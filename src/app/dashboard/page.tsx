@@ -258,9 +258,11 @@ export default function ConfigPage(){
     finally{setSaving(null);}
   }
 
-  function onPaisChange(pais:string){
+  function onIdiomaPaisEstadoChange(pais:string,estado:string){
     setPaisCode(pais);
     setEstados(ESTADOS_MAP[pais]||[]);
+    if(estado)loadDdd(pais,estado);
+    else setDdd('');
   }
 
   if(!clinica)return<div style={{textAlign:'center',padding:'60px 0',color:'#94a3b8',fontSize:13}}>Carregando configurações...</div>;
@@ -279,7 +281,7 @@ export default function ConfigPage(){
       {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
         open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -343,8 +345,8 @@ const PAIS_FLAGS: Record<string,string> = {
   sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
 };
 
-function IdiomaSection({clinica,saving,onSave,onClose}:{
-  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;
+function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;
 }){
   const idiomaVal=clinica.idioma||'português-br';
   const dash=idiomaVal.lastIndexOf('-');
@@ -391,6 +393,7 @@ function IdiomaSection({clinica,saving,onSave,onClose}:{
     setEstadoOpen(false);
     setEstadoOpts(ESTADOS_MAP[first]||[]);
     if(first)loadPaisInfo(first);
+    onPaisEstadoChange(first,'');
   }
 
   function selectPais(p:string){
@@ -401,6 +404,7 @@ function IdiomaSection({clinica,saving,onSave,onClose}:{
     setEstadoOpen(false);
     setEstadoOpts(ESTADOS_MAP[p]||[]);
     loadPaisInfo(p);
+    onPaisEstadoChange(p,'');
   }
 
   function selectEstado(s:string){
@@ -409,6 +413,7 @@ function IdiomaSection({clinica,saving,onSave,onClose}:{
     // Atualiza fuso se o país tiver fusos por estado
     const fusoEstado=FUSO_ESTADO_MAP[pais]?.[s];
     if(fusoEstado)setFuso(fusoEstado);
+    onPaisEstadoChange(pais,s);
   }
 
   const currentIdioma=IDIOMAS.find(i=>i.v===lang);
