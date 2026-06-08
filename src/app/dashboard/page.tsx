@@ -842,11 +842,18 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving}:{
 
 function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
-  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>void;saving:boolean;
+  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;
 }){
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
+  const [savedBlocks,setSavedBlocks]=useState<Record<string,boolean>>({});
+
+  async function saveBlock(block:'dados'|'horarios'|'especialidades'){
+    await onSave();
+    setSavedBlocks(prev=>({...prev,[block]:true}));
+    setOpenSub(null);
+  }
 
   return(
     <div style={{border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid #e2e8f0'}}>
@@ -872,9 +879,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
             exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
-              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
+              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} locked={openSub!==null&&openSub!=='dados'} saved={!!savedBlocks['dados']} onSave={()=>saveBlock('dados')} saving={saving} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
               {/* Nome */}
-              <div style={{display:'grid',gridTemplateColumns:'80px 1fr',gap:8}}>
+              <div style={{display:'grid',gridTemplateColumns:'56px 1fr',gap:8}}>
                 <div>
                   <label style={labelSt}>Título</label>
                   <select value={d.titulo||'Dr.'} onChange={e=>onUpdate({titulo:e.target.value})} style={inputSt}>
@@ -903,7 +910,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
               </div>
               </SubBloco>
-              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
+              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} locked={openSub!==null&&openSub!=='horarios'} saved={!!savedBlocks['horarios']} onSave={()=>saveBlock('horarios')} saving={saving} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
                   <label style={labelSt}>Atende Sábado?</label>
@@ -972,19 +979,12 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 </div>
               )}
               </SubBloco>
-              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
+              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} locked={openSub!==null&&openSub!=='especialidades'} saved={!!savedBlocks['especialidades']} onSave={()=>saveBlock('especialidades')} saving={saving} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
                 <label style={labelSt}>Especialidades do Profissional</label>
                 <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})}/>
               </div>
               </SubBloco>
-              {/* Salvar */}
-              <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid #f1f5f9'}}>
-                <button onClick={onSave} disabled={saving}
-                  style={{...saveBtnSt,opacity:saving?0.6:1}}>
-                  {saving?'Salvando...`':`💾 Salvar Dentista ${i+1}`}
-                </button>
-              </div>
             </div>
           </motion.div>
         )}
@@ -993,12 +993,17 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   );
 }
 
-function SubBloco({titulo,nomeDentista,open,onToggle,children}:{titulo:string;nomeDentista:string;open:boolean;onToggle:()=>void;children:React.ReactNode}){
+function SubBloco({titulo,nomeDentista,open,locked,saved,onToggle,onSave,saving,children}:{
+  titulo:string;nomeDentista:string;open:boolean;locked:boolean;saved:boolean;
+  onToggle:()=>void;onSave:()=>void;saving:boolean;children:React.ReactNode;
+}){
   return(
-    <div style={{border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-      <button onClick={onToggle} style={{width:'100%',padding:'10px 12px',border:'none',background:'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
+    <div style={{border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',opacity:locked?0.45:1,transition:'opacity 0.2s'}}>
+      <button onClick={locked?undefined:onToggle} disabled={locked}
+        style={{width:'100%',padding:'10px 12px',border:'none',background:saved?'rgba(16,185,129,0.04)':'#f8fafc',cursor:locked?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
         <span style={{fontSize:12,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
         <div style={{flex:1}}/>
+        {saved&&<Check size={12} color="#10b981" style={{flexShrink:0}}/>}
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
           <ChevronDown size={14}/>
         </motion.div>
@@ -1008,6 +1013,12 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{titulo:string;no
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:12,borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
               {children}
+              <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid #f1f5f9'}}>
+                <button onClick={onSave} disabled={saving}
+                  style={{...saveBtnSt,opacity:saving?0.6:1,fontSize:12,padding:'8px 16px'}}>
+                  {saving?'Salvando...':'💾 Salvar'}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
