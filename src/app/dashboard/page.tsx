@@ -1096,32 +1096,62 @@ function EspecialidadesGrid({procs,onChange}:{procs:{nome:string;ativo:boolean;t
     onChange(Object.entries(updated).map(([nome,v])=>({nome,...v})));
   }
 
+  function toggleAll(ei:number){
+    const esp=ESPECIALIDADES[ei];
+    const activeCount=esp.procs.filter(p=>procsMap[p.nome]?.ativo).length;
+    const newState=activeCount<esp.procs.length;
+    const updated={...procsMap};
+    esp.procs.forEach(p=>{updated[p.nome]={ativo:newState,tempo:procsMap[p.nome]?.tempo||p.tempo||30};});
+    onChange(Object.entries(updated).map(([nome,v])=>({nome,...v})));
+  }
+
   return(
-    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:8}}>
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>
       {ESPECIALIDADES.map((esp,ei)=>{
         const activeCount=esp.procs.filter(p=>procsMap[p.nome]?.ativo).length;
+        const total=esp.procs.length;
         const isOpen=openEsp===ei;
+        const allSelected=total>0&&activeCount===total;
+        const partial=activeCount>0&&activeCount<total;
         return(
-          <div key={ei} style={{border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-            <button onClick={()=>setOpenEsp(isOpen?null:ei)}
-              style={{width:'100%',padding:'10px 12px',border:'none',background:activeCount>0?'rgba(43,122,120,0.04)':'transparent',cursor:'pointer',textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div>
-                <div style={{fontSize:12,fontWeight:600,color:'#1e293b'}}>{esp.nome}</div>
-                <div style={{fontSize:11,color:'#94a3b8'}}>{activeCount>0?`${activeCount} procedimento${activeCount>1?'s':''} ativo${activeCount>1?'s':''}`:'Não configurada'}</div>
-              </div>
-              <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,background:activeCount>0?'#DEF2F1':'#f1f5f9',color:activeCount>0?'#2B7A78':'#94a3b8',fontWeight:600,cursor:'pointer',border:'none',fontFamily:"'Sora',sans-serif"}}>
-                {activeCount>0?'Configurar':'Ativar'}
-              </span>
-            </button>
+          <div key={ei} style={{border:`1px solid ${activeCount>0?'rgba(43,122,120,0.25)':'#e2e8f0'}`,borderRadius:8,overflow:'hidden'}}>
+            <div style={{display:'flex',alignItems:'center',padding:'10px 12px',gap:8,background:activeCount>0?'rgba(43,122,120,0.04)':'#f8fafc'}}>
+              {/* Name + count — click to expand */}
+              <button onClick={()=>setOpenEsp(isOpen?null:ei)} onMouseDown={e=>e.preventDefault()}
+                style={{flex:1,border:'none',background:'transparent',cursor:'pointer',textAlign:'left',padding:0,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#1e293b',lineHeight:1.2}}>{esp.nome}</div>
+                <div style={{fontSize:11,color:activeCount>0?'#2B7A78':'#94a3b8',marginTop:3}}>
+                  {activeCount>0?`${activeCount} de ${total} procedimento${total!==1?'s':''} selecionado${activeCount!==1?'s':''}`:'Nenhum selecionado'}
+                </div>
+              </button>
+              {/* Select-all button: ○ none / ✓ all / − partial */}
+              <button
+                onClick={e=>{e.stopPropagation();toggleAll(ei);}}
+                onMouseDown={e=>e.preventDefault()}
+                title={allSelected?'Desmarcar todos':'Selecionar todos'}
+                style={{width:26,height:26,borderRadius:'50%',flexShrink:0,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.18s',
+                  border:`2px solid ${allSelected?'#10b981':partial?'#f59e0b':'#cbd5e1'}`,
+                  background:allSelected?'#10b981':partial?'#fffbeb':'transparent'}}>
+                {allSelected&&<Check size={13} color="#fff" strokeWidth={3}/>}
+                {partial&&<span style={{width:10,height:2,background:'#f59e0b',borderRadius:2,display:'block'}}/>}
+              </button>
+              {/* Expand chevron */}
+              <button onClick={()=>setOpenEsp(isOpen?null:ei)} onMouseDown={e=>e.preventDefault()}
+                style={{border:'none',background:'transparent',cursor:'pointer',padding:'4px 2px',color:'#94a3b8',display:'flex',alignItems:'center',flexShrink:0}}>
+                <motion.div animate={{rotate:isOpen?180:0}} transition={{duration:0.2}}>
+                  <ChevronDown size={14}/>
+                </motion.div>
+              </button>
+            </div>
             <AnimatePresence initial={false}>
               {isOpen&&(
-                <motion.div initial={{height:0}} animate={{height:'auto'}} exit={{height:0}} style={{overflow:'hidden'}}>
-                  <div style={{padding:'8px 12px',borderTop:'1px solid #f1f5f9',display:'flex',flexWrap:'wrap',gap:6,paddingBottom:10}}>
+                <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+                  <div style={{padding:'10px 12px 12px',borderTop:'1px solid #f1f5f9',display:'flex',flexWrap:'wrap',gap:6}}>
                     {esp.procs.map(p=>{
                       const on=procsMap[p.nome]?.ativo||false;
                       return(
-                        <button key={p.nome} onClick={()=>toggle(p.nome)}
-                          style={{padding:'4px 10px',borderRadius:99,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${on?'#2B7A78':'#e2e8f0'}`,background:on?'#DEF2F1':'transparent',color:on?'#2B7A78':'#64748b',fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                        <button key={p.nome} onClick={()=>toggle(p.nome)} onMouseDown={e=>e.preventDefault()}
+                          style={{padding:'5px 11px',borderRadius:99,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${on?'#2B7A78':'#e2e8f0'}`,background:on?'#DEF2F1':'transparent',color:on?'#2B7A78':'#64748b',fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
                           {p.nome}
                         </button>
                       );
