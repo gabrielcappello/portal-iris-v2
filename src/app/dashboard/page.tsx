@@ -1005,7 +1005,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 )}
                 {d.modo==='proc'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    📋 <strong>PROCEDIMENTO —</strong> O tempo de cada turno dependerá do <strong>tempo configurado em cada procedimento</strong> dentro do bloco Especialidades.
+                    📋 <strong>PROCEDIMENTO —</strong> O tempo de cada turno dependerá do <strong>tempo configurado em procedimentos</strong>.
                   </div>
                 )}
               </div>
