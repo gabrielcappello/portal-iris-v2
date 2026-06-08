@@ -477,9 +477,24 @@ function IdiomaSection({clinica,saving,onSave,onClose}:{
           style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
       </div>
 
-      <div style={{display:'flex',justifyContent:'flex-end'}}>
-        <button onClick={()=>{onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado});onClose();}}
-          disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
+      <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'flex-end'}}>
+        {(()=>{
+          const precisaEstado=(ESTADOS_MAP[pais]||[]).length>0;
+          const estadoValido=!precisaEstado||((ESTADOS_MAP[pais]||[]).includes(estado)&&!!estado);
+          const falta=!lang?'Escolha um idioma':!pais?'Escolha um país':(!estadoValido)?'Escolha um estado / província':!fuso?'Fuso horário não identificado':null;
+          return falta?(
+            <div style={{fontSize:12,color:'#f59e0b',display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
+              <span>⚠️</span> {falta}
+            </div>
+          ):null;
+        })()}
+        <button onClick={()=>{
+          if(!lang||!pais)return;
+          const precisaEstado=(ESTADOS_MAP[pais]||[]).length>0;
+          if(precisaEstado&&(!estado||(ESTADOS_MAP[pais]||[]).includes(estado)===false))return;
+          onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado});
+          onClose();
+        }} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
       </div>
     </div>
   );
