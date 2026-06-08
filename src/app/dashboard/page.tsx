@@ -274,6 +274,7 @@ function IdiomaSection({clinica,saving,onSave}:{
   function selectLang(l:string){
     setLang(l);
     setIdiomaOpen(false);
+    setPaisInfo(null);
     const opts=PAIS_OPTIONS[l]||[];
     setPaisOpts(opts);
     const first=opts[0]?.v||'';
@@ -286,6 +287,7 @@ function IdiomaSection({clinica,saving,onSave}:{
   function selectPais(p:string){
     setPais(p);
     setPaisOpen(false);
+    setPaisInfo(null);
     setEstado('');
     setEstadoOpts(ESTADOS_MAP[p]||[]);
     loadPaisInfo(p);
@@ -314,9 +316,9 @@ function IdiomaSection({clinica,saving,onSave}:{
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,padding:'10px 0 4px'}}>
                 {IDIOMAS.map(id=>(
                   <button key={id.v} onClick={()=>selectLang(id.v)}
-                    style={{padding:'12px 6px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                    <span style={{fontSize:13,fontWeight:600,color:lang===id.v?'#2B7A78':'#475569'}}>{id.label}</span>
-                    {lang===id.v&&<Check size={11} color="#2B7A78"/>}
+                    style={{padding:'10px 4px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s',minHeight:52,boxSizing:'border-box'}}>
+                    <span style={{fontSize:12,fontWeight:600,color:lang===id.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2,wordBreak:'break-word'}}>{id.label}</span>
+                    {lang===id.v&&<Check size={10} color="#2B7A78"/>}
                   </button>
                 ))}
               </div>
@@ -366,15 +368,13 @@ function IdiomaSection({clinica,saving,onSave}:{
       </AnimatePresence>
 
       {/* Estado / Província */}
-      {estadoOpts.length>0&&(
-        <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}}>
-          <label style={labelSt}>Estado / Província</label>
-          <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
-            <option value="">Selecione...</option>
-            {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
-        </motion.div>
-      )}
+      <div style={{display:estadoOpts.length>0?'block':'none'}}>
+        <label style={labelSt}>Estado / Província</label>
+        <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
+          <option value="">Selecione...</option>
+          {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
 
       {/* Fuso horário */}
       <div>
