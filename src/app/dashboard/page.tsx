@@ -252,18 +252,21 @@ export default function ConfigPage(){
   const paisOpts=PAIS_OPTIONS[idioma]||[];
   const ativos=(Array.isArray(clinica.dentistas)?clinica.dentistas:[] as Dentista[]).filter((d:Dentista)=>d.ativo).length;
 
+  const idiomaConfigurado=!!(clinica.idioma&&clinica.pais_codigo&&(clinica as unknown as Record<string,string>).estado||(clinica.idioma&&clinica.pais_codigo&&!(ESTADOS_MAP[clinica.pais_codigo]?.length>0)));
+
   return(
     <div>
       <h2 style={{fontSize:18,fontWeight:700,color:'#1e293b',marginBottom:16}}>Configuração</h2>
 
-      {/* IDIOMA */}
-      <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica" open={open==='idioma'} onToggle={()=>toggle('idioma')}>
+      {/* IDIOMA — bloqueado após configurado */}
+      <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
+        open={open==='idioma'} onToggle={()=>{ if(!idiomaConfigurado||open==='idioma') toggle('idioma'); }}>
         <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')}/>
       </CardSection>
 
       {/* SECRETARIA */}
       <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title="Dados da Secretaria" subtitle="Identidade e configurações da Iris" open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
-        <SecretariaSection clinica={clinica} ddi={ddi} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)}/>
+        <SecretariaSection clinica={clinica} ddi={ddi} saving={saving==='secretaria'} onSave={async(d)=>{await save('secretaria',d);toggle('secretaria');}}/>
       </CardSection>
 
       {/* CLINICA */}
@@ -534,43 +537,82 @@ function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen}:{
 }
 
 // ── SECRETARIA SECTION ──────────────────────────────────────────────────────────
+const PERSONALIDADES_LIST = [
+  {v:'acolhedora', icon:'🤗', label:'Acolhedora',   sub:'Calorosa e empática'},
+  {v:'executiva',  icon:'💼', label:'Executiva',    sub:'Formal e precisa'},
+  {v:'moderna',    icon:'✨', label:'Moderna',      sub:'Descontraída e jovial'},
+  {v:'premium',    icon:'💎', label:'Premium',      sub:'Sofisticada e exclusiva'},
+  {v:'objetiva',   icon:'🎯', label:'Objetiva',     sub:'Direta e eficiente'},
+];
+
 function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
-  const [nome,setNome]=useState(clinica.nome_agente||'Iris');
-  const [pers,setPers]=useState(clinica.personalidade||'acolhedora');
+  const [nome,setNome]=useState(clinica.nome_agente||'');
+  const [pers,setPers]=useState(clinica.personalidade||'');
   const [tel,setTel]=useState(clinica.telefone_agente||'');
   const instancia=tel.replace(/\D/g,'')?`CAPPIA-IRIS-${tel.replace(/\D/g,'')}` :'';
 
+  const labelTel=nome?`Telefone de ${nome}`:'Telefone WhatsApp';
+
+  const falta=!nome?'Digite o nome da secretária':!pers?'Escolha uma personalidade':!tel?'Digite o telefone WhatsApp':null;
+
   return(
-    <div style={{display:'flex',flexDirection:'column',gap:14}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+
+      {/* Linha 1: Nome + Personalidade cards */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <div>
           <label style={labelSt}>Nome da Secretária</label>
           <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Ex: Iris, Sofia, Ana..." style={inputSt}/>
-          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Nome com que a Iris se apresentará.</span>
+          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Nome com que a Iris se apresentará aos pacientes.</span>
         </div>
         <div>
           <label style={labelSt}>Personalidade</label>
-          <select value={pers} onChange={e=>setPers(e.target.value)} style={inputSt}>
-            {PERSONALIDADES.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
-          </select>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:5}}>
+            {PERSONALIDADES_LIST.map(p=>(
+              <button key={p.v} onClick={()=>setPers(p.v)}
+                style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                <span style={{fontSize:18}}>{p.icon}</span>
+                <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
+                <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
+                {pers===p.v&&<Check size={10} color="#2B7A78"/>}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* Linha 2: Telefone + Instância */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <div>
-          <label style={labelSt}>Telefone WhatsApp</label>
+          <label style={labelSt}>{labelTel}</label>
           <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff'}}>
             <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{ddi}</span>
             <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="(21) 99999-9999"
               style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
           </div>
         </div>
+        <div>
+          <label style={labelSt}>Instância WhatsApp (automático)</label>
+          <input value={instancia} readOnly placeholder="Preencha o telefone ao lado"
+            style={{...inputSt,background:'#f8fafc',color:'#2B7A78',fontFamily:'monospace',fontWeight:600}}/>
+          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[telefone]</span>
+        </div>
       </div>
-      <div>
-        <label style={labelSt}>Instância WhatsApp (automático)</label>
-        <input value={instancia} readOnly placeholder="Preencha o telefone acima"
-          style={{...inputSt,background:'#f8fafc',color:'#2B7A78',fontFamily:'monospace',fontWeight:600}}/>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[telefone]</span>
-      </div>
-      <div style={{display:'flex',justifyContent:'flex-end'}}>
-        <button onClick={()=>onSave({nome_agente:nome,personalidade:pers,telefone_agente:tel,whatsapp_instancia:instancia})} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Secretaria'}</button>
+
+      {/* Validação + Salvar */}
+      <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'flex-end'}}>
+        {falta&&(
+          <div style={{fontSize:12,color:'#f59e0b',display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
+            <span>⚠️</span> {falta}
+          </div>
+        )}
+        <button onClick={()=>{
+          if(falta)return;
+          onSave({nome_agente:nome,personalidade:pers,telefone_agente:tel,whatsapp_instancia:instancia});
+        }} disabled={saving||!!falta}
+          style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
+          {saving?'Salvando...':'Salvar Secretaria'}
+        </button>
       </div>
     </div>
   );
