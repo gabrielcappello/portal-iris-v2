@@ -58,6 +58,70 @@ const FUSO_MAP: Record<string,string> = {
   ae:'Asia/Dubai',ma:'Africa/Casablanca',dz:'Africa/Algiers',
 };
 
+
+const FUSO_ESTADO_MAP: Record<string,Record<string,string>> = {
+  us:{
+    'Alabama':'America/Chicago','Alaska':'America/Anchorage','Arizona':'America/Phoenix',
+    'Arkansas':'America/Chicago','California':'America/Los_Angeles','Colorado':'America/Denver',
+    'Connecticut':'America/New_York','Delaware':'America/New_York','Florida':'America/New_York',
+    'Georgia':'America/New_York','Hawaii':'Pacific/Honolulu','Idaho':'America/Denver',
+    'Illinois':'America/Chicago','Indiana':'America/Indiana/Indianapolis','Iowa':'America/Chicago',
+    'Kansas':'America/Chicago','Kentucky':'America/New_York','Louisiana':'America/Chicago',
+    'Maine':'America/New_York','Maryland':'America/New_York','Massachusetts':'America/New_York',
+    'Michigan':'America/Detroit','Minnesota':'America/Chicago','Mississippi':'America/Chicago',
+    'Missouri':'America/Chicago','Montana':'America/Denver','Nebraska':'America/Chicago',
+    'Nevada':'America/Los_Angeles','New Hampshire':'America/New_York','New Jersey':'America/New_York',
+    'New Mexico':'America/Denver','New York':'America/New_York','North Carolina':'America/New_York',
+    'North Dakota':'America/Chicago','Ohio':'America/New_York','Oklahoma':'America/Chicago',
+    'Oregon':'America/Los_Angeles','Pennsylvania':'America/New_York','Rhode Island':'America/New_York',
+    'South Carolina':'America/New_York','South Dakota':'America/Chicago','Tennessee':'America/Chicago',
+    'Texas':'America/Chicago','Utah':'America/Denver','Vermont':'America/New_York',
+    'Virginia':'America/New_York','Washington':'America/Los_Angeles','Washington D.C.':'America/New_York',
+    'West Virginia':'America/New_York','Wisconsin':'America/Chicago','Wyoming':'America/Denver',
+  },
+  ca:{
+    'Alberta':'America/Edmonton','British Columbia':'America/Vancouver',
+    'Manitoba':'America/Winnipeg','New Brunswick':'America/Moncton',
+    'Newfoundland and Labrador':'America/St_Johns','Northwest Territories':'America/Yellowknife',
+    'Nova Scotia':'America/Halifax','Nunavut':'America/Iqaluit','Ontario':'America/Toronto',
+    'Prince Edward Island':'America/Halifax','Quebec':'America/Montreal',
+    'Saskatchewan':'America/Regina','Yukon':'America/Whitehorse',
+  },
+  br:{
+    'Acre':'America/Rio_Branco','Alagoas':'America/Recife','Amapá':'America/Belem',
+    'Amazonas':'America/Manaus','Bahia':'America/Bahia','Ceará':'America/Fortaleza',
+    'Distrito Federal':'America/Sao_Paulo','Espírito Santo':'America/Sao_Paulo',
+    'Goiás':'America/Sao_Paulo','Maranhão':'America/Fortaleza','Mato Grosso':'America/Cuiaba',
+    'Mato Grosso do Sul':'America/Campo_Grande','Minas Gerais':'America/Sao_Paulo',
+    'Pará':'America/Belem','Paraíba':'America/Recife','Paraná':'America/Sao_Paulo',
+    'Pernambuco':'America/Recife','Piauí':'America/Fortaleza','Rio de Janeiro':'America/Sao_Paulo',
+    'Rio Grande do Norte':'America/Fortaleza','Rio Grande do Sul':'America/Sao_Paulo',
+    'Rondônia':'America/Porto_Velho','Roraima':'America/Boa_Vista',
+    'Santa Catarina':'America/Sao_Paulo','São Paulo':'America/Sao_Paulo',
+    'Sergipe':'America/Recife','Tocantins':'America/Araguaina',
+  },
+  au:{
+    'Australian Capital Territory':'Australia/Sydney','New South Wales':'Australia/Sydney',
+    'Northern Territory':'Australia/Darwin','Queensland':'Australia/Brisbane',
+    'South Australia':'Australia/Adelaide','Tasmania':'Australia/Hobart',
+    'Victoria':'Australia/Melbourne','Western Australia':'Australia/Perth',
+  },
+  mx:{
+    'Baja California':'America/Tijuana','Baja California Sur':'America/Mazatlan',
+    'Chihuahua':'America/Chihuahua','Ciudad de México':'America/Mexico_City',
+    'Nayarit':'America/Bahia_Banderas','Sinaloa':'America/Mazatlan',
+    'Sonora':'America/Hermosillo',
+  },
+  ru:{
+    'Москва':'Europe/Moscow','Калининград':'Europe/Kaliningrad',
+    'Самара':'Europe/Samara','Екатеринбург':'Asia/Yekaterinburg',
+    'Омск':'Asia/Omsk','Красноярск':'Asia/Krasnoyarsk',
+    'Иркутск':'Asia/Irkutsk','Якутск':'Asia/Yakutsk',
+    'Владивосток':'Asia/Vladivostok','Магадан':'Asia/Magadan',
+    'Камчатка':'Asia/Kamchatka',
+  },
+};
+
 const ESPECIALIDADES = [
   {nome:'🦷 Clínico Geral',procs:[{nome:'Consulta / Avaliação',tempo:30},{nome:'Limpeza dental (profilaxia)',tempo:45},{nome:'Restauração / Cárie (1 face)',tempo:40},{nome:'Restauração / Cárie (2+ faces)',tempo:55},{nome:'Extração simples',tempo:35},{nome:'Fluoretação',tempo:25},{nome:'Radiografia',tempo:20}]},
   {nome:'🔧 Endodontia',procs:[{nome:'Canal dente anterior (1 raiz)',tempo:65},{nome:'Canal pré-molar (2 raízes)',tempo:80},{nome:'Canal molar (3+ raízes)',tempo:95},{nome:'Retratamento de canal',tempo:90}]},
@@ -194,7 +258,7 @@ export default function ConfigPage(){
 
       {/* IDIOMA */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica" open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -258,8 +322,8 @@ const PAIS_FLAGS: Record<string,string> = {
   sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
 };
 
-function IdiomaSection({clinica,saving,onSave}:{
-  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;
+function IdiomaSection({clinica,saving,onSave,onClose}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;
 }){
   const idiomaVal=clinica.idioma||'português-br';
   const dash=idiomaVal.lastIndexOf('-');
@@ -316,6 +380,14 @@ function IdiomaSection({clinica,saving,onSave}:{
     setEstadoOpen(false);
     setEstadoOpts(ESTADOS_MAP[p]||[]);
     loadPaisInfo(p);
+  }
+
+  function selectEstado(s:string){
+    setEstado(s);
+    setEstadoOpen(false);
+    // Atualiza fuso se o país tiver fusos por estado
+    const fusoEstado=FUSO_ESTADO_MAP[pais]?.[s];
+    if(fusoEstado)setFuso(fusoEstado);
   }
 
   const currentIdioma=IDIOMAS.find(i=>i.v===lang);
@@ -394,7 +466,7 @@ function IdiomaSection({clinica,saving,onSave}:{
 
       {/* Estado / Província */}
       {estadoOpts.length>0&&(
-        <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={s=>{setEstado(s);setEstadoOpen(false);}}
+        <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
           estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
       )}
 
@@ -406,7 +478,7 @@ function IdiomaSection({clinica,saving,onSave}:{
       </div>
 
       <div style={{display:'flex',justifyContent:'flex-end'}}>
-        <button onClick={()=>onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado})}
+        <button onClick={()=>{onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado});onClose();}}
           disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
       </div>
     </div>
