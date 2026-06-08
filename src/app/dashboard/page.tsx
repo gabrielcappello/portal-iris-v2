@@ -291,7 +291,7 @@ export default function ConfigPage(){
       </CardSection>
 
       {/* CLINICA */}
-      <CardSection id="clinica" icon={<Building2 size={18}/>} title="Dados da Clínica" subtitle="Informações usadas pelo agente nas conversas" open={open==='clinica'} onToggle={()=>toggle('clinica')}>
+      <CardSection id="clinica" icon={<Building2 size={18}/>} title={`Dados da clínica${clinica.nome?` ${clinica.nome}`:''}`} subtitle="Informações usadas pelo agente nas conversas" open={open==='clinica'} onToggle={()=>toggle('clinica')}>
         <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')}/>
       </CardSection>
 
