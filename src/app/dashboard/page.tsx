@@ -254,6 +254,7 @@ function IdiomaSection({clinica,saving,onSave}:{
   const [paisOpts,setPaisOpts]=useState<{v:string;l:string}[]>(PAIS_OPTIONS[initLang]||[]);
   const [estado,setEstado]=useState((clinica as unknown as Record<string,string>).estado||'');
   const [estadoOpts,setEstadoOpts]=useState<string[]>(ESTADOS_MAP[initPais]||[]);
+  const [estadoOpen,setEstadoOpen]=useState(false);
   const [fuso,setFuso]=useState(clinica.fuso_horario||'');
   const [paisInfo,setPaisInfo]=useState<{tipo_documento:string;digitos_documento:number;digitos_telefone:number}|null>(null);
 
@@ -280,6 +281,7 @@ function IdiomaSection({clinica,saving,onSave}:{
     const first=opts[0]?.v||'';
     setPais(first);
     setEstado('');
+    setEstadoOpen(false);
     setEstadoOpts(ESTADOS_MAP[first]||[]);
     if(first)loadPaisInfo(first);
   }
@@ -289,6 +291,7 @@ function IdiomaSection({clinica,saving,onSave}:{
     setPaisOpen(false);
     setPaisInfo(null);
     setEstado('');
+    setEstadoOpen(false);
     setEstadoOpts(ESTADOS_MAP[p]||[]);
     loadPaisInfo(p);
   }
@@ -368,13 +371,10 @@ function IdiomaSection({clinica,saving,onSave}:{
       </AnimatePresence>
 
       {/* Estado / Província */}
-      <div style={{display:estadoOpts.length>0?'block':'none'}}>
-        <label style={labelSt}>Estado / Província</label>
-        <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
-          <option value="">Selecione...</option>
-          {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
+      {estadoOpts.length>0&&(
+        <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={s=>{setEstado(s);setEstadoOpen(false);}}
+          estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
+      )}
 
       {/* Fuso horário */}
       <div>
@@ -387,6 +387,39 @@ function IdiomaSection({clinica,saving,onSave}:{
         <button onClick={()=>onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado})}
           disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
       </div>
+    </div>
+  );
+}
+
+function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen}:{
+  estado:string;estadoOpts:string[];onSelect:(s:string)=>void;
+  estadoOpen:boolean;setEstadoOpen:(v:boolean)=>void;
+}){
+  return(
+    <div>
+      <label style={labelSt}>Estado / Província</label>
+      <button onClick={()=>setEstadoOpen(!estadoOpen)}
+        style={{width:'100%',padding:'10px 14px',border:`1px solid ${estadoOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+        <span style={{flex:1,fontSize:14,fontWeight:600,color:estado?'#1e293b':'#94a3b8',textAlign:'left'}}>{estado||'Selecione...'}</span>
+        <motion.div animate={{rotate:estadoOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
+          <ChevronDown size={16}/>
+        </motion.div>
+      </button>
+      <AnimatePresence initial={false}>
+        {estadoOpen&&(
+          <motion.div key="estados" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
+            exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6,padding:'10px 0 4px',maxHeight:280,overflowY:'auto'}}>
+              {estadoOpts.map(s=>(
+                <button key={s} onClick={()=>onSelect(s)}
+                  style={{padding:'8px 10px',border:`1px solid ${estado===s?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:estado===s?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',fontSize:12,fontWeight:estado===s?600:400,color:estado===s?'#2B7A78':'#475569',fontFamily:"'Sora',sans-serif",transition:'all 0.15s',textAlign:'left'}}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
