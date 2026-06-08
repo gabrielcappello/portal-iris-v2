@@ -1048,6 +1048,10 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                   style={{...saveBtnSt,width:'100%',opacity:saving?0.6:1,justifyContent:'center',display:'flex',alignItems:'center',gap:8}}>
                   {saving?'Salvando...':`💾 Salvar ${nomeLabel}`}
                 </button>
+                <button onClick={onToggle} onMouseDown={e=>e.preventDefault()}
+                  style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid #e2e8f0',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
+                  Fechar
+                </button>
               </div>
             </div>
           </motion.div>
