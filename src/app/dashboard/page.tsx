@@ -604,10 +604,10 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
       {/* Linha 2: Telefone + Instância (empilhados em coluna) */}
       <div>
         <label style={labelSt}>{labelTel}</label>
-        <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff'}}>
-          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
+        <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{prefixo}</span>
           <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="999999999"
-            style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
+            style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif",width:'100%'}}/>
         </div>
         {/* Instância sempre visível logo abaixo */}
         <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8,overflow:'hidden'}}>
