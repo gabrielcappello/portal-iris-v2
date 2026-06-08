@@ -568,7 +568,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
   const [tel,setTel]=useState(clinica.telefone_agente||'');
   // Instância: só dígitos sem DDI e DDD
   const telDigits=tel.replace(/\D/g,'');
-  const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits.length>8?telDigits.slice(-8):telDigits;
+  const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits;
   const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
 
   const labelTel=nome?`Telefone de ${nome}`:'Telefone WhatsApp';
