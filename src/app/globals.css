@@ -1,12 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --primary: #2B7A78;
-  --primary-light: #DEF2F1;
-  --accent: #3AAFA9;
+@theme {
+  --color-primary: #2B7A78;
+  --color-primary-light: #DEF2F1;
+  --color-primary-dark: #1a4d4a;
+  --color-accent: #3AAFA9;
+  --font-sans: 'Sora', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * { box-sizing: border-box; }
