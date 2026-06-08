@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList } from "lucide-react";
+import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff } from "lucide-react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
@@ -848,8 +848,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
   const [validErrors,setValidErrors]=useState<string[]>([]);
+  const [showSenha,setShowSenha]=useState(false);
 
-  const dadosOk=!!d.nome?.trim()&&!!d.senha?.trim();
+  const dadosOk=!!d.nome?.trim()&&!!d.senha?.trim()&&!!d.calendar_id?.trim()&&!!d.whatsapp?.trim();
   const horariosOk=!!d.inicio&&!!d.fim&&!!d.alm_ini&&!!d.alm_fim&&(!d.sabado||(!!d.sab_ini&&!!d.sab_fim));
   const espOk=(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
 
@@ -922,7 +923,14 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
               </div>
               <div>
                 <label style={labelSt}>Senha de acesso ({nomeLabel})</label>
-                <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
+                <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+                  <input type={showSenha?'text':'password'} value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••"
+                    style={{flex:1,minWidth:0,padding:'10px 12px',fontSize:13,border:'none',outline:'none',background:'transparent',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'}}/>
+                  <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>setShowSenha(p=>!p)}
+                    style={{padding:'0 12px',border:'none',background:'transparent',cursor:'pointer',color:'#94a3b8',flexShrink:0,display:'flex',alignItems:'center'}}>
+                    {showSenha?<EyeOff size={16}/>:<Eye size={16}/>}
+                  </button>
+                </div>
               </div>
               </SubBloco>
               <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} saved={horariosOk} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
