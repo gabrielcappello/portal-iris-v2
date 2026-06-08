@@ -9,9 +9,10 @@ const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
   'português':[{v:'br',l:'Brasil'},{v:'pt',l:'Portugal'},{v:'ao',l:'Angola'},{v:'mz',l:'Moçambique'},{v:'cv',l:'Cabo Verde'},{v:'gw',l:'Guiné-Bissau'},{v:'st',l:'São Tomé e Príncipe'},{v:'tl',l:'Timor-Leste'}],
   'español':[{v:'mx',l:'México'},{v:'co',l:'Colombia'},{v:'ar',l:'Argentina'},{v:'es',l:'España'},{v:'pe',l:'Perú'},{v:'ve',l:'Venezuela'},{v:'cl',l:'Chile'},{v:'ec',l:'Ecuador'},{v:'gt',l:'Guatemala'},{v:'cu',l:'Cuba'},{v:'bo',l:'Bolivia'},{v:'do',l:'República Dominicana'},{v:'hn',l:'Honduras'},{v:'py',l:'Paraguay'},{v:'sv',l:'El Salvador'},{v:'ni',l:'Nicaragua'},{v:'cr',l:'Costa Rica'},{v:'pa',l:'Panamá'},{v:'uy',l:'Uruguay'}],
   'english':[{v:'us',l:'United States'},{v:'uk',l:'United Kingdom'},{v:'au',l:'Australia'},{v:'ca',l:'Canada'},{v:'ng',l:'Nigeria'},{v:'za',l:'South Africa'},{v:'gh',l:'Ghana'},{v:'ke',l:'Kenya'},{v:'in',l:'India'},{v:'ph',l:'Philippines'},{v:'sg',l:'Singapore'},{v:'nz',l:'New Zealand'},{v:'ie',l:'Ireland'}],
-  'français':[{v:'fr',l:'France'},{v:'be',l:'Belgique'},{v:'ch',l:'Suisse'},{v:'ca-fr',l:'Canada (Québec)'},{v:'sn',l:'Sénégal'},{v:'ci',l:'Côte d\'Ivoire'},{v:'cm',l:'Cameroun'},{v:'mg',l:'Madagascar'}],
-  'deutsch':[{v:'de',l:'Deutschland'},{v:'at',l:'Österreich'},{v:'ch-de',l:'Schweiz'}],
-  'italiano':[{v:'it',l:'Italia'},{v:'ch-it',l:'Svizzera'}],
+  'français':[{v:'fr',l:'France'},{v:'be',l:'Belgique'},{v:'ch',l:'Suisse'},{v:'sn',l:'Sénégal'},{v:'ci',l:"Côte d'Ivoire"},{v:'cm',l:'Cameroun'},{v:'mg',l:'Madagascar'}],
+  'deutsch':[{v:'de',l:'Deutschland'},{v:'at',l:'Österreich'},{v:'ch',l:'Schweiz'}],
+  'italiano':[{v:'it',l:'Italia'},{v:'ch',l:'Svizzera'}],
+  'русский':[{v:'ru',l:'Россия'},{v:'by',l:'Беларусь'},{v:'kz',l:'Казахстан'},{v:'ua',l:'Украина'}],
   'العربية':[{v:'sa',l:'المملكة العربية السعودية'},{v:'eg',l:'مصر'},{v:'ae',l:'الإمارات'},{v:'ma',l:'المغرب'},{v:'dz',l:'الجزائر'}],
 };
 
@@ -21,7 +22,9 @@ const DDI_MAP: Record<string,string> = {
   gt:'+502',cu:'+53',bo:'+591',do:'+1',hn:'+504',py:'+595',sv:'+503',ni:'+505',
   cr:'+506',pa:'+507',uy:'+598',us:'+1',uk:'+44',au:'+61',ca:'+1',ng:'+234',
   za:'+27',gh:'+233',ke:'+254',in:'+91',ph:'+63',sg:'+65',nz:'+64',ie:'+353',
-  fr:'+33',be:'+32',de:'+49',at:'+43',it:'+39',sa:'+966',eg:'+20',ae:'+971',ma:'+212',dz:'+213',
+  fr:'+33',be:'+32',de:'+49',at:'+43',it:'+39',ch:'+41',
+  sa:'+966',eg:'+20',ae:'+971',ma:'+212',dz:'+213',
+  ru:'+7',by:'+375',kz:'+7',ua:'+380',
 };
 
 const ESTADOS_MAP: Record<string,string[]> = {
@@ -172,7 +175,7 @@ export default function ConfigPage(){
 
       {/* IDIOMA */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica" open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} idioma={idioma} setIdioma={setIdioma} paisCode={paisCode} onPaisChange={onPaisChange} paisOpts={paisOpts} estados={estados} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -214,74 +217,138 @@ export default function ConfigPage(){
 }
 
 // ── IDIOMA SECTION ──────────────────────────────────────────────────────────────
-function IdiomaSection({clinica,idioma,setIdioma,paisCode,onPaisChange,paisOpts,estados,saving,onSave}:{
-  clinica:Clinica;idioma:string;setIdioma:(v:string)=>void;paisCode:string;
-  onPaisChange:(v:string)=>void;paisOpts:{v:string;l:string}[];
-  estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;
+const IDIOMAS = [
+  {v:'português', label:'Português', flag:'🇧🇷'},
+  {v:'español',   label:'Español',   flag:'🇪🇸'},
+  {v:'english',   label:'English',   flag:'🇺🇸'},
+  {v:'français',  label:'Français',  flag:'🇫🇷'},
+  {v:'deutsch',   label:'Deutsch',   flag:'🇩🇪'},
+  {v:'italiano',  label:'Italiano',  flag:'🇮🇹'},
+  {v:'русский',   label:'Русский',   flag:'🇷🇺'},
+  {v:'العربية',   label:'العربية',   flag:'🇸🇦'},
+];
+
+function IdiomaSection({clinica,saving,onSave}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;
 }){
-  const [lang,setLang]=useState(idioma);
-  const [pais,setPais]=useState(paisCode);
+  const idiomaVal=clinica.idioma||'português-br';
+  const dash=idiomaVal.lastIndexOf('-');
+  const initLang=dash>0?idiomaVal.substring(0,dash):'português';
+  const initPais=dash>0?idiomaVal.substring(dash+1):'br';
+
+  const [lang,setLang]=useState(initLang);
+  const [idiomaOpen,setIdiomaOpen]=useState(false);
+  const [pais,setPais]=useState(initPais);
+  const [paisOpts,setPaisOpts]=useState<{v:string;l:string}[]>(PAIS_OPTIONS[initLang]||[]);
   const [estado,setEstado]=useState((clinica as unknown as Record<string,string>).estado||'');
+  const [estadoOpts,setEstadoOpts]=useState<string[]>(ESTADOS_MAP[initPais]||[]);
   const [fuso,setFuso]=useState(clinica.fuso_horario||'');
+  const [paisInfo,setPaisInfo]=useState<{tipo_documento:string;digitos_documento:number;digitos_telefone:number}|null>(null);
 
-  useEffect(()=>{setLang(idioma);},[idioma]);
-  useEffect(()=>{setPais(paisCode);},[paisCode]);
+  useEffect(()=>{ loadPaisInfo(initPais); },[]);// eslint-disable-line
 
-  async function onPaisLocal(p:string){
-    setPais(p);
-    onPaisChange(p);
-    setEstado('');
+  async function loadPaisInfo(p:string){
     try{
-      const rows=await sb.query<{fuso_horario:string;timezone?:string}>('paises_config',`?codigo=eq.${p}&select=*`);
-      if(rows[0]){const f=(rows[0] as Record<string,string>).fuso_horario||(rows[0] as Record<string,string>).timezone||'';setFuso(f);}
+      const rows=await sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${p}&select=*`);
+      if(rows[0]){
+        const r=rows[0];
+        setPaisInfo({tipo_documento:String(r.tipo_documento||'Documento'),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0)});
+        const f=String(r.fuso_horario||r.timezone||'');
+        if(f)setFuso(f);
+      }
     }catch{}
   }
 
-  function handleSave(){
-    const idiomaVal=`${lang}-${pais}`;
-    onSave({idioma:idiomaVal,pais_codigo:pais,fuso_horario:fuso,estado});
-    setIdioma(lang);
+  function selectLang(l:string){
+    setLang(l);
+    setIdiomaOpen(false);
+    const opts=PAIS_OPTIONS[l]||[];
+    setPaisOpts(opts);
+    const first=opts[0]?.v||'';
+    setPais(first);
+    setEstado('');
+    setEstadoOpts(ESTADOS_MAP[first]||[]);
+    if(first)loadPaisInfo(first);
   }
 
+  function onPaisLocal(p:string){
+    setPais(p);
+    setEstado('');
+    setEstadoOpts(ESTADOS_MAP[p]||[]);
+    loadPaisInfo(p);
+  }
+
+  const currentIdioma=IDIOMAS.find(i=>i.v===lang);
+
   return(
-    <div style={{display:'flex',flexDirection:'column',gap:14}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div>
-          <label style={labelSt}>Idioma</label>
-          <select value={lang} onChange={e=>{setLang(e.target.value);setPais(PAIS_OPTIONS[e.target.value]?.[0]?.v||'');}}
-            style={inputSt}>
-            <option value="português">Português</option>
-            <option value="español">Español</option>
-            <option value="english">English</option>
-            <option value="français">Français</option>
-            <option value="deutsch">Deutsch</option>
-            <option value="italiano">Italiano</option>
-            <option value="العربية">العربية</option>
-          </select>
-        </div>
-        <div>
-          <label style={labelSt}>País</label>
-          <select value={pais} onChange={e=>onPaisLocal(e.target.value)} style={inputSt}>
-            {paisOpts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-          </select>
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div>
+        <label style={labelSt}>Idioma</label>
+        <button onClick={()=>setIdiomaOpen(p=>!p)}
+          style={{width:'100%',padding:'10px 14px',border:`1px solid ${idiomaOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+          <span style={{fontSize:20}}>{currentIdioma?.flag}</span>
+          <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentIdioma?.label}</span>
+          <motion.div animate={{rotate:idiomaOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
+            <ChevronDown size={16}/>
+          </motion.div>
+        </button>
+        <AnimatePresence initial={false}>
+          {idiomaOpen&&(
+            <motion.div key="idiomas" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
+              exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,padding:'10px 0 4px'}}>
+                {IDIOMAS.map(id=>(
+                  <button key={id.v} onClick={()=>selectLang(id.v)}
+                    style={{padding:'10px 6px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                    <span style={{fontSize:22}}>{id.flag}</span>
+                    <span style={{fontSize:11,fontWeight:600,color:lang===id.v?'#2B7A78':'#64748b'}}>{id.label}</span>
+                    {lang===id.v&&<Check size={12} color="#2B7A78"/>}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      <div>
+        <label style={labelSt}>País</label>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:6}}>
+          {paisOpts.map(o=>(
+            <button key={o.v} onClick={()=>onPaisLocal(o.v)}
+              style={{padding:'8px 10px',border:`1px solid ${pais===o.v?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:pais===o.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',fontSize:12,fontWeight:pais===o.v?600:400,color:pais===o.v?'#2B7A78':'#475569',fontFamily:"'Sora',sans-serif",transition:'all 0.15s',textAlign:'left'}}>
+              {o.l}
+            </button>
+          ))}
         </div>
       </div>
-      {ESTADOS_MAP[pais]?.length>0&&(
-        <div>
-          <label style={labelSt}>Estado / Província</label>
-          <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
-            <option value="">Selecione...</option>
-            {(ESTADOS_MAP[pais]||[]).map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-      )}
+      <AnimatePresence>
+        {paisInfo&&(
+          <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+            style={{display:'flex',gap:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,border:'1px solid #e2e8f0',fontSize:12,color:'#475569',flexWrap:'wrap'}}>
+            <span>📄 Documento: <strong>{paisInfo.tipo_documento}</strong> ({paisInfo.digitos_documento} dígitos)</span>
+            <span>📱 Telefone: <strong>{paisInfo.digitos_telefone} dígitos</strong></span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {estadoOpts.length>0&&(
+          <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+            <label style={labelSt}>Estado / Província</label>
+            <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
+              <option value="">Selecione...</option>
+              {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div>
         <label style={labelSt}>Fuso Horário</label>
-        <input value={fuso} onChange={e=>setFuso(e.target.value)} placeholder="Ex: America/Sao_Paulo" readOnly
+        <input value={fuso} readOnly placeholder="Preenchido automaticamente ao selecionar o país"
           style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
       </div>
       <div style={{display:'flex',justifyContent:'flex-end'}}>
-        <button onClick={handleSave} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar'}</button>
+        <button onClick={()=>onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado})}
+          disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
       </div>
     </div>
   );
