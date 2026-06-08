@@ -848,16 +848,27 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
 
   return(
     <div style={{border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid #e2e8f0'}}>
-      <button onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
-        <div style={{width:8,height:8,borderRadius:'50%',background:d.ativo?'#10b981':'#e2e8f0',flexShrink:0}}/>
-        <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>Dentista {i+1}</span>
-        {d.nome&&<span style={{fontSize:13,color:'#94a3b8'}}>— {d.titulo} {d.nome}</span>}
-        <div style={{flex:1}}/>
-        <Toggle on={d.ativo} onChange={v=>onUpdate({ativo:v})}/>
-        <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:8}}>
-          <ChevronDown size={14}/>
-        </motion.div>
-      </button>
+      <div style={{width:'100%',padding:'12px 14px'}}>
+        {/* Linha 1: nome do bloco + ativo/inativo */}
+        <div onClick={onToggle} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:d.ativo?'#10b981':'#e2e8f0',flexShrink:0}}/>
+          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>Dentista {i+1}</span>
+          <div style={{flex:1}}/>
+          <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>onUpdate({ativo:v})}/></div>
+          <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
+            <ChevronDown size={14}/>
+          </motion.div>
+        </div>
+        {/* Linha 2: Título (Dr./Dra.) + Nome — ocupa a largura toda */}
+        <div onClick={e=>e.stopPropagation()} style={{display:'flex',gap:8,marginTop:10}}>
+          <select value={d.titulo||'Dr.'} onChange={e=>onUpdate({titulo:e.target.value})}
+            style={{padding:'8px 10px',fontSize:13,border:'1px solid #e2e8f0',borderRadius:8,outline:'none',background:'#fff',fontFamily:"'Sora',sans-serif",color:'#2B7A78',fontWeight:600,flexShrink:0,cursor:'pointer'}}>
+            <option>Dr.</option><option>Dra.</option>
+          </select>
+          <input value={d.nome||''} onChange={e=>onUpdate({nome:e.target.value})} placeholder="Nome do dentista"
+            style={{flex:1,minWidth:0,padding:'8px 10px',fontSize:13,border:'1px solid #e2e8f0',borderRadius:8,outline:'none',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'}}/>
+        </div>
+      </div>
 
       <AnimatePresence initial={false}>
         {open&&(
