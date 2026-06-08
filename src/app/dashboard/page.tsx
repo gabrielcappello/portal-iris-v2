@@ -297,7 +297,7 @@ export default function ConfigPage(){
 
       {/* DENTISTAS */}
       <CardSection id="dentistas" icon={<Users size={18}/>} title="Dentistas" subtitle="Até 10 profissionais com agendas independentes" open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
-        <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'}/>
+        <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')}/>
       </CardSection>
 
       {/* DADOS DO AGENTE */}
@@ -805,11 +805,11 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
 }
 
 // ── DENTISTAS SECTION ──────────────────────────────────────────────────────────
-function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving}:{
+function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose}:{
   clinica:Clinica;ddi:string;
   onSaveOne:(i:number,dents:Dentista[])=>Promise<void>;
   onSaveAll:(dents:Dentista[])=>Promise<void>;
-  saving:boolean;
+  saving:boolean;onClose:()=>void;
 }){
   const base=Array.isArray(clinica.dentistas)?clinica.dentistas:[];
   const [dents,setDents]=useState<Dentista[]>(()=>
@@ -837,6 +837,10 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving}:{
         <DentistaCard key={i} d={d} i={i} open={open===i} onToggle={()=>setOpen(p=>p===i?null:i)}
           onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i}/>
       ))}
+      <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
+        style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
+        ✕ Fechar Dentistas
+      </button>
     </div>
   );
 }
