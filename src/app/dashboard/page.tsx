@@ -286,8 +286,8 @@ export default function ConfigPage(){
       </CardSection>
 
       {/* SECRETARIA */}
-      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title="Dados da Secretaria" subtitle="Identidade e configurações da Iris" open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
-        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={async(d)=>{await save('secretaria',d);toggle('secretaria');}}/>
+      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`Dados da ${clinica.nome_agente||'Secretaria'}`} subtitle={`Identidade e configurações d${clinica.nome_agente?`a ${clinica.nome_agente}`:'a secretaria'}`} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
+        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)}/>
       </CardSection>
 
       {/* CLINICA */}
