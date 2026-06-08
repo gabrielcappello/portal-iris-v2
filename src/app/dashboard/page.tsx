@@ -286,7 +286,7 @@ export default function ConfigPage(){
       </CardSection>
 
       {/* SECRETARIA */}
-      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`Dados da ${clinica.nome_agente||'Secretaria'}`} subtitle={`Identidade e configurações d${clinica.nome_agente?`a ${clinica.nome_agente}`:'a secretaria'}`} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
+      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`Dados da assistente${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle="Identidade e configurações da assistente virtual" open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
         <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)}/>
       </CardSection>
 
