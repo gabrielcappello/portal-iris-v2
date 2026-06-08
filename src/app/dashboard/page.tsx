@@ -995,17 +995,17 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 </div>
                 {d.modo==='auto'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    ⚡ Os turnos são gerados automaticamente — o intervalo entre cada horário depende da <strong>duração em minutos</strong> configurada abaixo.
+                    ⚡ <strong>AUTOMÁTICO —</strong> Os turnos são gerados automaticamente — o intervalo entre cada horário depende da <strong>duração em minutos</strong> configurada abaixo.
                   </div>
                 )}
                 {d.modo==='manual'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    ✏️ Você define exatamente quais horários estarão disponíveis, inserindo-os manualmente separados por vírgula.
+                    ✏️ <strong>MANUAL —</strong> Você define exatamente quais horários estarão disponíveis, inserindo-os manualmente separados por vírgula.
                   </div>
                 )}
                 {d.modo==='proc'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    📋 O tempo de cada turno dependerá do <strong>tempo configurado em cada procedimento</strong> dentro do bloco Especialidades.
+                    📋 <strong>PROCEDIMENTO —</strong> O tempo de cada turno dependerá do <strong>tempo configurado em cada procedimento</strong> dentro do bloco Especialidades.
                   </div>
                 )}
               </div>
