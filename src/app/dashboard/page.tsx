@@ -254,6 +254,7 @@ export default function ConfigPage(){
         loadDdd(String(data.pais_codigo),String(data.estado));
       }
       showToast('Salvo com sucesso ✓');
+      setOpen(null);
     }catch{showToast('Erro ao salvar',false);}
     finally{setSaving(null);}
   }
@@ -300,7 +301,7 @@ export default function ConfigPage(){
       </CardSection>
 
       {/* DADOS DO AGENTE */}
-      <CardSection id="dados" icon={<ClipboardList size={18}/>} title="Dados que o agente solicita" subtitle="Escolha quais informações o agente irá coletar do paciente" open={open==='dados'} onToggle={()=>toggle('dados')}>
+      <CardSection id="dados" icon={<ClipboardList size={18}/>} title={`Dados que ${clinica.nome_agente||'o agente'} solicita`} subtitle="Escolha quais informações o agente irá coletar do paciente" open={open==='dados'} onToggle={()=>toggle('dados')}>
         <DadosAgenteSection clinica={clinica} saving={saving==='dados'} onSave={(d)=>save('dados',d)}/>
       </CardSection>
 
