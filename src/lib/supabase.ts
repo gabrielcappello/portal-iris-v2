@@ -28,7 +28,7 @@ export type Dentista = {
 };
 
 export type Clinica = {
-  id: string; nome_clinica: string; telefone_clinica: string;
+  id: string; nome: string; telefone_clinica: string;
   endereco: string; sala: string; bairro: string; cidade: string; cep: string;
   referencia: string; email_clinica: string; google_maps: string;
   whatsapp_instancia: string; nome_agente: string; personalidade: string;

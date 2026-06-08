@@ -49,12 +49,12 @@ export default function LoginPage() {
       if (!users.length) throw new Error("Email ou senha incorretos");
       const u = users[0];
       if (u.senha_hash !== hash) throw new Error("Email ou senha incorretos");
-      const clinicas = await sbQuery<{id:string;nome_clinica:string}>("clinicas", `?id=eq.${u.clinica_id}&select=id,nome_clinica`);
+      const clinicas = await sbQuery<{id:string;nome:string}>("clinicas", `?id=eq.${u.clinica_id}&ativo=eq.true&select=id,nome`);
       if (!clinicas.length) throw new Error("Clínica não encontrada ou inativa");
       localStorage.setItem("auth_token", hash);
       localStorage.setItem("clinica_id", u.clinica_id);
       localStorage.setItem("user_id", u.id);
-      localStorage.setItem("clinica_nome", clinicas[0].nome_clinica || "Clínica");
+      localStorage.setItem("clinica_nome", clinicas[0].nome || "Clínica");
       if (u.primeiro_acesso) { setUserId(u.id); setPrimeiroAcesso(true); return; }
       router.replace("/dashboard");
     } catch (e: unknown) {

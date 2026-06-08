@@ -227,7 +227,7 @@ export default function ConfigPage(){
       if(r[0]){
         const c=r[0];
         setClinica(c);
-        localStorage.setItem('clinica_nome',c.nome_clinica||'Clínica');
+        localStorage.setItem('clinica_nome',c.nome||'Clínica');
         const idiomaVal=c.idioma||'português-br';
         const dash=idiomaVal.lastIndexOf('-');
         const lang=dash>0?idiomaVal.substring(0,dash):'português';
@@ -660,7 +660,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
   const cidadesOpts=cidadesPorEstado[estadoSalvo]||[];
 
   const [vals,setVals]=useState({
-    nome:clinica.nome_clinica||(c.nome)||'',
+    nome:clinica.nome||'',
     endereco:c.endereco||'',
     sala:c.sala||'',
     bairro:c.bairro||'',
