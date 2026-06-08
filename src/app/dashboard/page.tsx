@@ -289,7 +289,7 @@ export default function ConfigPage(){
 
       {/* CLINICA */}
       <CardSection id="clinica" icon={<Building2 size={18}/>} title="Dados da Clínica" subtitle="Informações usadas pelo agente nas conversas" open={open==='clinica'} onToggle={()=>toggle('clinica')}>
-        <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)}/>
+        <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')}/>
       </CardSection>
 
       {/* DENTISTAS */}
@@ -637,7 +637,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
 }
 
 // ── CLINICA SECTION ────────────────────────────────────────────────────────────
-function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;}){
   const c=clinica as unknown as Record<string,string>;
   const estadoSalvo=c.estado||'';
   
@@ -651,14 +651,14 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica
   const cidadesOpts=cidadesPorEstado[estadoSalvo]||[];
 
   const [vals,setVals]=useState({
-    nome_clinica:clinica.nome_clinica||'',
+    nome:clinica.nome_clinica||(c.nome)||'',
     endereco:c.endereco||'',
     sala:c.sala||'',
     bairro:c.bairro||'',
     cidade:c.cidade||'',
     cep:c.cep||'',
     referencia:c.referencia||'',
-    email_clinica:c.email_clinica||'',
+    email_clinica:c.email_clinica||c.email||'',
     whatsapp_admin:c.whatsapp_admin||'',
     maps_link:c.maps_link||c.google_maps||'',
   });
@@ -673,7 +673,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica
 
   // Validação — sala é opcional
   const obrigatorios:[string,string][]=[
-    ['nome_clinica','Nome da Clínica'],['endereco','Endereço'],['bairro','Bairro'],
+    ['nome','Nome da Clínica'],['endereco','Endereço'],['bairro','Bairro'],
     ['cidade','Cidade'],['cep','CEP'],['referencia','Referência'],
     ['email_clinica','Email da Clínica'],['whatsapp_admin','WhatsApp do Administrador'],
     ['maps_link','Link de Localização'],
@@ -686,7 +686,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica
       {/* L1: Nome da Clínica */}
       <div>
         <label style={labelSt}>Nome da Clínica</label>
-        <input value={vals.nome_clinica} onChange={e=>set('nome_clinica',e.target.value)} placeholder="Ex: Cleandent" style={inputSt}/>
+        <input value={vals.nome} onChange={e=>set('nome',e.target.value)} placeholder="Ex: Cleandent" style={inputSt}/>
       </div>
 
       {/* L2: Endereço */}
@@ -785,7 +785,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica
             <span>⚠️</span> Complete o campo: {falta[1]}
           </div>
         )}
-        <button onClick={()=>{if(!falta)onSave(vals);}} disabled={saving||!!falta}
+        <button onClick={()=>{if(!falta){onSave(vals);onClose();}}} disabled={saving||!!falta}
           style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
           {saving?'Salvando...':'Salvar'}
         </button>
