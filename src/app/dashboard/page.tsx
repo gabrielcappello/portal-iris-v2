@@ -197,7 +197,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
 
 // ── Page principal ─────────────────────────────────────────────────────────────
 export default function ConfigPage(){
-  const [open,setOpen]=useState<string|null>('idioma');
+  const [open,setOpen]=useState<string|null>(null);
   const [clinica,setClinica]=useState<Clinica|null>(null);
   const [saving,setSaving]=useState<string|null>(null);
   const [toast,setToast]=useState<{msg:string;ok:boolean}|null>(null);
