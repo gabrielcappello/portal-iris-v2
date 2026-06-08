@@ -850,21 +850,20 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
 
-  const dadosOk=!!d.nome?.trim()&&!!d.senha?.trim()&&!!d.calendar_id?.trim()&&!!d.whatsapp?.trim();
-  const horariosOk=!!d.inicio&&!!d.fim&&!!d.alm_ini&&!!d.alm_fim&&(!d.sabado||(!!d.sab_ini&&!!d.sab_fim));
-  const espOk=(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
-
   async function handleSave(){
     const errors:string[]=[];
-    if(!dadosOk){
-      if(!d.nome?.trim()) errors.push('Preencha o nome do dentista (bloco Dados)');
-      if(!d.senha?.trim()) errors.push('Defina a senha de acesso (bloco Dados)');
+    if(!d.nome?.trim()) errors.push('Preencha o nome do dentista (bloco Dados)');
+    if(!d.whatsapp?.trim()) errors.push('Preencha o WhatsApp / Telefone do dentista (bloco Dados)');
+    if(!d.senha?.trim()) errors.push('Defina a senha de acesso (bloco Dados)');
+    if(!d.calendar_id?.trim()){
+      errors.push('Preencha o ID do Google Calendar (bloco Dados)');
+    } else if(!d.calendar_id.trim().endsWith('@group.calendar.google.com')){
+      errors.push('ID do Google Calendar inválido — deve terminar com @group.calendar.google.com (ex: abc123@group.calendar.google.com)');
     }
-    if(!horariosOk){
-      if(!d.inicio) errors.push('Complete o horário de abertura (bloco Horários)');
-      if(!d.fim) errors.push('Complete o horário de encerramento (bloco Horários)');
-    }
-    if(!espOk) errors.push('Selecione ao menos uma especialidade (bloco Especialidades)');
+    if(!d.inicio) errors.push('Complete o horário de abertura (bloco Horários)');
+    if(!d.fim) errors.push('Complete o horário de encerramento (bloco Horários)');
+    if(!(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo))
+      errors.push('Selecione ao menos uma especialidade (bloco Especialidades)');
     if(errors.length>0){setValidErrors(errors);return;}
     setValidErrors([]);
     await onSave();
@@ -895,7 +894,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
             exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
-              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} saved={dadosOk} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
+              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
               {/* Nome */}
               <div style={{display:'grid',gridTemplateColumns:'56px 1fr',gap:8}}>
                 <div>
@@ -933,7 +932,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 </div>
               </div>
               </SubBloco>
-              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} saved={horariosOk} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
+              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
               {/* Linha 1: Abertura + Encerramento */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
@@ -1010,7 +1009,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 </div>
               )}
               </SubBloco>
-              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} saved={espOk} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
+              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
                 <label style={labelSt}>Especialidades do Profissional</label>
                 <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})}/>
@@ -1038,8 +1037,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   );
 }
 
-function SubBloco({titulo,nomeDentista,open,saved,onToggle,children}:{
-  titulo:string;nomeDentista:string;open:boolean;saved:boolean;
+function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
+  titulo:string;nomeDentista:string;open:boolean;
   onToggle:()=>void;children:React.ReactNode;
 }){
   return(
@@ -1047,10 +1046,9 @@ function SubBloco({titulo,nomeDentista,open,saved,onToggle,children}:{
       <button
         onClick={onToggle}
         onMouseDown={e=>e.preventDefault()}
-        style={{width:'100%',padding:'10px 12px',border:'none',background:saved?'rgba(16,185,129,0.05)':'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
+        style={{width:'100%',padding:'10px 12px',border:'none',background:'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
         <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
         <div style={{flex:1}}/>
-        {saved&&<Check size={12} color="#10b981" style={{flexShrink:0}}/>}
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
           <ChevronDown size={14}/>
         </motion.div>
