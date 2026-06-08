@@ -258,9 +258,9 @@ export default function ConfigPage(){
     <div>
       <h2 style={{fontSize:18,fontWeight:700,color:'#1e293b',marginBottom:16}}>Configuração</h2>
 
-      {/* IDIOMA — bloqueado após configurado */}
+      {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
-        open={open==='idioma'} onToggle={()=>{ if(!idiomaConfigurado||open==='idioma') toggle('idioma'); }}>
+        open={open==='idioma'} onToggle={()=>toggle('idioma')}>
         <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')}/>
       </CardSection>
 
@@ -549,7 +549,10 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
   const [nome,setNome]=useState(clinica.nome_agente||'');
   const [pers,setPers]=useState(clinica.personalidade||'');
   const [tel,setTel]=useState(clinica.telefone_agente||'');
-  const instancia=tel.replace(/\D/g,'')?`CAPPIA-IRIS-${tel.replace(/\D/g,'')}` :'';
+  // Instância: só dígitos do número, sem DDI e DDD (últimos 8-9 dígitos)
+  const telDigits=tel.replace(/\D/g,'');
+  const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits.length>8?telDigits.slice(-8):telDigits;
+  const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
 
   const labelTel=nome?`Telefone de ${nome}`:'Telefone WhatsApp';
 
@@ -567,16 +570,29 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
         </div>
         <div>
           <label style={labelSt}>Personalidade</label>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:5}}>
-            {PERSONALIDADES_LIST.map(p=>(
-              <button key={p.v} onClick={()=>setPers(p.v)}
-                style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                <span style={{fontSize:18}}>{p.icon}</span>
-                <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
-                <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
-                {pers===p.v&&<Check size={10} color="#2B7A78"/>}
-              </button>
-            ))}
+          <div style={{display:'flex',flexDirection:'column',gap:5}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5}}>
+              {PERSONALIDADES_LIST.slice(0,3).map(p=>(
+                <button key={p.v} onClick={()=>setPers(p.v)}
+                  style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                  <span style={{fontSize:18}}>{p.icon}</span>
+                  <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
+                  <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
+                  {pers===p.v&&<Check size={10} color="#2B7A78"/>}
+                </button>
+              ))}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:5}}>
+              {PERSONALIDADES_LIST.slice(3).map(p=>(
+                <button key={p.v} onClick={()=>setPers(p.v)}
+                  style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                  <span style={{fontSize:18}}>{p.icon}</span>
+                  <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
+                  <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
+                  {pers===p.v&&<Check size={10} color="#2B7A78"/>}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
