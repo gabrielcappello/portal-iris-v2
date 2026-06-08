@@ -218,15 +218,26 @@ export default function ConfigPage(){
 
 // ── IDIOMA SECTION ──────────────────────────────────────────────────────────────
 const IDIOMAS = [
-  {v:'português', label:'Português', flag:'🇧🇷'},
-  {v:'español',   label:'Español',   flag:'🇪🇸'},
-  {v:'english',   label:'English',   flag:'🇺🇸'},
-  {v:'français',  label:'Français',  flag:'🇫🇷'},
-  {v:'deutsch',   label:'Deutsch',   flag:'🇩🇪'},
-  {v:'italiano',  label:'Italiano',  flag:'🇮🇹'},
-  {v:'русский',   label:'Русский',   flag:'🇷🇺'},
-  {v:'العربية',   label:'العربية',   flag:'🇸🇦'},
+  {v:'português', label:'Português'},
+  {v:'español',   label:'Español'},
+  {v:'english',   label:'English'},
+  {v:'français',  label:'Français'},
+  {v:'deutsch',   label:'Deutsch'},
+  {v:'italiano',  label:'Italiano'},
+  {v:'русский',   label:'Русский'},
+  {v:'العربية',   label:'العربية'},
 ];
+
+const PAIS_FLAGS: Record<string,string> = {
+  br:'🇧🇷',pt:'🇵🇹',ao:'🇦🇴',mz:'🇲🇿',cv:'🇨🇻',gw:'🇬🇼',st:'🇸🇹',tl:'🇹🇱',
+  mx:'🇲🇽',co:'🇨🇴',ar:'🇦🇷',es:'🇪🇸',pe:'🇵🇪',ve:'🇻🇪',cl:'🇨🇱',ec:'🇪🇨',
+  gt:'🇬🇹',cu:'🇨🇺',bo:'🇧🇴',do:'🇩🇴',hn:'🇭🇳',py:'🇵🇾',sv:'🇸🇻',ni:'🇳🇮',
+  cr:'🇨🇷',pa:'🇵🇦',uy:'🇺🇾',us:'🇺🇸',uk:'🇬🇧',au:'🇦🇺',ca:'🇨🇦',ng:'🇳🇬',
+  za:'🇿🇦',gh:'🇬🇭',ke:'🇰🇪',in:'🇮🇳',ph:'🇵🇭',sg:'🇸🇬',nz:'🇳🇿',ie:'🇮🇪',
+  fr:'🇫🇷',be:'🇧🇪',ch:'🇨🇭',sn:'🇸🇳',ci:'🇨🇮',cm:'🇨🇲',mg:'🇲🇬',
+  de:'🇩🇪',at:'🇦🇹',it:'🇮🇹',ru:'🇷🇺',by:'🇧🇾',kz:'🇰🇿',ua:'🇺🇦',
+  sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
+};
 
 function IdiomaSection({clinica,saving,onSave}:{
   clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;
@@ -239,6 +250,7 @@ function IdiomaSection({clinica,saving,onSave}:{
   const [lang,setLang]=useState(initLang);
   const [idiomaOpen,setIdiomaOpen]=useState(false);
   const [pais,setPais]=useState(initPais);
+  const [paisOpen,setPaisOpen]=useState(false);
   const [paisOpts,setPaisOpts]=useState<{v:string;l:string}[]>(PAIS_OPTIONS[initLang]||[]);
   const [estado,setEstado]=useState((clinica as unknown as Record<string,string>).estado||'');
   const [estadoOpts,setEstadoOpts]=useState<string[]>(ESTADOS_MAP[initPais]||[]);
@@ -271,23 +283,26 @@ function IdiomaSection({clinica,saving,onSave}:{
     if(first)loadPaisInfo(first);
   }
 
-  function onPaisLocal(p:string){
+  function selectPais(p:string){
     setPais(p);
+    setPaisOpen(false);
     setEstado('');
     setEstadoOpts(ESTADOS_MAP[p]||[]);
     loadPaisInfo(p);
   }
 
   const currentIdioma=IDIOMAS.find(i=>i.v===lang);
+  const currentPais=paisOpts.find(o=>o.v===pais);
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:16}}>
+
+      {/* Idioma accordion */}
       <div>
         <label style={labelSt}>Idioma</label>
         <button onClick={()=>setIdiomaOpen(p=>!p)}
           style={{width:'100%',padding:'10px 14px',border:`1px solid ${idiomaOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
-          <span style={{fontSize:20}}>{currentIdioma?.flag}</span>
-          <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentIdioma?.label}</span>
+          <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentIdioma?.label||lang}</span>
           <motion.div animate={{rotate:idiomaOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
             <ChevronDown size={16}/>
           </motion.div>
@@ -299,10 +314,9 @@ function IdiomaSection({clinica,saving,onSave}:{
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,padding:'10px 0 4px'}}>
                 {IDIOMAS.map(id=>(
                   <button key={id.v} onClick={()=>selectLang(id.v)}
-                    style={{padding:'10px 6px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                    <span style={{fontSize:22}}>{id.flag}</span>
-                    <span style={{fontSize:11,fontWeight:600,color:lang===id.v?'#2B7A78':'#64748b'}}>{id.label}</span>
-                    {lang===id.v&&<Check size={12} color="#2B7A78"/>}
+                    style={{padding:'12px 6px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                    <span style={{fontSize:13,fontWeight:600,color:lang===id.v?'#2B7A78':'#475569'}}>{id.label}</span>
+                    {lang===id.v&&<Check size={11} color="#2B7A78"/>}
                   </button>
                 ))}
               </div>
@@ -310,17 +324,37 @@ function IdiomaSection({clinica,saving,onSave}:{
           )}
         </AnimatePresence>
       </div>
+
+      {/* País accordion */}
       <div>
         <label style={labelSt}>País</label>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:6}}>
-          {paisOpts.map(o=>(
-            <button key={o.v} onClick={()=>onPaisLocal(o.v)}
-              style={{padding:'8px 10px',border:`1px solid ${pais===o.v?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:pais===o.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',fontSize:12,fontWeight:pais===o.v?600:400,color:pais===o.v?'#2B7A78':'#475569',fontFamily:"'Sora',sans-serif",transition:'all 0.15s',textAlign:'left'}}>
-              {o.l}
-            </button>
-          ))}
-        </div>
+        <button onClick={()=>setPaisOpen(p=>!p)}
+          style={{width:'100%',padding:'10px 14px',border:`1px solid ${paisOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+          <span style={{fontSize:18}}>{PAIS_FLAGS[pais]||'🌍'}</span>
+          <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentPais?.l||pais}</span>
+          <motion.div animate={{rotate:paisOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
+            <ChevronDown size={16}/>
+          </motion.div>
+        </button>
+        <AnimatePresence initial={false}>
+          {paisOpen&&(
+            <motion.div key="paises" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
+              exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6,padding:'10px 0 4px'}}>
+                {paisOpts.map(o=>(
+                  <button key={o.v} onClick={()=>selectPais(o.v)}
+                    style={{padding:'9px 12px',border:`1px solid ${pais===o.v?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:pais===o.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:8,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                    <span style={{fontSize:16}}>{PAIS_FLAGS[o.v]||'🌍'}</span>
+                    <span style={{fontSize:12,fontWeight:pais===o.v?600:400,color:pais===o.v?'#2B7A78':'#475569'}}>{o.l}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Info do país */}
       <AnimatePresence>
         {paisInfo&&(
           <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
@@ -330,22 +364,25 @@ function IdiomaSection({clinica,saving,onSave}:{
           </motion.div>
         )}
       </AnimatePresence>
-      <AnimatePresence>
-        {estadoOpts.length>0&&(
-          <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-            <label style={labelSt}>Estado / Província</label>
-            <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
-              <option value="">Selecione...</option>
-              {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+      {/* Estado / Província */}
+      {estadoOpts.length>0&&(
+        <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}}>
+          <label style={labelSt}>Estado / Província</label>
+          <select value={estado} onChange={e=>setEstado(e.target.value)} style={inputSt}>
+            <option value="">Selecione...</option>
+            {estadoOpts.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+        </motion.div>
+      )}
+
+      {/* Fuso horário */}
       <div>
         <label style={labelSt}>Fuso Horário</label>
         <input value={fuso} readOnly placeholder="Preenchido automaticamente ao selecionar o país"
           style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
       </div>
+
       <div style={{display:'flex',justifyContent:'flex-end'}}>
         <button onClick={()=>onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado})}
           disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
