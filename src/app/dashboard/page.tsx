@@ -39,6 +39,25 @@ const ESTADOS_MAP: Record<string,string[]> = {
   au:['Australian Capital Territory','New South Wales','Northern Territory','Queensland','South Australia','Tasmania','Victoria','Western Australia'],
 };
 
+const FUSO_MAP: Record<string,string> = {
+  br:'America/Sao_Paulo',pt:'Europe/Lisbon',ao:'Africa/Luanda',mz:'Africa/Maputo',
+  cv:'Atlantic/Cape_Verde',gw:'Africa/Bissau',st:'Africa/Sao_Tome',tl:'Asia/Dili',
+  mx:'America/Mexico_City',co:'America/Bogota',ar:'America/Argentina/Buenos_Aires',
+  es:'Europe/Madrid',pe:'America/Lima',ve:'America/Caracas',cl:'America/Santiago',
+  ec:'America/Guayaquil',gt:'America/Guatemala',cu:'America/Havana',bo:'America/La_Paz',
+  do:'America/Santo_Domingo',hn:'America/Tegucigalpa',py:'America/Asuncion',
+  sv:'America/El_Salvador',ni:'America/Managua',cr:'America/Costa_Rica',
+  pa:'America/Panama',uy:'America/Montevideo',us:'America/New_York',
+  uk:'Europe/London',au:'Australia/Sydney',ca:'America/Toronto',ng:'Africa/Lagos',
+  za:'Africa/Johannesburg',gh:'Africa/Accra',ke:'Africa/Nairobi',in:'Asia/Kolkata',
+  ph:'Asia/Manila',sg:'Asia/Singapore',nz:'Pacific/Auckland',ie:'Europe/Dublin',
+  fr:'Europe/Paris',be:'Europe/Brussels',ch:'Europe/Zurich',de:'Europe/Berlin',
+  at:'Europe/Vienna',it:'Europe/Rome',sn:'Africa/Dakar',ci:'Africa/Abidjan',
+  cm:'Africa/Douala',mg:'Indian/Antananarivo',ru:'Europe/Moscow',by:'Europe/Minsk',
+  kz:'Asia/Almaty',ua:'Europe/Kiev',sa:'Asia/Riyadh',eg:'Africa/Cairo',
+  ae:'Asia/Dubai',ma:'Africa/Casablanca',dz:'Africa/Algiers',
+};
+
 const ESPECIALIDADES = [
   {nome:'🦷 Clínico Geral',procs:[{nome:'Consulta / Avaliação',tempo:30},{nome:'Limpeza dental (profilaxia)',tempo:45},{nome:'Restauração / Cárie (1 face)',tempo:40},{nome:'Restauração / Cárie (2+ faces)',tempo:55},{nome:'Extração simples',tempo:35},{nome:'Fluoretação',tempo:25},{nome:'Radiografia',tempo:20}]},
   {nome:'🔧 Endodontia',procs:[{nome:'Canal dente anterior (1 raiz)',tempo:65},{nome:'Canal pré-molar (2 raízes)',tempo:80},{nome:'Canal molar (3+ raízes)',tempo:95},{nome:'Retratamento de canal',tempo:90}]},
@@ -261,13 +280,16 @@ function IdiomaSection({clinica,saving,onSave}:{
   useEffect(()=>{ loadPaisInfo(initPais); },[]);// eslint-disable-line
 
   async function loadPaisInfo(p:string){
+    // Aplica fuso imediatamente do mapa local
+    const fusoLocal=FUSO_MAP[p]||'';
+    if(fusoLocal)setFuso(fusoLocal);
     try{
       const rows=await sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${p}&select=*`);
       if(rows[0]){
         const r=rows[0];
         setPaisInfo({tipo_documento:String(r.tipo_documento||'Documento'),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0)});
         const f=String(r.fuso_horario||r.timezone||'');
-        if(f)setFuso(f);
+        if(f)setFuso(f); // Supabase tem prioridade sobre o mapa local
       }
     }catch{}
   }
