@@ -612,14 +612,13 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
         {/* Instância sempre visível logo abaixo */}
         <div style={{marginTop:8}}>
           <label style={{...labelSt,marginBottom:6,display:'block'}}>Instância WhatsApp</label>
-          <div style={{display:'flex',border:'1px solid #DEF2F1',borderRadius:8,overflow:'hidden',background:'#f0fdf9',width:'100%'}}>
+        <div style={{display:'flex',border:'1px solid #DEF2F1',borderRadius:8,background:'#f0fdf9',width:'100%',boxSizing:'border-box'}}>
             <span style={{padding:'10px 10px',background:'#DEF2F1',borderRight:'1px solid #c8ebe9',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>CAPPIA-IRIS-</span>
             <input value={telSemDDI||''} readOnly
-              style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:'monospace',background:'#f0fdf9',color:'#2B7A78',fontWeight:700}}/>
+              style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:'monospace',background:'#f0fdf9',color:'#2B7A78',fontWeight:700,width:'100%',boxSizing:'border-box'}}/>
           </div>
           <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
         </div>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
       </div>
 
       {/* Validação + Salvar */}
