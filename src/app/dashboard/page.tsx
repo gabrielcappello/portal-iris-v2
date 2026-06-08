@@ -899,7 +899,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                   </select>
                 </div>
                 <div>
-                  <label style={labelSt}>Nome do Dentista *</label>
+                  <label style={labelSt}>Nome do Dentista</label>
                   <input value={d.nome||''} onChange={e=>onUpdate({nome:e.target.value})} placeholder="Nome completo" style={inputSt}/>
                 </div>
               </div>
@@ -921,13 +921,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
               </div>
               </SubBloco>
               <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} saved={!!savedBlocks['horarios']} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
+              {/* Linha 1: Abertura + Encerramento */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                <div>
-                  <label style={labelSt}>Atende Sábado?</label>
-                  <select value={d.sabado?'sim':'nao'} onChange={e=>onUpdate({sabado:e.target.value==='sim'})} style={inputSt}>
-                    <option value="nao">Não</option><option value="sim">Sim</option>
-                  </select>
-                </div>
                 <div>
                   <label style={labelSt}>Abertura</label>
                   <input type="time" value={d.inicio||'08:00'} onChange={e=>onUpdate({inicio:e.target.value})} style={inputSt}/>
@@ -936,6 +931,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                   <label style={labelSt}>Encerramento</label>
                   <input type="time" value={d.fim||'18:00'} onChange={e=>onUpdate({fim:e.target.value})} style={inputSt}/>
                 </div>
+              </div>
+              {/* Linha 2: Almoço */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
                   <label style={labelSt}>Início Almoço</label>
                   <input type="time" value={d.alm_ini||'12:00'} onChange={e=>onUpdate({alm_ini:e.target.value})} style={inputSt}/>
@@ -945,6 +943,16 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                   <input type="time" value={d.alm_fim||'13:00'} onChange={e=>onUpdate({alm_fim:e.target.value})} style={inputSt}/>
                 </div>
               </div>
+              {/* Linha 3: Atende Sábado toggle */}
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0'}}>
+                <label style={{...labelSt,marginBottom:0}}>Atende Sábado?</label>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginLeft:'auto'}}>
+                  <span style={{fontSize:12,fontWeight:600,color:!d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>Não</span>
+                  <Toggle on={!!d.sabado} onChange={v=>onUpdate({sabado:v})}/>
+                  <span style={{fontSize:12,fontWeight:600,color:d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>Sim</span>
+                </div>
+              </div>
+              {/* Linha 4: Horários de sábado (condicional) */}
               {d.sabado&&(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,padding:12,background:'#f8fafc',borderRadius:8}}>
                   <div>
