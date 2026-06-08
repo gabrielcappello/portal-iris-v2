@@ -610,9 +610,9 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
             style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
         {/* Instância sempre visível logo abaixo */}
-        <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:11,color:'#64748b'}}>Instância:</span>
-          <span style={{fontSize:12,fontWeight:700,color:'#2B7A78',fontFamily:'monospace',flex:1}}>{instancia||'—'}</span>
+        <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8,overflow:'hidden'}}>
+          <span style={{fontSize:11,color:'#64748b',flexShrink:0}}>Instância:</span>
+          <span style={{fontSize:11,fontWeight:700,color:'#2B7A78',fontFamily:'monospace',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{instancia||'—'}</span>
         </div>
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
       </div>
