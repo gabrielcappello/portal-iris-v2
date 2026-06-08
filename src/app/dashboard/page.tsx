@@ -1219,7 +1219,8 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
   const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
   const [lem2h,setLem2h]=useState((a.lembrete_2h as boolean)!==false);
   const [lem24h,setLem24h]=useState((a.lembrete_24h as boolean)||false);
-  const [posTipo,setPosTipo]=useState((a.pos_consulta_tipo as string)||'nenhum');
+  const [posAtivo,setPosAtivo]=useState((a.pos_consulta_tipo as string||'nenhum')!=='nenhum');
+  const [posTipo,setPosTipo]=useState((a.pos_consulta_tipo as string)==='nenhum'||!(a.pos_consulta_tipo)?'satisfacao':(a.pos_consulta_tipo as string));
   const [posLink,setPosLink]=useState((a.pos_consulta_google_link as string)||'');
   const [posTempo,setPosTempo]=useState((a.pos_consulta_tempo as string)||'2h');
   const [retorno,setRetorno]=useState((a.retorno as boolean)||false);
@@ -1227,15 +1228,8 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
   const [espera,setEspera]=useState((a.lista_espera as boolean)||false);
   const [aniv,setAniv]=useState((a.aniversario as boolean)||false);
 
-  const posCards=[
-    {v:'nenhum',icon:'🚫',label:'Nenhum'},
-    {v:'satisfacao',icon:'⭐',label:'Apenas satisfação'},
-    {v:'google',icon:'📊',label:'Apenas avaliação Google'},
-    {v:'ambos',icon:'✨',label:'Satisfação + Google'},
-  ];
-
   function handleSave(){
-    onSave({automatizacoes:{...a,lembrete_2h:lem2h,lembrete_24h:lem24h,pos_consulta_tipo:posTipo,pos_consulta_google_link:posLink,pos_consulta_tempo:posTempo,retorno,retorno_meses:retMeses,lista_espera:espera,aniversario:aniv}});
+    onSave({automatizacoes:{...a,lembrete_2h:lem2h,lembrete_24h:lem24h,pos_consulta_tipo:posAtivo?posTipo:'nenhum',pos_consulta_google_link:posLink,pos_consulta_tempo:posTempo,retorno,retorno_meses:retMeses,lista_espera:espera,aniversario:aniv}});
   }
 
   return(
@@ -1256,33 +1250,51 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
 
       {/* Pós-consulta */}
       <div style={{padding:'14px 0',borderBottom:'1px solid #f1f5f9'}}>
-        <div style={{fontSize:14,fontWeight:600,color:'#1e293b',marginBottom:4}}>⭐ Pós-consulta</div>
-        <div style={{fontSize:12,color:'#94a3b8',marginBottom:12}}>Envio automático após a consulta</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          {posCards.map(c=>(
-            <button key={c.v} onClick={()=>setPosTipo(c.v)}
-              style={{padding:'12px',borderRadius:10,border:`1px solid ${posTipo===c.v?'#2B7A78':'#e2e8f0'}`,background:posTipo===c.v?'rgba(43,122,120,0.06)':'transparent',cursor:'pointer',textAlign:'left',fontFamily:"'Sora',sans-serif"}}>
-              <div style={{fontSize:20,marginBottom:4}}>{c.icon}</div>
-              <div style={{fontSize:12,fontWeight:600,color:posTipo===c.v?'#2B7A78':'#475569'}}>{c.label}</div>
-            </button>
-          ))}
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:'#1e293b',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+              <span>⭐ Pós-consulta — Envio automático após</span>
+              <select value={posTempo} onChange={e=>setPosTempo(e.target.value)}
+                style={{fontSize:13,fontWeight:600,color:'#2B7A78',border:'1px solid rgba(43,122,120,0.3)',borderRadius:6,padding:'2px 6px',background:'rgba(43,122,120,0.05)',cursor:'pointer',fontFamily:"'Sora',sans-serif",outline:'none'}}>
+                <option value="2h">2 horas</option>
+                <option value="4h">4 horas</option>
+                <option value="24h">24 horas</option>
+              </select>
+            </div>
+            <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Mensagem disparada automaticamente após o horário da consulta</div>
+          </div>
+          <Toggle on={posAtivo} onChange={v=>{setPosAtivo(v);}}/>
         </div>
-        {['google','ambos'].includes(posTipo)&&(
-          <div style={{marginBottom:10}}>
-            <label style={labelSt}>Link Google Review</label>
-            <input value={posLink} onChange={e=>setPosLink(e.target.value)} placeholder="https://g.page/r/..." style={inputSt}/>
-          </div>
-        )}
-        {posTipo!=='nenhum'&&(
-          <div>
-            <label style={labelSt}>Enviar após:</label>
-            <select value={posTempo} onChange={e=>setPosTempo(e.target.value)} style={{...inputSt,width:'auto'}}>
-              <option value="2h">2 horas</option>
-              <option value="4h">4 horas</option>
-              <option value="24h">24 horas</option>
-            </select>
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {posAtivo&&(
+            <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+              <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:0}}>
+                {[
+                  {v:'satisfacao',icon:'⭐',label:'Satisfação',desc:'Pergunta ao paciente como foi a consulta — se tudo correu bem e se ficou satisfeito com o atendimento.'},
+                  {v:'google',icon:'📊',label:'Avaliação Google',desc:'Convida o paciente a deixar uma avaliação no Google da clínica, ajudando a construir a reputação online.'},
+                  {v:'ambos',icon:'✨',label:'Satisfação + Google',desc:'Primeiro coleta a satisfação e, se a resposta for positiva, direciona para a avaliação no Google.'},
+                ].map((opt,oi,arr)=>(
+                  <button key={opt.v} onClick={()=>setPosTipo(opt.v)}
+                    style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 0',borderBottom:oi<arr.length-1?'1px solid #f8fafc':'none',background:'transparent',border:'none',cursor:'pointer',width:'100%',textAlign:'left',fontFamily:"'Sora',sans-serif"}}>
+                    <div style={{width:17,height:17,borderRadius:'50%',border:`2px solid ${posTipo===opt.v?'#2B7A78':'#cbd5e1'}`,background:posTipo===opt.v?'#2B7A78':'transparent',flexShrink:0,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
+                      {posTipo===opt.v&&<div style={{width:6,height:6,borderRadius:'50%',background:'#fff'}}/>}
+                    </div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:posTipo===opt.v?'#2B7A78':'#1e293b'}}>{opt.icon} {opt.label}</div>
+                      <div style={{fontSize:12,color:'#94a3b8',marginTop:2,lineHeight:1.4}}>{opt.desc}</div>
+                    </div>
+                  </button>
+                ))}
+                {['google','ambos'].includes(posTipo)&&(
+                  <div style={{marginTop:8}}>
+                    <label style={labelSt}>Link Google Review</label>
+                    <input value={posLink} onChange={e=>setPosLink(e.target.value)} placeholder="https://g.page/r/..." style={inputSt}/>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Retorno automático */}
