@@ -1006,7 +1006,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 )}
                 <button onClick={handleSave} disabled={saving}
                   style={{...saveBtnSt,width:'100%',opacity:saving?0.6:1,justifyContent:'center',display:'flex',alignItems:'center',gap:8}}>
-                  {saving?'Salvando...':'💾 Salvar Dentista'}
+                  {saving?'Salvando...':`💾 Salvar ${nomeLabel}`}
                 </button>
               </div>
             </div>
@@ -1027,7 +1027,7 @@ function SubBloco({titulo,nomeDentista,open,saved,onToggle,children}:{
         onClick={onToggle}
         onMouseDown={e=>e.preventDefault()}
         style={{width:'100%',padding:'10px 12px',border:'none',background:saved?'rgba(16,185,129,0.05)':'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
-        <span style={{fontSize:12,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
+        <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
         <div style={{flex:1}}/>
         {saved&&<Check size={12} color="#10b981" style={{flexShrink:0}}/>}
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
