@@ -204,10 +204,21 @@ export default function ConfigPage(){
   const [paisCode,setPaisCode]=useState('br');
   const [idioma,setIdioma]=useState('português');
   const [estados,setEstados]=useState<string[]>([]);
+  const [ddd,setDdd]=useState('');
 
   const showToast=useCallback((msg:string,ok=true)=>{
     setToast({msg,ok});setTimeout(()=>setToast(null),3000);
   },[]);
+
+  async function loadDdd(pais:string, estado:string){
+    try{
+      const rows=await sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${pais}&select=ddd_por_estado`);
+      if(rows[0]){
+        const mapa=rows[0].ddd_por_estado as Record<string,string>||{};
+        setDdd(mapa[estado]||'');
+      }
+    }catch{ setDdd(''); }
+  }
 
   useEffect(()=>{
     const id=localStorage.getItem('clinica_id');
@@ -221,9 +232,11 @@ export default function ConfigPage(){
         const dash=idiomaVal.lastIndexOf('-');
         const lang=dash>0?idiomaVal.substring(0,dash):'português';
         const pais=dash>0?idiomaVal.substring(dash+1):'br';
+        const estadoSalvo=(c as unknown as Record<string,string>).estado||'';
         setIdioma(lang);
         setPaisCode(pais);
         setEstados(ESTADOS_MAP[pais]||[]);
+        if(pais&&estadoSalvo)loadDdd(pais,estadoSalvo);
       }
     }).catch(()=>showToast('Erro ao carregar dados',false));
   },[showToast]);
@@ -236,6 +249,10 @@ export default function ConfigPage(){
     try{
       await sb.update('clinicas',clinica.id,data);
       setClinica(prev=>prev?{...prev,...data}:prev);
+      // Atualiza DDD se mudou idioma/estado
+      if(data.pais_codigo&&data.estado){
+        loadDdd(String(data.pais_codigo),String(data.estado));
+      }
       showToast('Salvo com sucesso ✓');
     }catch{showToast('Erro ao salvar',false);}
     finally{setSaving(null);}
@@ -249,6 +266,7 @@ export default function ConfigPage(){
   if(!clinica)return<div style={{textAlign:'center',padding:'60px 0',color:'#94a3b8',fontSize:13}}>Carregando configurações...</div>;
 
   const ddi=DDI_MAP[paisCode]||'+55';
+  const prefixo=ddd?`${ddi} (${ddd})`:`${ddi}`;
   const paisOpts=PAIS_OPTIONS[idioma]||[];
   const ativos=(Array.isArray(clinica.dentistas)?clinica.dentistas:[] as Dentista[]).filter((d:Dentista)=>d.ativo).length;
 
@@ -266,17 +284,17 @@ export default function ConfigPage(){
 
       {/* SECRETARIA */}
       <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title="Dados da Secretaria" subtitle="Identidade e configurações da Iris" open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
-        <SecretariaSection clinica={clinica} ddi={ddi} saving={saving==='secretaria'} onSave={async(d)=>{await save('secretaria',d);toggle('secretaria');}}/>
+        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={async(d)=>{await save('secretaria',d);toggle('secretaria');}}/>
       </CardSection>
 
       {/* CLINICA */}
       <CardSection id="clinica" icon={<Building2 size={18}/>} title="Dados da Clínica" subtitle="Informações usadas pelo agente nas conversas" open={open==='clinica'} onToggle={()=>toggle('clinica')}>
-        <ClinicaSection clinica={clinica} ddi={ddi} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)}/>
+        <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)}/>
       </CardSection>
 
       {/* DENTISTAS */}
       <CardSection id="dentistas" icon={<Users size={18}/>} title="Dentistas" subtitle="Até 10 profissionais com agendas independentes" open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
-        <DentistasSection clinica={clinica} ddi={ddi} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'}/>
+        <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'}/>
       </CardSection>
 
       {/* DADOS DO AGENTE */}
@@ -544,11 +562,11 @@ const PERSONALIDADES_LIST = [
   {v:'objetiva',   icon:'🎯', label:'Objetiva',     sub:'Direta e eficiente'},
 ];
 
-function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;prefixo:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
   const [nome,setNome]=useState(clinica.nome_agente||'');
   const [pers,setPers]=useState(clinica.personalidade||'');
   const [tel,setTel]=useState(clinica.telefone_agente||'');
-  // Instância: só dígitos do número, sem DDI e DDD (últimos 8-9 dígitos)
+  // Instância: só dígitos sem DDI e DDD
   const telDigits=tel.replace(/\D/g,'');
   const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits.length>8?telDigits.slice(-8):telDigits;
   const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
@@ -583,22 +601,20 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
         </div>
       </div>
 
-      {/* Linha 2: Telefone + Instância */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div>
-          <label style={labelSt}>{labelTel}</label>
-          <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff'}}>
-            <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{ddi}</span>
-            <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="(21) 99999-9999"
-              style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
-          </div>
+      {/* Linha 2: Telefone + Instância (empilhados em coluna) */}
+      <div>
+        <label style={labelSt}>{labelTel}</label>
+        <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff'}}>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
+          <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="999999999"
+            style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
-        <div>
-          <label style={labelSt}>Instância WhatsApp (automático)</label>
-          <input value={instancia} readOnly placeholder="Preencha o telefone ao lado"
-            style={{...inputSt,background:'#f8fafc',color:'#2B7A78',fontFamily:'monospace',fontWeight:600}}/>
-          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[telefone]</span>
+        {/* Instância sempre visível logo abaixo */}
+        <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:11,color:'#64748b'}}>Instância:</span>
+          <span style={{fontSize:12,fontWeight:700,color:'#2B7A78',fontFamily:'monospace',flex:1}}>{instancia||'—'}</span>
         </div>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
       </div>
 
       {/* Validação + Salvar */}
@@ -621,7 +637,7 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
 }
 
 // ── CLINICA SECTION ────────────────────────────────────────────────────────────
-function ClinicaSection({clinica,ddi,estados,saving,onSave}:{clinica:Clinica;ddi:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function ClinicaSection({clinica,prefixo,estados,saving,onSave}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
   const c=clinica as unknown as Record<string,string>;
   const estadoSalvo=c.estado||'';
   
@@ -743,7 +759,7 @@ function ClinicaSection({clinica,ddi,estados,saving,onSave}:{clinica:Clinica;ddi
       <div>
         <label style={labelSt}>WhatsApp do Administrador</label>
         <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{ddi}</span>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
           <input value={vals.whatsapp_admin} onChange={e=>set('whatsapp_admin',e.target.value)} placeholder="21999990000"
             style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
