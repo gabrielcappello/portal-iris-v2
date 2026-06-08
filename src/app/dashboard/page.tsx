@@ -846,13 +846,20 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
 }){
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
-  const [openSub,setOpenSub]=useState<'horarios'|'especialidades'|null>(null);
+  const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
 
   return(
     <div style={{border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid #e2e8f0'}}>
       <button onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
         <div style={{width:8,height:8,borderRadius:'50%',background:d.ativo?'#10b981':'#e2e8f0',flexShrink:0}}/>
-        <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`}</span>
+        {d.nome?(
+          <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
+            <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>Dentista</span>
+            <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`${d.titulo||'Dr.'} ${d.nome}`}</span>
+          </div>
+        ):(
+          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`Dentista ${i+1}`}</span>
+        )}
         <div style={{flex:1}}/>
         <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>onUpdate({ativo:v})}/></div>
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
@@ -865,6 +872,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
             exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
+              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
               {/* Nome */}
               <div style={{display:'grid',gridTemplateColumns:'80px 1fr',gap:8}}>
                 <div>
@@ -894,6 +902,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 <label style={labelSt}>Senha de acesso ({nomeLabel})</label>
                 <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
               </div>
+              </SubBloco>
               <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
