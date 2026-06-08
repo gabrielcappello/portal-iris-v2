@@ -607,12 +607,12 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
         <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
           <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{prefixo}</span>
           <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="999999999"
-            style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif",width:'100%'}}/>
+            style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif",width:'100%',textAlign:'left',direction:'ltr'}}/>
         </div>
         {/* Instância sempre visível logo abaixo */}
-        <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8,overflow:'hidden'}}>
+        <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf9',borderRadius:8,border:'1px solid #DEF2F1',display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontSize:11,color:'#64748b',flexShrink:0}}>Instância:</span>
-          <span style={{fontSize:11,fontWeight:700,color:'#2B7A78',fontFamily:'monospace',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{instancia||'—'}</span>
+          <span style={{fontSize:11,fontWeight:700,color:'#2B7A78',fontFamily:'monospace',flex:1,wordBreak:'break-all'}}>{instancia||'—'}</span>
         </div>
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
       </div>
