@@ -1,74 +1,50 @@
-const SUPABASE_URL = 'https://udizowyfjnhuhgxkeayk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws';
+export const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
+export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws";
 
-const headers = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': `Bearer ${SUPABASE_KEY}`,
-  'Content-Type': 'application/json',
-};
+const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" };
 
 export const sb = {
-  async query<T>(table: string, params = ''): Promise<T[]> {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, { headers });
+  async query<T>(table: string, params = ""): Promise<T[]> {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, { headers: H });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
-
   async update(table: string, id: string, data: Record<string, unknown>) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", headers: H, body: JSON.stringify(data) });
     if (!res.ok) throw new Error(await res.text());
-    return res.ok;
   },
-
   async insert(table: string, data: Record<string, unknown>) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: 'POST',
-      headers: { ...headers, 'Prefer': 'return=representation' },
-      body: JSON.stringify(data),
-    });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...H, Prefer: "return=representation" }, body: JSON.stringify(data) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
-  },
+  }
+};
+
+export type Dentista = {
+  nome: string; titulo: string; calendar_id: string; senha: string; ativo: boolean;
+  inicio: string; fim: string; dur: number; alm_ini: string; alm_fim: string;
+  sabado: boolean; sab_ini: string; sab_fim: string; horarios: string; modo: string;
+  whatsapp: string; procedimentos: {nome:string;ativo:boolean;tempo:number}[];
 };
 
 export type Clinica = {
-  id: string;
-  nome_clinica: string;
-  telefone_clinica: string;
-  endereco: string;
-  cidade: string;
-  whatsapp_instancia: string;
-  nome_agente: string;
-  personalidade: string;
+  id: string; nome_clinica: string; telefone_clinica: string;
+  endereco: string; sala: string; bairro: string; cidade: string; cep: string;
+  referencia: string; email_clinica: string; google_maps: string;
+  whatsapp_instancia: string; nome_agente: string; personalidade: string;
+  telefone_agente: string; idioma: string; pais_codigo: string;
+  fuso_horario: string; estado: string; dentistas: Dentista[];
 };
 
 export type Paciente = {
-  id: string;
-  clinica_id: string;
-  nome: string;
-  telefone: string;
-  documento: string;
-  data_nascimento?: string;
-  ultima_consulta?: string;
-  total_consultas?: number;
+  id: string; clinica_id: string; nome: string; telefone: string;
+  documento: string; data_nascimento?: string;
 };
 
 export type Agendamento = {
-  id: string;
-  clinica_id: string;
-  paciente_id?: string;
-  nome: string;
-  telefone: string;
-  documento: string;
-  data: string;
-  horario: string;
-  dentista_nome: string;
-  procedimento: string;
-  status: 'confirmado' | 'remarcado' | 'cancelado';
-  event_id?: string;
-  calendar_id?: string;
+  id: string; clinica_id: string; paciente_id?: string;
+  nome: string; telefone: string; documento: string;
+  data: string; horario: string; dentista_nome: string;
+  procedimento: string; status: "confirmado"|"remarcado"|"cancelado";
+  event_id?: string; calendar_id?: string;
 };
