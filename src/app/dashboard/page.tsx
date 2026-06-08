@@ -541,7 +541,6 @@ const PERSONALIDADES_LIST = [
   {v:'acolhedora', icon:'🤗', label:'Acolhedora',   sub:'Calorosa e empática'},
   {v:'executiva',  icon:'💼', label:'Executiva',    sub:'Formal e precisa'},
   {v:'moderna',    icon:'✨', label:'Moderna',      sub:'Descontraída e jovial'},
-  {v:'premium',    icon:'💎', label:'Premium',      sub:'Sofisticada e exclusiva'},
   {v:'objetiva',   icon:'🎯', label:'Objetiva',     sub:'Direta e eficiente'},
 ];
 
@@ -570,29 +569,16 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
         </div>
         <div>
           <label style={labelSt}>Personalidade</label>
-          <div style={{display:'flex',flexDirection:'column',gap:5}}>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5}}>
-              {PERSONALIDADES_LIST.slice(0,3).map(p=>(
-                <button key={p.v} onClick={()=>setPers(p.v)}
-                  style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                  <span style={{fontSize:18}}>{p.icon}</span>
-                  <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
-                  <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
-                  {pers===p.v&&<Check size={10} color="#2B7A78"/>}
-                </button>
-              ))}
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:5}}>
-              {PERSONALIDADES_LIST.slice(3).map(p=>(
-                <button key={p.v} onClick={()=>setPers(p.v)}
-                  style={{padding:'8px 4px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                  <span style={{fontSize:18}}>{p.icon}</span>
-                  <span style={{fontSize:10,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2}}>{p.label}</span>
-                  <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
-                  {pers===p.v&&<Check size={10} color="#2B7A78"/>}
-                </button>
-              ))}
-            </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
+            {PERSONALIDADES_LIST.map(p=>(
+              <button key={p.v} onClick={()=>setPers(p.v)}
+                style={{padding:'10px 8px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                <span style={{fontSize:20}}>{p.icon}</span>
+                <span style={{fontSize:11,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center'}}>{p.label}</span>
+                <span style={{fontSize:10,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
+                {pers===p.v&&<Check size={10} color="#2B7A78"/>}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -637,69 +623,156 @@ function SecretariaSection({clinica,ddi,saving,onSave}:{clinica:Clinica;ddi:stri
 // ── CLINICA SECTION ────────────────────────────────────────────────────────────
 function ClinicaSection({clinica,ddi,estados,saving,onSave}:{clinica:Clinica;ddi:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
   const c=clinica as unknown as Record<string,string>;
-  const [vals,setVals]=useState({nome_clinica:clinica.nome_clinica||'',endereco:c.endereco||'',sala:c.sala||'',bairro:c.bairro||'',cidade:c.cidade||'',cep:c.cep||'',referencia:c.referencia||'',email_clinica:c.email_clinica||'',whatsapp_admin:c.whatsapp_admin||'',maps_link:c.maps_link||c.google_maps||''});
+  const estadoSalvo=c.estado||'';
+  
+  // Cidade: lista de cidades do estado ou campo livre
+  const cidadesSP=['São Paulo','Campinas','Santos','Ribeirão Preto','Sorocaba','Osasco','São Bernardo do Campo','Santo André','Guarulhos','Mauá','São Caetano do Sul','Diadema','Mogi das Cruzes','Piracicaba','Bauru'];
+  const cidadesRJ=['Rio de Janeiro','Niterói','Duque de Caxias','Nova Iguaçu','São Gonçalo','Petrópolis','Volta Redonda','Campos dos Goytacazes','Macaé','Cabo Frio'];
+  const cidadesBsB=['Brasília','Ceilândia','Taguatinga','Samambaia','Gama','Sobradinho','Planaltina','Núcleo Bandeirante'];
+  const cidadesPorEstado: Record<string,string[]> = {
+    'São Paulo':cidadesSP,'Rio de Janeiro':cidadesRJ,'Distrito Federal':cidadesBsB,
+  };
+  const cidadesOpts=cidadesPorEstado[estadoSalvo]||[];
+
+  const [vals,setVals]=useState({
+    nome_clinica:clinica.nome_clinica||'',
+    endereco:c.endereco||'',
+    sala:c.sala||'',
+    bairro:c.bairro||'',
+    cidade:c.cidade||'',
+    cep:c.cep||'',
+    referencia:c.referencia||'',
+    email_clinica:c.email_clinica||'',
+    whatsapp_admin:c.whatsapp_admin||'',
+    maps_link:c.maps_link||c.google_maps||'',
+  });
   const set=(k:string,v:string)=>setVals(p=>({...p,[k]:v}));
 
   function useGeo(){
     if(!navigator.geolocation){alert('Geolocalização não suportada');return;}
     navigator.geolocation.getCurrentPosition(pos=>{
-      const url=`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      set('maps_link',url);
-    });
+      set('maps_link',`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
+    },()=>alert('Não foi possível obter localização'));
   }
 
-  const fields:[string,string,string,string?][]=[
-    ['nome_clinica','Nome da Clínica','OdontoBR'],
-    ['endereco','Endereço (Rua e número)','Av. Paulista, 1234'],
-    ['sala','Sala','3º andar, Sala 302'],
-    ['bairro','Bairro','Centro'],
-    ['cidade','Cidade','São Paulo'],
-    ['cep','CEP','01310-100'],
-    ['referencia','Referência','Em frente ao banco'],
-    ['email_clinica','Email da Clínica','clinica@exemplo.com'],
+  // Validação — sala é opcional
+  const obrigatorios:[string,string][]=[
+    ['nome_clinica','Nome da Clínica'],['endereco','Endereço'],['bairro','Bairro'],
+    ['cidade','Cidade'],['cep','CEP'],['referencia','Referência'],
+    ['email_clinica','Email da Clínica'],['whatsapp_admin','WhatsApp do Administrador'],
+    ['maps_link','Link de Localização'],
   ];
+  const falta=obrigatorios.find(([k])=>!(vals as Record<string,string>)[k]?.trim());
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:14}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        {fields.map(([k,l,ph])=>(
-          <div key={k}>
-            <label style={labelSt}>{l}</label>
-            <input value={(vals as Record<string,string>)[k]||''} onChange={e=>set(k,e.target.value)} placeholder={ph} style={inputSt}/>
-          </div>
-        ))}
-        {estados.length>0&&(
-          <div>
-            <label style={labelSt}>Estado</label>
-            <select value={c.estado||''} onChange={e=>set('estado',e.target.value)} style={inputSt}>
-              <option value="">Selecione...</option>
-              {estados.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        )}
+
+      {/* L1: Nome da Clínica */}
+      <div>
+        <label style={labelSt}>Nome da Clínica</label>
+        <input value={vals.nome_clinica} onChange={e=>set('nome_clinica',e.target.value)} placeholder="Ex: Cleandent" style={inputSt}/>
       </div>
+
+      {/* L2: Endereço */}
+      <div>
+        <label style={labelSt}>Endereço (Rua e número)</label>
+        <input value={vals.endereco} onChange={e=>set('endereco',e.target.value)} placeholder="Ex: Av. Paulista, 1234" style={inputSt}/>
+      </div>
+
+      {/* L3: Sala + Bairro */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <div>
+          <label style={labelSt}>Sala <span style={{color:'#94a3b8',fontWeight:400}}>(opcional)</span></label>
+          <input value={vals.sala} onChange={e=>set('sala',e.target.value)} placeholder="Ex: 3º andar, Sala 302" style={inputSt}/>
+        </div>
+        <div>
+          <label style={labelSt}>Bairro</label>
+          <input value={vals.bairro} onChange={e=>set('bairro',e.target.value)} placeholder="Ex: Centro" style={inputSt}/>
+        </div>
+      </div>
+
+      {/* L4: Cidade + CEP */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <div>
+          <label style={labelSt}>Cidade</label>
+          {cidadesOpts.length>0?(
+            <select value={vals.cidade} onChange={e=>set('cidade',e.target.value)} style={inputSt}>
+              <option value="">Selecione a cidade...</option>
+              {cidadesOpts.map(ci=><option key={ci} value={ci}>{ci}</option>)}
+              <option value="__outra__">Outra cidade...</option>
+            </select>
+          ):(
+            <input value={vals.cidade} onChange={e=>set('cidade',e.target.value)} placeholder="Ex: São Paulo" style={inputSt}/>
+          )}
+        </div>
+        <div>
+          <label style={labelSt}>CEP</label>
+          <input value={vals.cep} onChange={e=>set('cep',e.target.value)} placeholder="Ex: 01310-100" style={inputSt}/>
+        </div>
+      </div>
+
+      {/* Cidade livre se selecionou "Outra" */}
+      {vals.cidade==='__outra__'&&(
+        <div>
+          <label style={labelSt}>Digite o nome da cidade</label>
+          <input onChange={e=>set('cidade',e.target.value)} placeholder="Nome da cidade" style={inputSt} autoFocus/>
+        </div>
+      )}
+
+      {/* L5: Referência */}
+      <div>
+        <label style={labelSt}>Referência</label>
+        <input value={vals.referencia} onChange={e=>set('referencia',e.target.value)} placeholder="Ex: Em frente ao Banco do Brasil" style={inputSt}/>
+      </div>
+
+      {/* L6: Email */}
+      <div>
+        <label style={labelSt}>Email da Clínica</label>
+        <input type="email" value={vals.email_clinica} onChange={e=>set('email_clinica',e.target.value)} placeholder="clinica@exemplo.com" style={inputSt}/>
+      </div>
+
+      {/* L7: Estado (somente leitura — vem do Idioma) */}
+      <div>
+        <label style={labelSt}>Estado / Província</label>
+        <input value={estadoSalvo} readOnly
+          style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Definido em Idioma & Localização.</span>
+      </div>
+
+      {/* L8: WhatsApp do administrador */}
       <div>
         <label style={labelSt}>WhatsApp do Administrador</label>
         <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78'}}>{ddi}</span>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{ddi}</span>
           <input value={vals.whatsapp_admin} onChange={e=>set('whatsapp_admin',e.target.value)} placeholder="21999990000"
             style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Número do administrador — usado pela Iris para identificar o gestor.</span>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Usado pela Iris para identificar o gestor da clínica.</span>
       </div>
+
+      {/* L9: Link Maps + botão geo embaixo */}
       <div>
         <label style={labelSt}>Link de Localização (Google Maps)</label>
-        <div style={{display:'flex',gap:8}}>
-          <input value={vals.maps_link} onChange={e=>set('maps_link',e.target.value)} placeholder="https://maps.google.com/?q=..."
-            style={{...inputSt,flex:1}}/>
-          <button onClick={useGeo} style={{padding:'10px 14px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:12,color:'#2B7A78',cursor:'pointer',whiteSpace:'nowrap',fontFamily:"'Sora',sans-serif",fontWeight:600}}>
-            📍 Usar minha localização
-          </button>
-        </div>
+        <input value={vals.maps_link} onChange={e=>set('maps_link',e.target.value)}
+          placeholder="https://maps.google.com/?q=..." style={inputSt}/>
+        <button onClick={useGeo}
+          style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:13,color:'#2B7A78',cursor:'pointer',fontFamily:"'Sora',sans-serif",fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          📍 Usar minha localização
+        </button>
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>O agente enviará este link ao paciente quando solicitado.</span>
       </div>
-      <div style={{display:'flex',justifyContent:'flex-end'}}>
-        <button onClick={()=>onSave(vals)} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar'}</button>
+
+      {/* Validação + Salvar */}
+      <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'flex-end'}}>
+        {falta&&(
+          <div style={{fontSize:12,color:'#f59e0b',display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
+            <span>⚠️</span> Complete o campo: {falta[1]}
+          </div>
+        )}
+        <button onClick={()=>{if(!falta)onSave(vals);}} disabled={saving||!!falta}
+          style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
+          {saving?'Salvando...':'Salvar'}
+        </button>
       </div>
     </div>
   );
