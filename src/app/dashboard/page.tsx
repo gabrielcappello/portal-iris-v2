@@ -846,6 +846,10 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
 }){
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
+  const allComplete=!!d.nome?.trim()&&!!d.whatsapp?.trim()&&!!d.senha?.trim()&&
+    !!d.calendar_id?.trim()&&d.calendar_id.trim().endsWith('@group.calendar.google.com')&&
+    !!d.inicio&&!!d.fim&&(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
+  const dotColor=!d.ativo?'#e2e8f0':allComplete?'#10b981':'#f59e0b';
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
@@ -873,7 +877,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   return(
     <div style={{border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid #e2e8f0'}}>
       <button onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
-        <div style={{width:8,height:8,borderRadius:'50%',background:d.ativo?'#10b981':'#e2e8f0',flexShrink:0}}/>
+        <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
           <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
             <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>Dentista</span>
