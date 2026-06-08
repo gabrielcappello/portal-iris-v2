@@ -847,21 +847,26 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
-  const [savedBlocks,setSavedBlocks]=useState<Record<string,boolean>>({});
   const [validErrors,setValidErrors]=useState<string[]>([]);
+
+  const dadosOk=!!d.nome?.trim()&&!!d.senha?.trim();
+  const horariosOk=!!d.inicio&&!!d.fim&&!!d.alm_ini&&!!d.alm_fim&&(!d.sabado||(!!d.sab_ini&&!!d.sab_fim));
+  const espOk=(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
 
   async function handleSave(){
     const errors:string[]=[];
-    if(!d.nome?.trim()) errors.push('Preencha o nome do dentista (bloco Dados)');
-    if(!d.senha?.trim()) errors.push('Defina a senha de acesso (bloco Dados)');
-    if(!d.inicio) errors.push('Complete o horário de abertura (bloco Horários)');
-    if(!d.fim) errors.push('Complete o horário de encerramento (bloco Horários)');
-    if(!(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo))
-      errors.push('Selecione ao menos uma especialidade (bloco Especialidades)');
+    if(!dadosOk){
+      if(!d.nome?.trim()) errors.push('Preencha o nome do dentista (bloco Dados)');
+      if(!d.senha?.trim()) errors.push('Defina a senha de acesso (bloco Dados)');
+    }
+    if(!horariosOk){
+      if(!d.inicio) errors.push('Complete o horário de abertura (bloco Horários)');
+      if(!d.fim) errors.push('Complete o horário de encerramento (bloco Horários)');
+    }
+    if(!espOk) errors.push('Selecione ao menos uma especialidade (bloco Especialidades)');
     if(errors.length>0){setValidErrors(errors);return;}
     setValidErrors([]);
     await onSave();
-    setSavedBlocks({dados:true,horarios:true,especialidades:true});
     setOpenSub(null);
   }
 
@@ -889,7 +894,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
             exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
-              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} saved={!!savedBlocks['dados']} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
+              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} saved={dadosOk} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
               {/* Nome */}
               <div style={{display:'grid',gridTemplateColumns:'56px 1fr',gap:8}}>
                 <div>
@@ -920,7 +925,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
               </div>
               </SubBloco>
-              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} saved={!!savedBlocks['horarios']} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
+              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} saved={horariosOk} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
               {/* Linha 1: Abertura + Encerramento */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
@@ -997,7 +1002,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                 </div>
               )}
               </SubBloco>
-              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} saved={!!savedBlocks['especialidades']} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
+              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} saved={espOk} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
                 <label style={labelSt}>Especialidades do Profissional</label>
                 <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})}/>
