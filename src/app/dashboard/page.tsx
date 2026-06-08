@@ -876,23 +876,23 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                   <input value={d.nome||''} onChange={e=>onUpdate({nome:e.target.value})} placeholder="Nome completo" style={inputSt}/>
                 </div>
               </div>
+              <div>
+                <label style={labelSt}>ID Google Calendar</label>
+                <input value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
+              </div>
+              <div>
+                <label style={labelSt}>Telefone / WhatsApp</label>
+                <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+                  <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{ddi}</span>
+                  <input value={d.whatsapp||''} onChange={e=>onUpdate({whatsapp:e.target.value})} placeholder="999999999"
+                    style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',width:'100%',boxSizing:'border-box'}}/>
+                </div>
+              </div>
+              <div>
+                <label style={labelSt}>Senha de Acesso</label>
+                <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
+              </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                <div>
-                  <label style={labelSt}>ID Google Calendar</label>
-                  <input value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
-                </div>
-                <div>
-                  <label style={labelSt}>Telefone / WhatsApp</label>
-                  <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-                    <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:12,color:'#2B7A78'}}>{ddi}</span>
-                    <input value={d.whatsapp||''} onChange={e=>onUpdate({whatsapp:e.target.value})} placeholder="(21) 99999-9999"
-                      style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none'}}/>
-                  </div>
-                </div>
-                <div>
-                  <label style={labelSt}>Senha de Acesso</label>
-                  <input type="password" value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••" style={inputSt}/>
-                </div>
                 <div>
                   <label style={labelSt}>Atende Sábado?</label>
                   <select value={d.sabado?'sim':'nao'} onChange={e=>onUpdate({sabado:e.target.value==='sim'})} style={inputSt}>
@@ -930,13 +930,13 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
               )}
               {/* Modo horários */}
               <div>
-                <label style={labelSt}>Modo de Horários</label>
-                <div style={{display:'flex',gap:4,padding:4,background:'#f1f5f9',borderRadius:8,width:'fit-content'}}>
+                <label style={{...labelSt,textAlign:'center',display:'block'}}>Modo de Horários</label>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,padding:4,background:'#f1f5f9',borderRadius:8,width:'100%',boxSizing:'border-box'}}>
                   {(['auto','manual','proc'] as const).map(m=>(
                     <button key={m} onClick={()=>onUpdate({modo:m})}
-                      style={{padding:'7px 14px',borderRadius:6,border:'none',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",
+                      style={{padding:'7px 6px',borderRadius:6,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
                         background:d.modo===m?'#2B7A78':'transparent',color:d.modo===m?'#fff':'#64748b',transition:'all 0.2s'}}>
-                      {m==='auto'?'⚡ Automático':m==='manual'?'✏️ Manual':'📋 Por procedimento'}
+                      {m==='auto'?'⚡ Automático':m==='manual'?'✏️ Manual':'📋 Procedimento'}
                     </button>
                   ))}
                 </div>
