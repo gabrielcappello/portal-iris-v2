@@ -1225,6 +1225,7 @@ const ANAMNESE_CAMPOS=[
   {k:'diabetes',        label:'Diabetes',                    sub:'Pergunta se o paciente tem diagnóstico de diabetes.'},
   {k:'hipertensao',     label:'Hipertensão',                 sub:'Pergunta se o paciente tem pressão alta.'},
   {k:'gravidez',        label:'Gravidez',                    sub:'Pergunta se a paciente está grávida ou suspeita de gravidez.'},
+  {k:'fumante',         label:'Fumante',                     sub:'Pergunta se o paciente fuma ou já fumou.'},
   {k:'observacoes',     label:'Observações de saúde gerais', sub:'Campo aberto para o paciente informar outras condições relevantes.'},
 ];
 

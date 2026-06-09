@@ -18,6 +18,7 @@ function anamneseAlertas(a?: AnamnesePaciente): string[] {
   if (a.diabetes)    al.push("Diabetes");
   if (a.hipertensao) al.push("Hipertensão");
   if (a.gravidez)    al.push("Gravidez");
+  if (a.fumante)     al.push("Fumante");
   if (a.alergias?.trim())                  al.push(`Alergias: ${a.alergias.trim()}`);
   if (a.medicamentos_uso_continuo?.trim()) al.push(`Medicamentos: ${a.medicamentos_uso_continuo.trim()}`);
   if (a.observacoes_saude?.trim())         al.push(`Obs.: ${a.observacoes_saude.trim()}`);

@@ -38,7 +38,7 @@ export type Clinica = {
 
 export type AnamnesePaciente = {
   alergias?: string; medicamentos_uso_continuo?: string;
-  diabetes?: boolean; hipertensao?: boolean; gravidez?: boolean;
+  diabetes?: boolean; hipertensao?: boolean; gravidez?: boolean; fumante?: boolean;
   observacoes_saude?: string; data_ultima_atualizacao?: string|null;
 };
 
