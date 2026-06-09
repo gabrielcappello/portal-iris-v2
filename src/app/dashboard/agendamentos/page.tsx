@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown } from "lucide-react";
 import { sb, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
@@ -92,7 +92,7 @@ export default function AgendamentosPage() {
         </select>
       </div>
 
-      <div style={{overflowX:"auto",borderRadius:12,border:"1px solid #e2e8f0",background:"#fff"}}>
+      <div style={{overflow:"auto",maxHeight:"calc(100vh - 240px)",minHeight:200,borderRadius:12,border:"1px solid #e2e8f0",background:"#fff"}}>
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}>
           <thead>
             <tr style={{background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
@@ -122,8 +122,8 @@ export default function AgendamentosPage() {
               const histPac = pac ? agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone) : [];
 
               return (
-                <>
-                  <motion.tr key={a.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.01}}
+                <Fragment key={a.id}>
+                  <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.01}}
                     style={{borderBottom: isOpen?"none":"1px solid #f1f5f9",transition:"background 0.15s",
                       background: isOpen?"rgba(43,122,120,0.03)":"transparent"}}
                     onMouseEnter={e=>{ if(!isOpen) e.currentTarget.style.background="#fafafa"; }}
@@ -171,13 +171,12 @@ export default function AgendamentosPage() {
                   </motion.tr>
 
                   {/* Linha expandida */}
-                  <AnimatePresence initial={false}>
-                    {isOpen&&(
-                      <tr key={`${a.id}-detail`}>
-                        <td colSpan={9} style={{padding:0,borderBottom:"1px solid #e2e8f0"}}>
-                          <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}}
-                            exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}}
-                            style={{overflow:"hidden"}}>
+                  <tr>
+                    <td colSpan={9} style={{padding:0,borderBottom:isOpen?"1px solid #e2e8f0":"none"}}>
+                      <motion.div initial={false}
+                        animate={{height:isOpen?"auto":0,opacity:isOpen?1:0}}
+                        transition={{duration:0.25,ease:[0.4,0,0.2,1]}}
+                        style={{overflow:"hidden"}}>
                             <div style={{padding:"16px",background:"rgba(43,122,120,0.02)",display:"flex",flexDirection:"column",gap:12}}>
 
                               {/* Dados do agendamento */}
@@ -296,12 +295,10 @@ export default function AgendamentosPage() {
                                 )}
                               </AnimatePresence>
                             </div>
-                          </motion.div>
-                        </td>
-                      </tr>
-                    )}
-                  </AnimatePresence>
-                </>
+                      </motion.div>
+                    </td>
+                  </tr>
+                </Fragment>
               );
             })}
           </tbody>
