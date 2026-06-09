@@ -34,7 +34,7 @@ export type Clinica = {
   whatsapp_instancia: string; nome_agente: string; personalidade: string;
   telefone_agente: string; idioma: string; pais_codigo: string;
   fuso_horario: string; estado: string; dentistas: Dentista[];
-  precios?: {esp:string;nome:string;valor:number;tempo:number}[];
+  precios?: {esp:string;nome:string;valor:number;tempo:number;mostrar_valor?:boolean}[];
 };
 
 export type AnamnesePaciente = {

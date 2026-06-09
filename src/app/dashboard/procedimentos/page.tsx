@@ -54,7 +54,8 @@ const MOEDA: Record<string,string> = {
 };
 
 type Item = {valor:number; tempo:number};
-type State = Record<string, Item>;
+type State   = Record<string, Item>;
+type Visivel = Record<string, boolean>;
 
 function safe(n: unknown): number {
   const v = Number(n);
@@ -72,6 +73,30 @@ function buildState(saved?: Clinica["precios"]): State {
       if (k in s) s[k] = {valor:safe(r.valor), tempo:safe(r.tempo)};
     }
   return s;
+}
+
+function buildVisivel(saved?: Clinica["precios"]): Visivel {
+  const v: Visivel = {};
+  for (const esp of ESPECIALIDADES) v[esp.nome] = false;
+  if (saved)
+    for (const r of saved)
+      if (r.mostrar_valor !== undefined) v[r.esp] = !!r.mostrar_valor;
+  return v;
+}
+
+function Toggle({on, onChange}: {on:boolean; onChange:(v:boolean)=>void}) {
+  return (
+    <button onClick={()=>onChange(!on)}
+      style={{width:40,height:22,borderRadius:99,border:"none",cursor:"pointer",
+        position:"relative",flexShrink:0,background:on?"#2B7A78":"#cbd5e1",
+        transition:"background 0.2s"}}>
+      <span style={{
+        position:"absolute",top:2,left:on?20:2,width:18,height:18,
+        borderRadius:"50%",background:"#fff",
+        boxShadow:"0 1px 3px rgba(0,0,0,0.25)",
+        transition:"left 0.18s ease"}}/>
+    </button>
+  );
 }
 
 function TempoStepper({value, onChange}: {value:number; onChange:(v:number)=>void}) {
@@ -102,11 +127,12 @@ function TempoStepper({value, onChange}: {value:number; onChange:(v:number)=>voi
 }
 
 export default function ProcedimentosPage() {
-  const [clinica, setClinica] = useState<Clinica|null>(null);
-  const [state, setState]     = useState<State>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving]   = useState(false);
-  const [flash, setFlash]     = useState<"saved"|null>(null);
+  const [clinica, setClinica]   = useState<Clinica|null>(null);
+  const [state, setState]       = useState<State>({});
+  const [visivel, setVisivel]   = useState<Visivel>({});
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [flash, setFlash]       = useState<"saved"|null>(null);
 
   useEffect(() => {
     const id = localStorage.getItem("clinica_id");
@@ -117,6 +143,7 @@ export default function ProcedimentosPage() {
         const c = rows[0];
         setClinica(c);
         setState(buildState(c.precios));
+        setVisivel(buildVisivel(c.precios));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -132,7 +159,8 @@ export default function ProcedimentosPage() {
       const toSave = ESPECIALIDADES.flatMap(e =>
         e.procs.map(p => {
           const k = `${e.nome}|${p.nome}`;
-          return {esp:e.nome, nome:p.nome, valor:state[k]?.valor??0, tempo:state[k]?.tempo??p.tempo};
+          return {esp:e.nome, nome:p.nome, valor:state[k]?.valor??0, tempo:state[k]?.tempo??0,
+            mostrar_valor: visivel[e.nome]??false};
         })
       );
       await sb.update("clinicas", clinica.id, {precios: toSave});
@@ -142,7 +170,8 @@ export default function ProcedimentosPage() {
     finally { setSaving(false); }
   }
 
-  const moeda = MOEDA[clinica?.pais_codigo||""] || "$";
+  const moeda      = MOEDA[clinica?.pais_codigo||""] || "$";
+  const agenteName = clinica?.nome_agente || "a assistente";
   const totalProcs = ESPECIALIDADES.reduce((a,e)=>a+e.procs.length, 0);
 
   return (
@@ -194,14 +223,31 @@ export default function ProcedimentosPage() {
                   {/* Specialty separator row */}
                   <tr>
                     <td colSpan={3} style={{
-                      padding:"10px 14px",
+                      padding:"9px 14px",
                       background:"linear-gradient(90deg,rgba(43,122,120,0.07),rgba(43,122,120,0.02))",
                       borderTop:"1px solid #e2e8f0",
                       borderBottom:"1px solid rgba(43,122,120,0.15)"}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#2B7A78"}}>{esp.nome}</span>
-                      <span style={{fontSize:11,color:"#94a3b8",marginLeft:8,fontWeight:400}}>
-                        {esp.procs.length} procedimentos
-                      </span>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                        {/* Nome especialidade */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"#2B7A78",whiteSpace:"nowrap"}}>{esp.nome}</span>
+                          <span style={{fontSize:11,color:"#94a3b8",fontWeight:400,whiteSpace:"nowrap"}}>
+                            {esp.procs.length} procedimentos
+                          </span>
+                        </div>
+                        {/* Toggle + descrição */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                          <span style={{fontSize:11,color:visivel[esp.nome]?"#2B7A78":"#94a3b8",
+                            fontStyle:"italic",whiteSpace:"nowrap",transition:"color 0.2s"}}>
+                            {visivel[esp.nome]
+                              ? `${agenteName} informa o valor se o cliente perguntar`
+                              : `${agenteName} informa que é necessário avaliar primeiro`}
+                          </span>
+                          <Toggle
+                            on={visivel[esp.nome]||false}
+                            onChange={v=>setVisivel(prev=>({...prev,[esp.nome]:v}))}/>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                   {/* Procedure rows */}
