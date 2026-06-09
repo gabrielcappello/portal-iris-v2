@@ -1211,11 +1211,37 @@ function EspecialidadesGrid({procs,onChange}:{procs:{nome:string;ativo:boolean;t
 }
 
 // ── DADOS DO AGENTE ────────────────────────────────────────────────────────────
+const DOC_LABEL:Record<string,string>={
+  br:'CPF',ar:'DNI',co:'Cédula',mx:'CURP / INE',es:'DNI / NIE',pe:'DNI',
+  cl:'RUT',uy:'CI',ve:'Cédula',ec:'Cédula',bo:'CI',py:'CI',do:'Cédula',
+  gt:'DPI',cr:'Cédula',pa:'Cédula',sv:'DUI',hn:'DNI',ni:'Cédula',cu:'CI',
+  pt:'NIF',ao:'BI',mz:'BI',cv:'BI',gw:'BI',st:'BI',tl:'BI',
+};
+
+const ANAMNESE_CAMPOS=[
+  {k:'alergias',        label:'Alergias',                    sub:'Pergunta se o paciente tem alergias a medicamentos ou materiais.'},
+  {k:'medicamentos',    label:'Medicamentos em uso contínuo', sub:'Solicita lista de medicamentos que o paciente usa regularmente.'},
+  {k:'diabetes',        label:'Diabetes',                    sub:'Pergunta se o paciente tem diagnóstico de diabetes.'},
+  {k:'hipertensao',     label:'Hipertensão',                 sub:'Pergunta se o paciente tem pressão alta.'},
+  {k:'gravidez',        label:'Gravidez',                    sub:'Pergunta se a paciente está grávida ou suspeita de gravidez.'},
+  {k:'observacoes',     label:'Observações de saúde gerais', sub:'Campo aberto para o paciente informar outras condições relevantes.'},
+];
+
 function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
-  const a=(clinica as unknown as Record<string,Record<string,boolean>>).automatizacoes||{};
-  const [nasc,setNasc]=useState(a.solicitar_nascimento||false);
-  const [email,setEmail]=useState(a.solicitar_email||false);
-  const [resp,setResp]=useState(a.solicitar_responsavel||false);
+  const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
+  const [nasc,setNasc]=useState((a.solicitar_nascimento as boolean)||false);
+  const [email,setEmail]=useState((a.solicitar_email as boolean)||false);
+  const [resp,setResp]=useState((a.solicitar_responsavel as boolean)||false);
+  const anam=(a.anamnese as Record<string,boolean>)||{};
+  const [anamCampos,setAnamCampos]=useState<Record<string,boolean>>(
+    Object.fromEntries(ANAMNESE_CAMPOS.map(c=>[c.k,anam[c.k]||false]))
+  );
+  const [anamOpen,setAnamOpen]=useState(false);
+
+  const docLabel=DOC_LABEL[clinica.pais_codigo||'']||'Documento';
+  const anamAtivo=Object.values(anamCampos).some(Boolean);
+
+  function toggleAnam(k:string){setAnamCampos(p=>({...p,[k]:!p[k]}));}
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:0}}>
@@ -1224,7 +1250,7 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
       </div>
       <div style={{marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>Campos Obrigatórios (Fixos)</div>
-        {['Nome','Telefone','CPF / Documento'].map(l=>(
+        {['Nome','Telefone',docLabel].map(l=>(
           <div key={l} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #f1f5f9'}}>
             <span style={{fontSize:16}}>🔒</span>
             <span style={{flex:1,fontSize:14,fontWeight:500,color:'#1e293b'}}>{l}</span>
@@ -1235,9 +1261,9 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
       <div>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>Campos Opcionais</div>
         {[
-          {k:'nasc',v:nasc,set:setNasc,label:'Data de nascimento',sub:'Quando ativado, o agente sempre solicitará a data de nascimento do paciente.'},
-          {k:'email',v:email,set:setEmail,label:'Email',sub:'Quando ativado, o agente sempre solicitará o email do paciente.'},
-          {k:'resp',v:resp,set:setResp,label:'Responsável',sub:'Quando ativado, o agente solicitará o nome do responsável (indicado para pacientes menores de idade).'},
+          {k:'nasc', v:nasc, set:setNasc, label:'Data de nascimento', sub:'Quando ativado, o agente sempre solicitará a data de nascimento do paciente.'},
+          {k:'email',v:email,set:setEmail,label:'Email',               sub:'Quando ativado, o agente sempre solicitará o email do paciente.'},
+          {k:'resp', v:resp, set:setResp, label:'Responsável',         sub:'Quando ativado, o agente solicitará o nome do responsável (indicado para pacientes menores de idade).'},
         ].map(f=>(
           <div key={f.k} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid #f1f5f9'}}>
             <div style={{flex:1}}>
@@ -1247,9 +1273,45 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
             <Toggle on={f.v} onChange={f.set}/>
           </div>
         ))}
+
+        {/* Anamnese — expansível */}
+        <div style={{borderBottom:'1px solid #f1f5f9'}}>
+          <button onClick={()=>setAnamOpen(p=>!p)} onMouseDown={e=>e.preventDefault()}
+            style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'12px 0',border:'none',background:'transparent',cursor:'pointer',textAlign:'left',fontFamily:"'Sora',sans-serif"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:600,color:'#1e293b',display:'flex',alignItems:'center',gap:8}}>
+                Anamnese
+                {anamAtivo&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'rgba(43,122,120,0.1)',color:'#2B7A78'}}>
+                  {Object.values(anamCampos).filter(Boolean).length} ativo{Object.values(anamCampos).filter(Boolean).length!==1?'s':''}
+                </span>}
+              </div>
+              <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Dados de saúde coletados pelo agente antes da consulta.</div>
+            </div>
+            <motion.div animate={{rotate:anamOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
+              <ChevronDown size={15}/>
+            </motion.div>
+          </button>
+          <AnimatePresence initial={false}>
+            {anamOpen&&(
+              <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+                <div style={{paddingBottom:12,display:'flex',flexDirection:'column',gap:0}}>
+                  {ANAMNESE_CAMPOS.map(c=>(
+                    <div key={c.k} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0 10px 12px',borderTop:'1px solid #f8fafc'}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{c.label}</div>
+                        <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{c.sub}</div>
+                      </div>
+                      <Toggle on={anamCampos[c.k]} onChange={()=>toggleAnam(c.k)}/>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:nasc,solicitar_email:email,solicitar_responsavel:resp}})} disabled={saving} style={saveBtnSt}>
+        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:nasc,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
           {saving?'Salvando...':'Salvar'}
         </button>
       </div>
