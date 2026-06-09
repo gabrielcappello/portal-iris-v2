@@ -158,9 +158,10 @@ const inputSt:React.CSSProperties={width:'100%',padding:'10px 12px',fontSize:13,
 const labelSt:React.CSSProperties={display:'block',fontSize:11,fontWeight:600,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6};
 const saveBtnSt:React.CSSProperties={padding:'10px 20px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#2B7A78,#3AAFA9)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif"};
 
-function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}){
+function Toggle({on,onChange,partial}:{on:boolean;onChange:(v:boolean)=>void;partial?:boolean}){
+  const bg=on?(partial?'#f59e0b':'#2B7A78'):'#e2e8f0';
   return(
-    <button onClick={()=>onChange(!on)} style={{width:44,height:24,borderRadius:99,border:'none',cursor:'pointer',position:'relative',transition:'background 0.2s',background:on?'#2B7A78':'#e2e8f0',flexShrink:0}}>
+    <button onClick={()=>onChange(!on)} style={{width:44,height:24,borderRadius:99,border:'none',cursor:'pointer',position:'relative',transition:'background 0.2s',background:bg,flexShrink:0}}>
       <motion.div animate={{x:on?20:2}} transition={{type:'spring',stiffness:500,damping:30}}
         style={{width:20,height:20,borderRadius:'50%',background:'#fff',position:'absolute',top:2,boxShadow:'0 1px 3px rgba(0,0,0,0.2)'}}/>
     </button>
@@ -1260,6 +1261,43 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
       </div>
       <div>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>Campos Opcionais</div>
+        {/* Anamnese — primeiro, com toggle pai + sub-campos inline */}
+        <div style={{borderBottom:'1px solid #f1f5f9'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
+            <div style={{flex:1}}>
+              <button onClick={()=>setAnamOpen(p=>!p)} onMouseDown={e=>e.preventDefault()}
+                style={{display:'flex',alignItems:'center',gap:6,background:'transparent',border:'none',cursor:'pointer',padding:0,fontFamily:"'Sora',sans-serif",textAlign:'left'}}>
+                <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>Anamnese</div>
+                <motion.div animate={{rotate:anamOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
+                  <ChevronDown size={13}/>
+                </motion.div>
+              </button>
+              <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Dados de saúde coletados pelo agente antes da consulta.</div>
+            </div>
+            <Toggle
+              on={anamAtivo}
+              partial={anamAtivo && !Object.values(anamCampos).every(Boolean)}
+              onChange={v=>setAnamCampos(Object.fromEntries(ANAMNESE_CAMPOS.map(c=>[c.k,v])))}/>
+          </div>
+          <AnimatePresence initial={false}>
+            {anamOpen&&(
+              <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+                <div style={{paddingBottom:10,display:'flex',flexDirection:'column',gap:0}}>
+                  {ANAMNESE_CAMPOS.map(c=>(
+                    <div key={c.k} style={{display:'flex',alignItems:'center',gap:12,padding:'9px 0 9px 14px',borderTop:'1px solid #f8fafc'}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{c.label}</div>
+                        <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{c.sub}</div>
+                      </div>
+                      <Toggle on={anamCampos[c.k]} onChange={()=>toggleAnam(c.k)}/>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {[
           {k:'nasc', v:nasc, set:setNasc, label:'Data de nascimento', sub:'Quando ativado, o agente sempre solicitará a data de nascimento do paciente.'},
           {k:'email',v:email,set:setEmail,label:'Email',               sub:'Quando ativado, o agente sempre solicitará o email do paciente.'},
@@ -1273,42 +1311,6 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
             <Toggle on={f.v} onChange={f.set}/>
           </div>
         ))}
-
-        {/* Anamnese — expansível */}
-        <div style={{borderBottom:'1px solid #f1f5f9'}}>
-          <button onClick={()=>setAnamOpen(p=>!p)} onMouseDown={e=>e.preventDefault()}
-            style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'12px 0',border:'none',background:'transparent',cursor:'pointer',textAlign:'left',fontFamily:"'Sora',sans-serif"}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:14,fontWeight:600,color:'#1e293b',display:'flex',alignItems:'center',gap:8}}>
-                Anamnese
-                {anamAtivo&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'rgba(43,122,120,0.1)',color:'#2B7A78'}}>
-                  {Object.values(anamCampos).filter(Boolean).length} ativo{Object.values(anamCampos).filter(Boolean).length!==1?'s':''}
-                </span>}
-              </div>
-              <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Dados de saúde coletados pelo agente antes da consulta.</div>
-            </div>
-            <motion.div animate={{rotate:anamOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
-              <ChevronDown size={15}/>
-            </motion.div>
-          </button>
-          <AnimatePresence initial={false}>
-            {anamOpen&&(
-              <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
-                <div style={{paddingBottom:12,display:'flex',flexDirection:'column',gap:0}}>
-                  {ANAMNESE_CAMPOS.map(c=>(
-                    <div key={c.k} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0 10px 12px',borderTop:'1px solid #f8fafc'}}>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{c.label}</div>
-                        <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{c.sub}</div>
-                      </div>
-                      <Toggle on={anamCampos[c.k]} onChange={()=>toggleAnam(c.k)}/>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
         <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:nasc,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
