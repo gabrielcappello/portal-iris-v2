@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
@@ -835,7 +836,7 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose}:{
       </div>
       {dents.map((d,i)=>(
         <DentistaCard key={i} d={d} i={i} open={open===i} onToggle={()=>setOpen(p=>p===i?null:i)}
-          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i}/>
+          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i} clinicaId={clinica.id}/>
       ))}
       <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
         style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
@@ -845,9 +846,9 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose}:{
   );
 }
 
-function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
+function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
-  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;
+  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;clinicaId:string;
 }){
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
@@ -856,6 +857,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
     !!d.inicio&&!!d.fim&&(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
   const dotColor=!d.ativo?'#e2e8f0':allComplete?'#10b981':'#f59e0b';
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
+  const [showQR,setShowQR]=useState(false);
+  const qrUrl=`https://painel.cappia.app/dentista/${clinicaId}/${i}?t=${encodeURIComponent(d.senha||'')}`;
+
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
 
@@ -1048,10 +1052,40 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving}:{
                     ))}
                   </div>
                 )}
-                <button onClick={handleSave} disabled={saving}
-                  style={{...saveBtnSt,width:'100%',opacity:saving?0.6:1,justifyContent:'center',display:'flex',alignItems:'center',gap:8}}>
-                  {saving?'Salvando...':`💾 Salvar ${nomeLabel}`}
-                </button>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
+                    style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/></svg>
+                    QR Code
+                  </button>
+                  <button onClick={handleSave} disabled={saving}
+                    style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,opacity:saving?0.6:1}}>
+                    {saving?'Salvando...':`💾 Salvar ${nomeLabel}`}
+                  </button>
+                </div>
+                <AnimatePresence initial={false}>
+                  {showQR&&(
+                    <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22}} style={{overflow:'hidden'}}>
+                      <div style={{marginTop:12,display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'16px',background:'#fff',borderRadius:10,border:'1px solid #e2e8f0'}}>
+                        <div style={{fontSize:12,fontWeight:600,color:'#1e293b',textAlign:'center'}}>App de {nomeLabel}</div>
+                        {d.senha?(
+                          <>
+                            <div style={{padding:16,background:'#fff',borderRadius:12,boxShadow:'0 2px 12px rgba(0,0,0,0.08)'}}>
+                              <QRCodeSVG value={qrUrl} size={180} fgColor="#2B7A78" bgColor="#ffffff" level="M" marginSize={1}/>
+                            </div>
+                            <div style={{fontSize:11,color:'#94a3b8',textAlign:'center',maxWidth:200,lineHeight:1.4}}>
+                              Escaneie para acessar o app do dentista. Requer instalação.
+                            </div>
+                          </>
+                        ):(
+                          <div style={{fontSize:12,color:'#f59e0b',textAlign:'center',padding:'12px 16px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
+                            ⚠️ Defina a senha de acesso antes de gerar o QR Code
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <button onClick={onToggle} onMouseDown={e=>e.preventDefault()}
                   style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid #e2e8f0',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
                   Fechar
