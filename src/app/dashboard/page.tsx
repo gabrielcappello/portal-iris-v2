@@ -1071,7 +1071,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                         {d.senha?(
                           <>
                             <div style={{padding:16,background:'#fff',borderRadius:12,boxShadow:'0 2px 12px rgba(0,0,0,0.08)'}}>
-                              <QRCodeSVG value={qrUrl} size={180} fgColor="#2B7A78" bgColor="#ffffff" level="M" marginSize={1}/>
+                              <QRCodeSVG value={qrUrl} size={180} fgColor="#000000" bgColor="#ffffff" level="M" marginSize={1}/>
                             </div>
                             <div style={{fontSize:11,color:'#94a3b8',textAlign:'center',maxWidth:200,lineHeight:1.4}}>
                               Escaneie para acessar o app do dentista. Requer instalação.
