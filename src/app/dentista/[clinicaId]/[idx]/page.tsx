@@ -2,8 +2,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Search } from "lucide-react";
-import { sb, type Clinica, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
+import { sb, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
+
+function anamneseAlertas(a?: AnamnesePaciente): string[] {
+  if (!a) return [];
+  const al: string[] = [];
+  if (a.diabetes)    al.push("Diabetes");
+  if (a.hipertensao) al.push("Hipertensão");
+  if (a.gravidez)    al.push("Gravidez");
+  if (a.alergias?.trim())                  al.push(`Alergias: ${a.alergias.trim()}`);
+  if (a.medicamentos_uso_continuo?.trim()) al.push(`Medicamentos: ${a.medicamentos_uso_continuo.trim()}`);
+  if (a.observacoes_saude?.trim())         al.push(`Obs.: ${a.observacoes_saude.trim()}`);
+  return al;
+}
 
 const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
   confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
@@ -266,6 +278,34 @@ export default function DentistaApp() {
                                                 </div>
                                               ))}
                                             </div>
+                                            {/* Anamnese */}
+                                            {(()=>{
+                                              const alertas=anamneseAlertas(pac.anamnese);
+                                              const temAlerta=alertas.length>0;
+                                              const bg=temAlerta?"rgba(239,68,68,0.06)":"rgba(16,185,129,0.06)";
+                                              const border=temAlerta?"1px solid rgba(239,68,68,0.25)":"1px solid rgba(16,185,129,0.25)";
+                                              const color=temAlerta?"#dc2626":"#059669";
+                                              return(
+                                                <div style={{padding:"10px 12px",background:bg,border,borderRadius:8}}>
+                                                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:temAlerta?6:0}}>
+                                                    <span style={{fontSize:13}}>{temAlerta?"⚠️":"✓"}</span>
+                                                    <div style={{fontSize:12,fontWeight:700,color,textTransform:"uppercase",letterSpacing:"0.5px"}}>
+                                                      {temAlerta?"Alertas de saúde":"Anamnese"}
+                                                    </div>
+                                                  </div>
+                                                  {!pac.anamnese&&<div style={{fontSize:11,color,opacity:0.8}}>Não coletada</div>}
+                                                  {pac.anamnese&&!temAlerta&&<div style={{fontSize:11,color,opacity:0.8}}>Sem alertas registrados</div>}
+                                                  {temAlerta&&(
+                                                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                                                      {alertas.map(al=>(
+                                                        <span key={al} style={{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",border:"1px solid rgba(239,68,68,0.2)"}}>{al}</span>
+                                                      ))}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+
                                             {/* Histórico */}
                                             {hist.length>0&&(
                                               <div>

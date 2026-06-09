@@ -36,9 +36,15 @@ export type Clinica = {
   fuso_horario: string; estado: string; dentistas: Dentista[];
 };
 
+export type AnamnesePaciente = {
+  alergias?: string; medicamentos_uso_continuo?: string;
+  diabetes?: boolean; hipertensao?: boolean; gravidez?: boolean;
+  observacoes_saude?: string; data_ultima_atualizacao?: string|null;
+};
+
 export type Paciente = {
   id: string; clinica_id: string; nome: string; telefone: string;
-  documento: string; data_nascimento?: string;
+  documento: string; data_nascimento?: string; anamnese?: AnamnesePaciente;
 };
 
 export type Agendamento = {
