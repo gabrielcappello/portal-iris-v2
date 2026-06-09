@@ -851,7 +851,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
   onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;clinicaId:string;
 }){
-  const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,d.alm_ini||'12:00',d.alm_fim||'13:00'):[];
+  const semAlmoco = d.alm_ini === d.alm_fim;
+  const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,semAlmoco?'00:00':(d.alm_ini||'12:00'),semAlmoco?'00:00':(d.alm_fim||'13:00')):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
   const allComplete=!!d.nome?.trim()&&!!d.whatsapp?.trim()&&!!d.senha?.trim()&&
     !!d.calendar_id?.trim()&&d.calendar_id.trim().endsWith('@group.calendar.google.com')&&
@@ -959,15 +960,40 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 </div>
               </div>
               {/* Linha 2: Almoço */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                <div>
-                  <label style={labelSt}>Início Almoço</label>
-                  <input type="time" value={d.alm_ini||'12:00'} onChange={e=>onUpdate({alm_ini:e.target.value})} style={inputSt}/>
+              <div>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                  <label style={{...labelSt,marginBottom:0}}>Almoço</label>
+                  <div style={{display:'flex',alignItems:'center',gap:7}}>
+                    <span style={{fontSize:11,color:semAlmoco?'#94a3b8':'#2B7A78',fontWeight:600,transition:'color 0.2s'}}>
+                      {semAlmoco?'Sem almoço':'Com almoço'}
+                    </span>
+                    <Toggle
+                      on={!semAlmoco}
+                      onChange={v=>onUpdate(v
+                        ?{alm_ini:'12:00',alm_fim:'13:00'}
+                        :{alm_ini:'00:00',alm_fim:'00:00'})}/>
+                  </div>
                 </div>
-                <div>
-                  <label style={labelSt}>Fim Almoço</label>
-                  <input type="time" value={d.alm_fim||'13:00'} onChange={e=>onUpdate({alm_fim:e.target.value})} style={inputSt}/>
-                </div>
+                {semAlmoco?(
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    {['Início','Fim'].map(l=>(
+                      <div key={l} style={{...inputSt,display:'flex',alignItems:'center',justifyContent:'center',
+                        color:'#cbd5e1',background:'#f8fafc',userSelect:'none',cursor:'default',
+                        fontWeight:700,fontSize:16,letterSpacing:2}}>—</div>
+                    ))}
+                  </div>
+                ):(
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    <div>
+                      <label style={labelSt}>Início</label>
+                      <input type="time" value={d.alm_ini||'12:00'} onChange={e=>onUpdate({alm_ini:e.target.value})} style={inputSt}/>
+                    </div>
+                    <div>
+                      <label style={labelSt}>Fim</label>
+                      <input type="time" value={d.alm_fim||'13:00'} onChange={e=>onUpdate({alm_fim:e.target.value})} style={inputSt}/>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Linha 3: Atende Sábado toggle */}
               <div style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0'}}>
