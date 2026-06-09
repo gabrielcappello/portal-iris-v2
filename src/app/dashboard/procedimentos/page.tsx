@@ -56,24 +56,30 @@ const MOEDA: Record<string,string> = {
 type Item = {valor:number; tempo:number};
 type State = Record<string, Item>;
 
+function safe(n: unknown): number {
+  const v = Number(n);
+  return isFinite(v) && !isNaN(v) ? v : 0;
+}
+
 function buildState(saved?: Clinica["precios"]): State {
   const s: State = {};
   for (const esp of ESPECIALIDADES)
     for (const p of esp.procs)
-      s[`${esp.nome}|${p.nome}`] = {valor:0, tempo:p.tempo};
+      s[`${esp.nome}|${p.nome}`] = {valor:0, tempo:0};
   if (saved)
     for (const r of saved) {
       const k = `${r.esp}|${r.nome}`;
-      if (k in s) s[k] = {valor:r.valor, tempo:r.tempo};
+      if (k in s) s[k] = {valor:safe(r.valor), tempo:safe(r.tempo)};
     }
   return s;
 }
 
 function TempoStepper({value, onChange}: {value:number; onChange:(v:number)=>void}) {
+  const v = isNaN(value) || !isFinite(value) ? 0 : value;
   return (
     <div style={{display:"flex",alignItems:"center",gap:2,background:"#f8fafc",
       borderRadius:9,padding:2,border:"1px solid #e2e8f0",width:"fit-content"}}>
-      <button onClick={()=>onChange(Math.max(10,value-10))}
+      <button onClick={()=>onChange(Math.max(0,v-10))}
         style={{width:32,height:32,borderRadius:7,border:"none",background:"#fff",cursor:"pointer",
           fontSize:18,color:"#475569",display:"flex",alignItems:"center",justifyContent:"center",
           boxShadow:"0 1px 2px rgba(0,0,0,0.06)",flexShrink:0,fontFamily:"monospace",
@@ -82,9 +88,9 @@ function TempoStepper({value, onChange}: {value:number; onChange:(v:number)=>voi
       </button>
       <span style={{minWidth:60,textAlign:"center",fontSize:12,fontWeight:700,
         color:"#1e293b",fontFamily:"monospace",userSelect:"none",padding:"0 2px"}}>
-        {value} min
+        {v} min
       </span>
-      <button onClick={()=>onChange(Math.min(240,value+10))}
+      <button onClick={()=>onChange(Math.min(240,v+10))}
         style={{width:32,height:32,borderRadius:7,border:"none",background:"#fff",cursor:"pointer",
           fontSize:18,color:"#475569",display:"flex",alignItems:"center",justifyContent:"center",
           boxShadow:"0 1px 2px rgba(0,0,0,0.06)",flexShrink:0,fontFamily:"monospace",
@@ -201,7 +207,8 @@ export default function ProcedimentosPage() {
                   {/* Procedure rows */}
                   {esp.procs.map((p,pi)=>{
                     const key = `${esp.nome}|${p.nome}`;
-                    const item = state[key] || {valor:0, tempo:p.tempo};
+                    const raw = state[key] || {valor:0, tempo:0};
+                    const item = {valor:safe(raw.valor), tempo:safe(raw.tempo)};
                     const isLast = pi === esp.procs.length-1;
                     return (
                       <tr key={key}
