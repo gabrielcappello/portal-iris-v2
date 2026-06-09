@@ -858,7 +858,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
   const dotColor=!d.ativo?'#e2e8f0':allComplete?'#10b981':'#f59e0b';
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
   const [showQR,setShowQR]=useState(false);
-  const qrUrl=`https://painel.cappia.app/dentista/${clinicaId}/${i}?t=${encodeURIComponent(d.senha||'')}`;
+  const qrUrl=typeof window!=='undefined'?`${window.location.origin}/dentista/${clinicaId}/${i}?t=${encodeURIComponent(d.senha||'')}`:`/dentista/${clinicaId}/${i}`;
 
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
