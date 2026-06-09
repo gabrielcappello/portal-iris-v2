@@ -82,7 +82,9 @@ export default function AgendamentosPage() {
             <tr style={{background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
               {["DATA","HORA","PACIENTE","DOCUMENTO","PROCEDIMENTO","DENTISTA","STATUS","AÇÃO"].map(h=>(
                 <th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:10,fontWeight:700,
-                  color:"#94a3b8",letterSpacing:"0.6px",whiteSpace:"nowrap"}}>{h}</th>
+                  color:"#94a3b8",letterSpacing:"0.6px",whiteSpace:"nowrap",
+                  position:"sticky",top:0,background:"#f8fafc",zIndex:2,
+                  boxShadow:"0 1px 0 #e2e8f0"}}>{h}</th>
               ))}
             </tr>
           </thead>
