@@ -45,6 +45,6 @@ export type Agendamento = {
   id: string; clinica_id: string; paciente_id?: string;
   nome: string; telefone: string; documento: string;
   data: string; horario: string; dentista_nome: string;
-  procedimento: string; status: "confirmado"|"remarcado"|"cancelado";
+  procedimento: string; status: "confirmado"|"remarcado"|"cancelado"|"ok"|"faltou";
   event_id?: string; calendar_id?: string;
 };

@@ -5,9 +5,11 @@ import { Search } from "lucide-react";
 import { sb, type Agendamento } from "@/lib/supabase";
 
 const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
-  confirmado: {bg:"rgba(16,185,129,0.12)", color:"#059669", label:"Confirmado"},
-  remarcado:  {bg:"rgba(245,158,11,0.12)", color:"#d97706", label:"Remarcado"},
-  cancelado:  {bg:"rgba(239,68,68,0.12)",  color:"#dc2626", label:"Cancelado"},
+  confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
+  ok:         {bg:"rgba(16,185,129,0.12)",  color:"#059669", label:"✓ OK"},
+  faltou:     {bg:"rgba(239,68,68,0.12)",   color:"#dc2626", label:"✗ Faltou"},
+  cancelado:  {bg:"rgba(100,116,139,0.12)", color:"#64748b", label:"Cancelado"},
+  remarcado:  {bg:"rgba(245,158,11,0.12)",  color:"#d97706", label:"Remarcado"},
 };
 
 export default function AgendamentosPage() {
@@ -136,8 +138,10 @@ export default function AgendamentosPage() {
                             border:`1px solid ${st.color}33`,background:st.bg,color:st.color,
                             cursor:"pointer",outline:"none",fontFamily:"'Sora',sans-serif"}}>
                           <option value="confirmado">Confirmado</option>
-                          <option value="remarcado">Remarcado</option>
+                          <option value="ok">✓ OK</option>
+                          <option value="faltou">✗ Faltou</option>
                           <option value="cancelado">Cancelado</option>
+                          <option value="remarcado">Remarcado</option>
                         </motion.select>
                       )}
                     </AnimatePresence>
