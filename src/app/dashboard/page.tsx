@@ -40,6 +40,14 @@ const ESTADOS_MAP: Record<string,string[]> = {
   au:['Australian Capital Territory','New South Wales','Northern Territory','Queensland','South Australia','Tasmania','Victoria','Western Australia'],
 };
 
+const UF_TO_ESTADO_BR: Record<string,string> = {
+  AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',
+  ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',
+  MG:'Minas Gerais',PA:'Pará',PB:'Paraíba',PR:'Paraná',PE:'Pernambuco',PI:'Piauí',
+  RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',RS:'Rio Grande do Sul',RO:'Rondônia',
+  RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins',
+};
+
 const FUSO_MAP: Record<string,string> = {
   br:'America/Sao_Paulo',pt:'Europe/Lisbon',ao:'Africa/Luanda',mz:'Africa/Maputo',
   cv:'Atlantic/Cape_Verde',gw:'Africa/Bissau',st:'Africa/Sao_Tome',tl:'Asia/Dili',
@@ -292,7 +300,7 @@ export default function ConfigPage(){
       {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
         open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData} showToast={showToast}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -356,8 +364,8 @@ const PAIS_FLAGS: Record<string,string> = {
   sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
 };
 
-function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepData}:{
-  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;onCepData:(d:Record<string,unknown>)=>void;
+function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepData,showToast}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;onCepData:(d:Record<string,unknown>)=>void;showToast:(msg:string,ok?:boolean)=>void;
 }){
   const idiomaVal=clinica.idioma||'português-br';
   const dash=idiomaVal.lastIndexOf('-');
@@ -390,13 +398,19 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       try{
         const res=await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
         const data=await res.json();
-        if(data.erro){setCepErro('CEP não encontrado.');return;}
+        if(data.erro){setCepErro('CEP não encontrado.');showToast('CEP não encontrado',false);return;}
         const payload:Record<string,unknown>={cep:cepRaw};
         if(data.logradouro)payload.endereco=data.logradouro;
         if(data.bairro)payload.bairro=data.bairro;
         if(data.localidade)payload.cidade=data.localidade;
-        onCepData(payload);
-      }catch{setCepErro('Erro ao buscar CEP.');}
+        const estadoNome=UF_TO_ESTADO_BR[data.uf]||'';
+        if(estadoNome&&estadoOpts.includes(estadoNome)&&estadoNome!==estado){
+          selectEstado(estadoNome);
+          payload.estado=estadoNome;
+        }
+        await onCepData(payload);
+        showToast('Endereço preenchido a partir do CEP ✓');
+      }catch{setCepErro('Erro ao buscar CEP.');showToast('Erro ao buscar CEP',false);}
       finally{setCepLoading(false);}
       return;
     }
@@ -406,12 +420,20 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
     setCepLoading(true);
     try{
       const res=await fetch(`https://api.zippopotam.us/${pais}/${cepLimpo}`);
-      if(!res.ok){setCepErro('Código postal não encontrado.');return;}
+      if(!res.ok){setCepErro('Código postal não encontrado.');showToast('Código postal não encontrado',false);return;}
       const data=await res.json();
       const place=data.places?.[0];
-      if(!place){setCepErro('Código postal não encontrado.');return;}
-      onCepData({cep: cepRaw, cidade: place['place name']||undefined});
-    }catch{setCepErro('Erro ao buscar código postal.');}
+      if(!place){setCepErro('Código postal não encontrado.');showToast('Código postal não encontrado',false);return;}
+      const payload:Record<string,unknown>={cep:cepRaw};
+      if(place['place name'])payload.cidade=place['place name'];
+      const estadoNome=place['state']||'';
+      if(estadoNome&&estadoOpts.includes(estadoNome)&&estadoNome!==estado){
+        selectEstado(estadoNome);
+        payload.estado=estadoNome;
+      }
+      await onCepData(payload);
+      showToast('Cidade preenchida a partir do código postal ✓');
+    }catch{setCepErro('Erro ao buscar código postal.');showToast('Erro ao buscar código postal',false);}
     finally{setCepLoading(false);}
   }
 
@@ -541,12 +563,8 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
         )}
       </AnimatePresence>
 
-      {/* Estado / Província + CEP */}
+      {/* CEP + Estado / Província */}
       <div style={estadoOpts.length>0?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}:undefined}>
-        {estadoOpts.length>0&&(
-          <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
-            estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
-        )}
         <div>
           <label style={labelSt}>
             CEP / Código Postal
@@ -561,9 +579,13 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
           />
           {cepErro&&<span style={{fontSize:11,color:'#ef4444',marginTop:4,display:'block'}}>{cepErro}</span>}
           {!cepErro&&<span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>
-            {pais==='br'?'Preenche endereço, bairro e cidade automaticamente.':'Preenche cidade automaticamente.'}
+            {pais==='br'?'Identifica endereço, bairro, cidade e estado automaticamente.':'Identifica cidade e estado automaticamente.'}
           </span>}
         </div>
+        {estadoOpts.length>0&&(
+          <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
+            estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
+        )}
       </div>
 
       {/* Fuso horário */}
