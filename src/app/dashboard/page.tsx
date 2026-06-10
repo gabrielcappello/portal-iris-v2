@@ -268,6 +268,14 @@ export default function ConfigPage(){
     else setDdd('');
   }
 
+  async function onCepData(data:Record<string,unknown>){
+    if(!clinica)return;
+    try{
+      await sb.update('clinicas',clinica.id,data);
+      setClinica(prev=>prev?{...prev,...data}:prev);
+    }catch{}
+  }
+
   if(!clinica)return<div style={{textAlign:'center',padding:'60px 0',color:'#94a3b8',fontSize:13}}>Carregando configurações...</div>;
 
   const ddi=DDI_MAP[paisCode]||'+55';
@@ -284,7 +292,7 @@ export default function ConfigPage(){
       {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
         open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -348,8 +356,8 @@ const PAIS_FLAGS: Record<string,string> = {
   sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
 };
 
-function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange}:{
-  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;
+function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepData}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;onCepData:(d:Record<string,unknown>)=>void;
 }){
   const idiomaVal=clinica.idioma||'português-br';
   const dash=idiomaVal.lastIndexOf('-');
@@ -366,6 +374,46 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange}:{
   const [estadoOpen,setEstadoOpen]=useState(false);
   const [fuso,setFuso]=useState(clinica.fuso_horario||'');
   const [paisInfo,setPaisInfo]=useState<{tipo_documento:string;digitos_documento:number;digitos_telefone:number}|null>(null);
+
+  const [cep,setCep]=useState((clinica as unknown as Record<string,string>).cep||'');
+  const [cepLoading,setCepLoading]=useState(false);
+  const [cepErro,setCepErro]=useState('');
+
+  async function buscarCep(cepRaw:string){
+    const cepLimpo=cepRaw.replace(/\D/g,'');
+    setCepErro('');
+
+    // Brasil: mínimo 8 dígitos
+    if(pais==='br'){
+      if(cepLimpo.length<8) return;
+      setCepLoading(true);
+      try{
+        const res=await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        const data=await res.json();
+        if(data.erro){setCepErro('CEP não encontrado.');return;}
+        const payload:Record<string,unknown>={cep:cepRaw};
+        if(data.logradouro)payload.endereco=data.logradouro;
+        if(data.bairro)payload.bairro=data.bairro;
+        if(data.localidade)payload.cidade=data.localidade;
+        onCepData(payload);
+      }catch{setCepErro('Erro ao buscar CEP.');}
+      finally{setCepLoading(false);}
+      return;
+    }
+
+    // Internacional: Zippopotam.us — mínimo 3 caracteres
+    if(cepLimpo.length<3) return;
+    setCepLoading(true);
+    try{
+      const res=await fetch(`https://api.zippopotam.us/${pais}/${cepLimpo}`);
+      if(!res.ok){setCepErro('Código postal não encontrado.');return;}
+      const data=await res.json();
+      const place=data.places?.[0];
+      if(!place){setCepErro('Código postal não encontrado.');return;}
+      onCepData({cep: cepRaw, cidade: place['place name']||undefined});
+    }catch{setCepErro('Erro ao buscar código postal.');}
+    finally{setCepLoading(false);}
+  }
 
   useEffect(()=>{ loadPaisInfo(initPais); },[]);// eslint-disable-line
 
@@ -493,11 +541,30 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange}:{
         )}
       </AnimatePresence>
 
-      {/* Estado / Província */}
-      {estadoOpts.length>0&&(
-        <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
-          estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
-      )}
+      {/* Estado / Província + CEP */}
+      <div style={estadoOpts.length>0?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}:undefined}>
+        {estadoOpts.length>0&&(
+          <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
+            estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
+        )}
+        <div>
+          <label style={labelSt}>
+            CEP / Código Postal
+            {cepLoading&&<span style={{marginLeft:8,fontSize:11,color:'#2B7A78'}}>🔍 Buscando...</span>}
+          </label>
+          <input
+            value={cep}
+            onChange={e=>setCep(e.target.value)}
+            onBlur={e=>buscarCep(e.target.value)}
+            placeholder={pais==='br'?'Ex: 01310-100':'Código postal'}
+            style={inputSt}
+          />
+          {cepErro&&<span style={{fontSize:11,color:'#ef4444',marginTop:4,display:'block'}}>{cepErro}</span>}
+          {!cepErro&&<span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>
+            {pais==='br'?'Preenche endereço, bairro e cidade automaticamente.':'Preenche cidade automaticamente.'}
+          </span>}
+        </div>
+      </div>
 
       {/* Fuso horário */}
       <div>
@@ -652,7 +719,6 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
 function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;}){
   const c=clinica as unknown as Record<string,string>;
   const estadoSalvo=c.estado||'';
-  const paisCode=(clinica.pais_codigo||c.pais_codigo||'br').toLowerCase();
 
   // Cidade: lista de cidades do estado ou campo livre
   const cidadesSP=['São Paulo','Campinas','Santos','Ribeirão Preto','Sorocaba','Osasco','São Bernardo do Campo','Santo André','Guarulhos','Mauá','São Caetano do Sul','Diadema','Mogi das Cruzes','Piracicaba','Bauru'];
@@ -683,52 +749,6 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
     return cidadesOpts.length>0 ? '__outra__' : c.cidade;
   });
 
-  const [cepLoading,setCepLoading]=useState(false);
-  const [cepErro,setCepErro]=useState('');
-
-  async function buscarCep(cepRaw:string){
-    const cepLimpo=cepRaw.replace(/\D/g,'');
-    setCepErro('');
-
-    // Brasil: mínimo 8 dígitos
-    if(paisCode==='br'){
-      if(cepLimpo.length<8) return;
-      setCepLoading(true);
-      try{
-        const res=await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-        const data=await res.json();
-        if(data.erro){setCepErro('CEP não encontrado.');return;}
-        setVals(p=>({
-          ...p,
-          endereco: data.logradouro||p.endereco,
-          bairro:   data.bairro||p.bairro,
-          cidade:   data.localidade||p.cidade,
-        }));
-        if(data.localidade&&cidadesOpts.includes(data.localidade)) setCidadeSel(data.localidade);
-        else if(data.localidade&&cidadesOpts.length>0) setCidadeSel('__outra__');
-      }catch{setCepErro('Erro ao buscar CEP.');}
-      finally{setCepLoading(false);}
-      return;
-    }
-
-    // Internacional: Zippopotam.us — mínimo 3 caracteres
-    if(cepLimpo.length<3) return;
-    setCepLoading(true);
-    try{
-      const res=await fetch(`https://api.zippopotam.us/${paisCode}/${cepLimpo}`);
-      if(!res.ok){setCepErro('Código postal não encontrado.');return;}
-      const data=await res.json();
-      const place=data.places?.[0];
-      if(!place){setCepErro('Código postal não encontrado.');return;}
-      setVals(p=>({
-        ...p,
-        cidade: place['place name']||p.cidade,
-        bairro: p.bairro, // Zippopotam não retorna bairro
-      }));
-    }catch{setCepErro('Erro ao buscar código postal.');}
-    finally{setCepLoading(false);}
-  }
-
   function useGeo(){
     if(!navigator.geolocation){alert('Geolocalização não suportada');return;}
     navigator.geolocation.getCurrentPosition(pos=>{
@@ -753,32 +773,13 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         <input value={vals.nome} onChange={e=>set('nome',e.target.value)} placeholder="Ex: Cleandent" style={inputSt}/>
       </div>
 
-      {/* L2: CEP — dispara autocomplete */}
-      <div>
-        <label style={labelSt}>
-          CEP / Código Postal
-          {cepLoading&&<span style={{marginLeft:8,fontSize:11,color:'#2B7A78'}}>🔍 Buscando...</span>}
-        </label>
-        <input
-          value={vals.cep}
-          onChange={e=>{set('cep',e.target.value);}}
-          onBlur={e=>buscarCep(e.target.value)}
-          placeholder={paisCode==='br'?'Ex: 01310-100':'Código postal'}
-          style={inputSt}
-        />
-        {cepErro&&<span style={{fontSize:11,color:'#ef4444',marginTop:4,display:'block'}}>{cepErro}</span>}
-        {!cepErro&&<span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>
-          {paisCode==='br'?'Preenche endereço, bairro e cidade automaticamente.':'Preenche cidade automaticamente.'}
-        </span>}
-      </div>
-
-      {/* L3: Endereço */}
+      {/* L2: Endereço */}
       <div>
         <label style={labelSt}>Endereço (Rua e número)</label>
         <input value={vals.endereco} onChange={e=>set('endereco',e.target.value)} placeholder="Ex: Av. Paulista, 1234" style={inputSt}/>
       </div>
 
-      {/* L4: Sala + Bairro */}
+      {/* L3: Sala + Bairro */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <div>
           <label style={labelSt}>Sala <span style={{color:'#94a3b8',fontWeight:400}}>(opcional)</span></label>
@@ -790,7 +791,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         </div>
       </div>
 
-      {/* L5: Cidade */}
+      {/* L4: Cidade */}
       <div>
         <label style={labelSt}>Cidade</label>
         {cidadesOpts.length>0?(
@@ -812,19 +813,19 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         )}
       </div>
 
-      {/* L6: Referência */}
+      {/* L5: Referência */}
       <div>
         <label style={labelSt}>Referência</label>
         <input value={vals.referencia} onChange={e=>set('referencia',e.target.value)} placeholder="Ex: Em frente ao Banco do Brasil" style={inputSt}/>
       </div>
 
-      {/* L7: Email */}
+      {/* L6: Email */}
       <div>
         <label style={labelSt}>Email da Clínica</label>
         <input type="email" value={vals.email_clinica} onChange={e=>set('email_clinica',e.target.value)} placeholder="clinica@exemplo.com" style={inputSt}/>
       </div>
 
-      {/* L8: Estado (somente leitura — vem do Idioma) */}
+      {/* L7: Estado (somente leitura — vem do Idioma) */}
       <div>
         <label style={labelSt}>Estado / Província</label>
         <input value={estadoSalvo} readOnly
@@ -832,7 +833,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Definido em Idioma & Localização.</span>
       </div>
 
-      {/* L9: WhatsApp do administrador */}
+      {/* L8: WhatsApp do administrador */}
       <div>
         <label style={labelSt}>WhatsApp do Administrador</label>
         <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
@@ -843,7 +844,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Usado pela Iris para identificar o gestor da clínica.</span>
       </div>
 
-      {/* L10: Link Maps + botão geo */}
+      {/* L9: Link Maps + botão geo */}
       <div>
         <label style={labelSt}>Link de Localização (Google Maps)</label>
         <input value={vals.maps_link} onChange={e=>set('maps_link',e.target.value)}
