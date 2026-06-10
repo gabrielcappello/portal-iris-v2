@@ -676,6 +676,13 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
   });
   const set=(k:string,v:string)=>setVals(p=>({...p,[k]:v}));
 
+  // Seleção do dropdown de cidade — separada do valor final, para não fechar o campo "outra"
+  const [cidadeSel,setCidadeSel]=useState(()=>{
+    if(!c.cidade) return '';
+    if(cidadesOpts.includes(c.cidade)) return c.cidade;
+    return cidadesOpts.length>0 ? '__outra__' : c.cidade;
+  });
+
   function useGeo(){
     if(!navigator.geolocation){alert('Geolocalização não suportada');return;}
     navigator.geolocation.getCurrentPosition(pos=>{
@@ -724,7 +731,11 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         <div>
           <label style={labelSt}>Cidade</label>
           {cidadesOpts.length>0?(
-            <select value={vals.cidade} onChange={e=>set('cidade',e.target.value)} style={inputSt}>
+            <select value={cidadeSel} onChange={e=>{
+              const v=e.target.value;
+              setCidadeSel(v);
+              set('cidade', v==='__outra__'?'':v);
+            }} style={inputSt}>
               <option value="">Selecione a cidade...</option>
               {cidadesOpts.map(ci=><option key={ci} value={ci}>{ci}</option>)}
               <option value="__outra__">Outra cidade...</option>
@@ -740,10 +751,10 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
       </div>
 
       {/* Cidade livre se selecionou "Outra" */}
-      {vals.cidade==='__outra__'&&(
+      {cidadeSel==='__outra__'&&(
         <div>
           <label style={labelSt}>Digite o nome da cidade</label>
-          <input onChange={e=>set('cidade',e.target.value)} placeholder="Nome da cidade" style={inputSt} autoFocus/>
+          <input value={vals.cidade} onChange={e=>set('cidade',e.target.value)} placeholder="Nome da cidade" style={inputSt} autoFocus/>
         </div>
       )}
 
