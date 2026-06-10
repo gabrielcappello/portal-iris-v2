@@ -49,10 +49,6 @@ const ESPECIALIDADES = [
   ]},
 ];
 
-const MOEDA: Record<string,string> = {
-  BR:"R$", AR:"$", CL:"$", MX:"$", CO:"$", PE:"S/.", UY:"$U", PY:"₲",
-};
-
 type Item = {valor:number; tempo:number};
 type State   = Record<string, Item>;
 type Visivel = Record<string, boolean>;
@@ -133,17 +129,32 @@ export default function ProcedimentosPage() {
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [flash, setFlash]       = useState<"saved"|null>(null);
+  const [moeda, setMoeda]       = useState("$");
+  const [moedaCodigo, setMoedaCodigo] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("clinica_id");
     if (!id) { setLoading(false); return; }
     sb.query<Clinica>("clinicas", `?id=eq.${id}&select=*`)
-      .then(rows => {
+      .then(async rows => {
         if (!rows.length) return;
         const c = rows[0];
         setClinica(c);
         setState(buildState(c.precios));
         setVisivel(buildVisivel(c.precios));
+        // Busca moeda do Supabase
+        if (c.pais_codigo) {
+          try {
+            const paisRows = await sb.query<Record<string,unknown>>(
+              "paises_config",
+              `?codigo=eq.${c.pais_codigo}&select=moeda,moeda_codigo`
+            );
+            if (paisRows[0]) {
+              if (paisRows[0].moeda) setMoeda(String(paisRows[0].moeda));
+              if (paisRows[0].moeda_codigo) setMoedaCodigo(String(paisRows[0].moeda_codigo));
+            }
+          } catch {}
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -170,7 +181,8 @@ export default function ProcedimentosPage() {
     finally { setSaving(false); }
   }
 
-  const moeda      = MOEDA[clinica?.pais_codigo||""] || "$";
+  // Exibe símbolo + código quando o símbolo for $ (para diferenciar moedas)
+  const moedaLabel = moeda === "$" && moedaCodigo ? `$ ${moedaCodigo}` : moeda;
   const agenteName = clinica?.nome_agente || "a assistente";
   const totalProcs = ESPECIALIDADES.reduce((a,e)=>a+e.procs.length, 0);
 
@@ -220,7 +232,6 @@ export default function ProcedimentosPage() {
             <tbody>
               {ESPECIALIDADES.map(esp => (
                 <Fragment key={esp.nome}>
-                  {/* Specialty separator row */}
                   <tr>
                     <td colSpan={3} style={{
                       padding:"9px 14px",
@@ -228,14 +239,12 @@ export default function ProcedimentosPage() {
                       borderTop:"1px solid #e2e8f0",
                       borderBottom:"1px solid rgba(43,122,120,0.15)"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                        {/* Nome especialidade */}
                         <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
                           <span style={{fontSize:13,fontWeight:700,color:"#2B7A78",whiteSpace:"nowrap"}}>{esp.nome}</span>
                           <span style={{fontSize:11,color:"#94a3b8",fontWeight:400,whiteSpace:"nowrap"}}>
                             {esp.procs.length} procedimentos
                           </span>
                         </div>
-                        {/* Toggle + descrição */}
                         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
                           <span style={{fontSize:11,color:visivel[esp.nome]?"#2B7A78":"#94a3b8",
                             fontStyle:"italic",whiteSpace:"nowrap",transition:"color 0.2s"}}>
@@ -250,7 +259,6 @@ export default function ProcedimentosPage() {
                       </div>
                     </td>
                   </tr>
-                  {/* Procedure rows */}
                   {esp.procs.map((p,pi)=>{
                     const key = `${esp.nome}|${p.nome}`;
                     const raw = state[key] || {valor:0, tempo:0};
@@ -268,12 +276,12 @@ export default function ProcedimentosPage() {
                         <td style={{padding:"7px 14px",whiteSpace:"nowrap"}}>
                           <div style={{display:"flex",alignItems:"stretch",
                             border:"1px solid #e2e8f0",borderRadius:9,overflow:"hidden",
-                            maxWidth:120,background:"#fff"}}>
+                            maxWidth:130,background:"#fff"}}>
                             <span style={{padding:"0 9px",background:"#f8fafc",
                               color:"#94a3b8",fontSize:11,fontWeight:700,
                               borderRight:"1px solid #e2e8f0",display:"flex",
                               alignItems:"center",whiteSpace:"nowrap",flexShrink:0}}>
-                              {moeda}
+                              {moedaLabel}
                             </span>
                             <input type="number" min={0} step={1}
                               value={item.valor===0?"":item.valor}

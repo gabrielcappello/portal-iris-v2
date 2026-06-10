@@ -381,7 +381,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
   const [estadoOpts,setEstadoOpts]=useState<string[]>(ESTADOS_MAP[initPais]||[]);
   const [estadoOpen,setEstadoOpen]=useState(false);
   const [fuso,setFuso]=useState(clinica.fuso_horario||'');
-  const [paisInfo,setPaisInfo]=useState<{tipo_documento:string;digitos_documento:number;digitos_telefone:number}|null>(null);
+  const [paisInfo,setPaisInfo]=useState<{tipo_documento:string;digitos_documento:number;digitos_telefone:number;moeda:string;moeda_codigo:string}|null>(null);
 
   const [cep,setCep]=useState((clinica as unknown as Record<string,string>).cep||'');
   const [cepLoading,setCepLoading]=useState(false);
@@ -447,7 +447,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       const rows=await sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${p}&select=*`);
       if(rows[0]){
         const r=rows[0];
-        setPaisInfo({tipo_documento:String(r.tipo_documento||'Documento'),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0)});
+        setPaisInfo({tipo_documento:String(r.tipo_documento||'Documento'),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0),moeda:String(r.moeda||'$'),moeda_codigo:String(r.moeda_codigo||'')});
         const f=String(r.fuso_horario||r.timezone||'');
         if(f)setFuso(f); // Supabase tem prioridade sobre o mapa local
       }
@@ -559,6 +559,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
             style={{display:'flex',gap:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,border:'1px solid #e2e8f0',fontSize:12,color:'#475569',flexWrap:'wrap'}}>
             <span>📄 Documento: <strong>{paisInfo.tipo_documento}</strong> ({paisInfo.digitos_documento} dígitos)</span>
             <span>📱 Telefone: <strong>{paisInfo.digitos_telefone} dígitos</strong></span>
+            <span>💰 Moeda: <strong>{paisInfo.moeda}{paisInfo.moeda_codigo?` (${paisInfo.moeda_codigo})`:''}</strong></span>
           </motion.div>
         )}
       </AnimatePresence>
