@@ -1257,7 +1257,6 @@ const ANAMNESE_CAMPOS=[
 
 function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
   const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
-  const [nasc,setNasc]=useState((a.solicitar_nascimento as boolean)||false);
   const [email,setEmail]=useState((a.solicitar_email as boolean)||false);
   const [resp,setResp]=useState((a.solicitar_responsavel as boolean)||false);
   const anam=(a.anamnese as Record<string,boolean>)||{};
@@ -1278,7 +1277,7 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
       </div>
       <div style={{marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>Campos Obrigatórios (Fixos)</div>
-        {['Nome','Telefone',docLabel].map(l=>(
+        {['Nome','Telefone',docLabel,'Data de nascimento'].map(l=>(
           <div key={l} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #f1f5f9'}}>
             <span style={{fontSize:16}}>🔒</span>
             <span style={{flex:1,fontSize:14,fontWeight:500,color:'#1e293b'}}>{l}</span>
@@ -1326,7 +1325,6 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
         </div>
 
         {[
-          {k:'nasc', v:nasc, set:setNasc, label:'Data de nascimento', sub:'Quando ativado, o agente sempre solicitará a data de nascimento do paciente.'},
           {k:'email',v:email,set:setEmail,label:'Email',               sub:'Quando ativado, o agente sempre solicitará o email do paciente.'},
           {k:'resp', v:resp, set:setResp, label:'Responsável',         sub:'Quando ativado, o agente solicitará o nome do responsável (indicado para pacientes menores de idade).'},
         ].map(f=>(
@@ -1340,7 +1338,7 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
         ))}
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:nasc,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
+        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:true,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
           {saving?'Salvando...':'Salvar'}
         </button>
       </div>
@@ -1463,7 +1461,6 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
           <div style={{marginTop:6,padding:'8px 12px',background:'rgba(245,158,11,0.08)',borderLeft:'2px solid rgba(245,158,11,0.4)',borderRadius:'0 6px 6px 0',fontSize:12,color:'#78350f',fontStyle:'italic'}}>
             &quot;Feliz aniversário! 🎉 Que seja um dia especial. Estamos aqui para cuidar do seu sorriso 😊&quot;
           </div>
-          <div style={{marginTop:6,fontSize:11,color:'#94a3b8'}}>⚠️ Requer data de nascimento ativada em Dados que o agente solicita</div>
         </div>
         <Toggle on={aniv} onChange={setAniv}/>
       </div>

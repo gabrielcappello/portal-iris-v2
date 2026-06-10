@@ -189,10 +189,11 @@ export default function PacientesPage() {
                             <div style={{padding:"16px",background:"rgba(43,122,120,0.02)",display:"flex",flexDirection:"column",gap:14}}>
 
                               {/* Dados básicos */}
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12}}>
                                 {[
                                   ["Documento",     p.documento||"—"],
                                   ["Nascimento",    p.data_nascimento||"—"],
+                                  ["Email",         p.email||"—"],
                                   ["Total",         String(total)],
                                   ["Última consulta", ultima||"—"],
                                 ].map(([l,v])=>(

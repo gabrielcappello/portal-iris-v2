@@ -233,8 +233,8 @@ export default function AgendamentosPage() {
                                             </div>
                                           </div>
                                           {/* Dados */}
-                                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-                                            {[["Documento",pac.documento||"—"],["Nascimento",pac.data_nascimento||"—"],["Total consultas",String(agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone).filter(x=>["confirmado","ok"].includes(x.status)).length)]].map(([l,v])=>(
+                                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+                                            {[["Documento",pac.documento||"—"],["Nascimento",pac.data_nascimento||"—"],["Email",pac.email||"—"],["Total consultas",String(agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone).filter(x=>["confirmado","ok"].includes(x.status)).length)]].map(([l,v])=>(
                                               <div key={l}>
                                                 <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{l}</div>
                                                 <div style={{fontSize:13,color:"#334155",fontWeight:500}}>{v}</div>

@@ -45,7 +45,7 @@ export type AnamnesePaciente = {
 
 export type Paciente = {
   id: string; clinica_id: string; nome: string; telefone: string;
-  documento: string; data_nascimento?: string; anamnese?: AnamnesePaciente;
+  documento: string; data_nascimento?: string; email?: string; anamnese?: AnamnesePaciente;
 };
 
 export type Agendamento = {
