@@ -749,6 +749,15 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
     return cidadesOpts.length>0 ? '__outra__' : c.cidade;
   });
 
+  // Reflete dados preenchidos pela busca de CEP em Idioma & Localização
+  useEffect(()=>{
+    setVals(p=>({...p, cep:c.cep||p.cep, endereco:c.endereco||p.endereco, bairro:c.bairro||p.bairro, cidade:c.cidade||p.cidade}));
+    if(c.cidade){
+      setCidadeSel(cidadesOpts.includes(c.cidade) ? c.cidade : (cidadesOpts.length>0 ? '__outra__' : c.cidade));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[c.cep,c.endereco,c.bairro,c.cidade]);
+
   function useGeo(){
     if(!navigator.geolocation){alert('Geolocalização não suportada');return;}
     navigator.geolocation.getCurrentPosition(pos=>{
