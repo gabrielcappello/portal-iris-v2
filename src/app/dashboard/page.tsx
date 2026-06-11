@@ -48,6 +48,19 @@ const UF_TO_ESTADO_BR: Record<string,string> = {
   RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins',
 };
 
+type HorarioFunc = {
+  seg_sex:{inicio:string;fim:string};
+  almoco:{ativo:boolean;inicio:string;fim:string};
+  sabado:{ativo:boolean;inicio:string;fim:string};
+  domingo:{ativo:boolean;inicio:string;fim:string};
+};
+const HORARIO_DEFAULT: HorarioFunc = {
+  seg_sex:{inicio:'08:00',fim:'18:00'},
+  almoco:{ativo:true,inicio:'12:00',fim:'13:00'},
+  sabado:{ativo:false,inicio:'08:00',fim:'12:00'},
+  domingo:{ativo:false,inicio:'08:00',fim:'12:00'},
+};
+
 const FUSO_MAP: Record<string,string> = {
   br:'America/Sao_Paulo',pt:'Europe/Lisbon',ao:'Africa/Luanda',mz:'Africa/Maputo',
   cv:'Atlantic/Cape_Verde',gw:'Africa/Bissau',st:'Africa/Sao_Tome',tl:'Asia/Dili',
@@ -766,6 +779,14 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
   });
   const set=(k:string,v:string)=>setVals(p=>({...p,[k]:v}));
 
+  const hfRaw=(clinica as unknown as Record<string,unknown>).horario_funcionamento;
+  const [horario,setHorario]=useState<HorarioFunc>(
+    hfRaw&&typeof hfRaw==='object' ? {...HORARIO_DEFAULT,...(hfRaw as Partial<HorarioFunc>)} : HORARIO_DEFAULT
+  );
+  function setHorarioField(dia:keyof HorarioFunc, field:string, value:string|boolean){
+    setHorario(p=>({...p,[dia]:{...(p[dia] as object),[field]:value}} as HorarioFunc));
+  }
+
   const [cidadeSel,setCidadeSel]=useState(()=>{
     if(!c.cidade) return '';
     if(cidadesOpts.includes(c.cidade)) return c.cidade;
@@ -865,6 +886,66 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Definido em Idioma & Localização.</span>
       </div>
 
+      {/* L7.5: Horário de Funcionamento */}
+      <div>
+        <label style={labelSt}>Horário de Funcionamento</label>
+        <div style={{display:'flex',flexDirection:'column',gap:12,padding:12,border:'1px solid #e2e8f0',borderRadius:10,background:'#f8fafc'}}>
+
+          {/* Segunda a sexta */}
+          <div>
+            <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>Segunda a sexta</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <input type="time" value={horario.seg_sex.inicio} onChange={e=>setHorarioField('seg_sex','inicio',e.target.value)} style={inputSt}/>
+              <input type="time" value={horario.seg_sex.fim} onChange={e=>setHorarioField('seg_sex','fim',e.target.value)} style={inputSt}/>
+            </div>
+          </div>
+
+          {/* Intervalo de almoço */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.almoco.ativo?6:0}}>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Intervalo de almoço</span>
+              <Toggle on={horario.almoco.ativo} onChange={v=>setHorarioField('almoco','ativo',v)}/>
+            </div>
+            {horario.almoco.ativo&&(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <input type="time" value={horario.almoco.inicio} onChange={e=>setHorarioField('almoco','inicio',e.target.value)} style={inputSt}/>
+                <input type="time" value={horario.almoco.fim} onChange={e=>setHorarioField('almoco','fim',e.target.value)} style={inputSt}/>
+              </div>
+            )}
+          </div>
+
+          {/* Sábado */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.sabado.ativo?6:0}}>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Sábado</span>
+              <Toggle on={horario.sabado.ativo} onChange={v=>setHorarioField('sabado','ativo',v)}/>
+            </div>
+            {horario.sabado.ativo&&(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <input type="time" value={horario.sabado.inicio} onChange={e=>setHorarioField('sabado','inicio',e.target.value)} style={inputSt}/>
+                <input type="time" value={horario.sabado.fim} onChange={e=>setHorarioField('sabado','fim',e.target.value)} style={inputSt}/>
+              </div>
+            )}
+          </div>
+
+          {/* Domingo */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.domingo.ativo?6:0}}>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Domingo</span>
+              <Toggle on={horario.domingo.ativo} onChange={v=>setHorarioField('domingo','ativo',v)}/>
+            </div>
+            {horario.domingo.ativo&&(
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <input type="time" value={horario.domingo.inicio} onChange={e=>setHorarioField('domingo','inicio',e.target.value)} style={inputSt}/>
+                <input type="time" value={horario.domingo.fim} onChange={e=>setHorarioField('domingo','fim',e.target.value)} style={inputSt}/>
+              </div>
+            )}
+          </div>
+
+        </div>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Define os horários em que a clínica está aberta para atendimento.</span>
+      </div>
+
       {/* L8: WhatsApp do administrador */}
       <div>
         <label style={labelSt}>WhatsApp do Administrador</label>
@@ -895,7 +976,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
             <span>⚠️</span> Complete o campo: {falta[1]}
           </div>
         )}
-        <button onClick={()=>{if(!falta){onSave(vals);onClose();}}} disabled={saving||!!falta}
+        <button onClick={()=>{if(!falta){onSave({...vals,horario_funcionamento:horario});onClose();}}} disabled={saving||!!falta}
           style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
           {saving?'Salvando...':'Salvar'}
         </button>
