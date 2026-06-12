@@ -1667,7 +1667,15 @@ type Preco = {
 };
 
 function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
-  const moeda = (clinica as unknown as Record<string,string>).clinica_moeda_codigo || (clinica as unknown as Record<string,string>).clinica_moeda || 'R$';
+  const [moeda, setMoeda] = useState('R$');
+
+  useEffect(() => {
+    const pais = (clinica as unknown as Record<string,string>).pais_codigo;
+    if (!pais) return;
+    sb.query<Record<string,unknown>>('paises_config', `?codigo=eq.${pais}&select=moeda,moeda_codigo`)
+      .then(r => { if (r[0]) setMoeda((r[0].moeda_codigo || r[0].moeda || 'R$') as string); })
+      .catch(() => {});
+  }, [clinica]);
 
   const initPrecos = (): Preco[] => {
     const raw = (clinica as unknown as Record<string,unknown>).precios;
