@@ -1667,7 +1667,7 @@ type Preco = {
 };
 
 function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
-  const moeda = (clinica as unknown as Record<string,string>).clinica_moeda || 'R$';
+  const moeda = (clinica as unknown as Record<string,string>).clinica_moeda_codigo || (clinica as unknown as Record<string,string>).clinica_moeda || 'R$';
 
   const initPrecos = (): Preco[] => {
     const raw = (clinica as unknown as Record<string,unknown>).precios;
