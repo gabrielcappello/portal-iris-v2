@@ -1672,7 +1672,6 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
   const initPrecos = (): Preco[] => {
     const raw = (clinica as unknown as Record<string,unknown>).precios;
     const arr: Preco[] = Array.isArray(raw) ? raw as Preco[] : [];
-    // Garante que todos os campos existem
     return ESPECIALIDADES.flatMap(esp =>
       esp.procs.map(p => {
         const salvo = arr.find(a => a.nome === p.nome);
@@ -1694,17 +1693,31 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
     setPrecos(prev => prev.map(p => p.nome === nome ? {...p, [field]: value} : p));
   }
 
+  // Toggle em massa por especialidade
+  function toggleEspAtivo(espNome: string, value: boolean) {
+    setPrecos(prev => prev.map(p =>
+      p.esp === espNome ? {...p, ativo: value, mostrar_valor: value ? p.mostrar_valor : false} : p
+    ));
+  }
+
+  function toggleEspMostrarValor(espNome: string, value: boolean) {
+    setPrecos(prev => prev.map(p =>
+      p.esp === espNome && p.ativo ? {...p, mostrar_valor: value} : p
+    ));
+  }
+
   function handleSave() {
     onSave({precios: precos});
   }
 
-  // Agrupar por especialidade
   const grupos = ESPECIALIDADES.map(esp => ({
     nome: esp.nome,
     procs: precos.filter(p => p.esp === esp.nome),
   }));
 
   const totalAtivos = precos.filter(p => p.ativo).length;
+
+  const colStyle: React.CSSProperties = {display:'grid',gridTemplateColumns:'1fr 80px 110px 90px',gap:8};
 
   return (
     <div>
@@ -1714,61 +1727,98 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
 
       {grupos.map(g => {
         const ativos = g.procs.filter(p => p.ativo).length;
+        const todosAtivos = ativos === g.procs.length;
+        const algumAtivo = ativos > 0;
+        const todosComValor = g.procs.filter(p=>p.ativo).every(p=>p.mostrar_valor);
+        const algumComValor = g.procs.filter(p=>p.ativo).some(p=>p.mostrar_valor);
+
+        // Estado indeterminado para o toggle de especialidade
+        const espAtivoVal = todosAtivos ? true : false;
+        const espValorVal = algumAtivo && todosComValor ? true : false;
+
         return (
-          <div key={g.nome} style={{marginBottom:24}}>
-            {/* Header especialidade */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-              <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{g.nome}</div>
-              <div style={{fontSize:11,color:'#94a3b8'}}>{ativos}/{g.procs.length}</div>
+          <div key={g.nome} style={{marginBottom:28,background:'#fafbfc',borderRadius:10,padding:'12px 14px',border:'1px solid #f1f5f9'}}>
+
+            {/* Header especialidade com toggles */}
+            <div style={{...colStyle, alignItems:'center', marginBottom:10, paddingBottom:8, borderBottom:'2px solid #e8f0ef'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#1e293b',display:'flex',alignItems:'center',gap:8}}>
+                {g.nome}
+                <span style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>
+                  {ativos}/{g.procs.length}
+                  {!todosAtivos && ativos>0 && ' • parcial'}
+                </span>
+              </div>
+              {/* Toggle Faz? especialidade */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                <Toggle on={espAtivoVal} onChange={v => toggleEspAtivo(g.nome, v)}/>
+                <span style={{fontSize:9,color:'#94a3b8'}}>todos</span>
+              </div>
+              {/* Toggle Informa valor? especialidade */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                <Toggle on={espValorVal} onChange={v => algumAtivo && toggleEspMostrarValor(g.nome, v)}/>
+                <span style={{fontSize:9,color:'#94a3b8'}}>todos</span>
+              </div>
+              {/* Aviso tempo */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.3}}>modo<br/>proc.</span>
+              </div>
             </div>
 
             {/* Header colunas */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 72px 88px 80px',gap:8,padding:'6px 0',borderBottom:'1px solid #f1f5f9',marginBottom:4}}>
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600}}>PROCEDIMENTO</div>
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>FAZ?</div>
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>INFORMA VALOR?</div>
-              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>TEMPO (min)</div>
+            <div style={{...colStyle, padding:'4px 0', marginBottom:4}}>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600}}>PROCEDIMENTO</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>FAZ?</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>INFORMA VALOR?</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center',lineHeight:1.2}}>
+                TEMPO (min)
+              </div>
             </div>
 
             {g.procs.map(p => (
               <div key={p.nome} style={{
-                display:'grid',gridTemplateColumns:'1fr 72px 88px 80px',gap:8,
-                padding:'10px 0',borderBottom:'1px solid #f8fafc',
-                opacity: p.ativo ? 1 : 0.45,
+                ...colStyle,
+                padding:'9px 0',borderBottom:'1px solid #f1f5f9',
+                opacity: p.ativo ? 1 : 0.4,
                 transition:'opacity 0.15s',
+                alignItems:'center',
               }}>
                 {/* Nome */}
-                <div style={{fontSize:13,color:'#1e293b',display:'flex',alignItems:'center'}}>{p.nome}</div>
+                <div style={{fontSize:13,color:'#1e293b'}}>{p.nome}</div>
 
                 {/* Faz? */}
-                <div style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-                  <Toggle on={p.ativo} onChange={v => update(p.nome,'ativo',v)}/>
+                <div style={{display:'flex',justifyContent:'center'}}>
+                  <Toggle on={p.ativo} onChange={v => {
+                    update(p.nome,'ativo',v);
+                    if(!v) update(p.nome,'mostrar_valor',false);
+                  }}/>
                 </div>
 
-                {/* Informa valor? — só ativo se faz=true */}
-                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                  <Toggle on={p.mostrar_valor} onChange={v => p.ativo && update(p.nome,'mostrar_valor',v)}/>
+                {/* Informa valor? */}
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                  <div style={{opacity: p.ativo ? 1 : 0.3, pointerEvents: p.ativo ? 'auto' : 'none'}}>
+                    <Toggle on={p.mostrar_valor} onChange={v => update(p.nome,'mostrar_valor',v)}/>
+                  </div>
                   {p.ativo && p.mostrar_valor && (
                     <input
                       type="number" min={0} value={p.valor}
                       onChange={e => update(p.nome,'valor',parseFloat(e.target.value)||0)}
-                      style={{width:68,fontSize:12,padding:'3px 6px',border:'1px solid #e2e8f0',borderRadius:6,textAlign:'right',fontFamily:"'Sora',sans-serif",color:'#1e293b'}}
+                      style={{width:72,fontSize:12,padding:'3px 6px',border:'1px solid #e2e8f0',borderRadius:6,textAlign:'right',fontFamily:"'Sora',sans-serif",color:'#1e293b'}}
                       placeholder={moeda+' 0'}
                     />
                   )}
                 </div>
 
                 {/* Tempo */}
-                <div style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
+                <div style={{display:'flex',justifyContent:'center'}}>
                   <input
                     type="number" min={5} max={480} step={5} value={p.tempo}
                     onChange={e => update(p.nome,'tempo',parseInt(e.target.value)||30)}
                     disabled={!p.ativo}
                     style={{
-                      width:60,fontSize:12,padding:'4px 6px',
+                      width:64,fontSize:12,padding:'4px 6px',
                       border:'1px solid #e2e8f0',borderRadius:6,textAlign:'center',
                       fontFamily:"'Sora',sans-serif",color:'#1e293b',
-                      opacity: p.ativo ? 1 : 0.4,
+                      background: p.ativo ? '#fff' : '#f8fafc',
                     }}
                   />
                 </div>
@@ -1778,7 +1828,12 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
         );
       })}
 
-      <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
+      {/* Legenda tempo */}
+      <div style={{fontSize:11,color:'#94a3b8',marginBottom:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,borderLeft:'3px solid #e2e8f0'}}>
+        ⏱️ <strong>Tempo</strong> — usado somente quando o dentista está configurado no modo <strong>📋 Procedimento</strong>
+      </div>
+
+      <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
         <button onClick={handleSave} disabled={saving} style={{
           padding:'10px 24px',background:'#2B7A78',color:'#fff',border:'none',
           borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',
