@@ -1745,10 +1745,10 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
         const espValorVal = algumAtivo && todosComValor ? true : false;
 
         return (
-          <div key={g.nome} style={{marginBottom:28,background:'rgba(43,122,120,0.06)',borderRadius:10,padding:'12px 14px',border:'1px solid rgba(43,122,120,0.2)'}}>
+          <div key={g.nome} style={{marginBottom:28,background:'#fafbfc',borderRadius:10,border:'1px solid #f1f5f9',overflow:'hidden'}}>
 
             {/* Header especialidade com toggles */}
-            <div style={{...colStyle, alignItems:'center', marginBottom:10, paddingBottom:8, borderBottom:'2px solid #e8f0ef'}}>
+            <div style={{...colStyle, alignItems:'center', padding:'10px 14px', background:'rgba(43,122,120,0.06)', border:'1px solid rgba(43,122,120,0.2)'}}>
               <div style={{fontSize:13,fontWeight:700,color:'#2B7A78',display:'flex',alignItems:'center',gap:8}}>
                 {g.nome}
                 <span style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>
@@ -1773,7 +1773,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
             </div>
 
             {/* Header colunas */}
-            <div style={{...colStyle, padding:'4px 0', marginBottom:4}}>
+            <div style={{...colStyle, padding:'8px 14px 4px', marginBottom:4}}>
               <div style={{fontSize:10,color:'#94a3b8',fontWeight:600}}>PROCEDIMENTO</div>
               <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>FAZ?</div>
               <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>INFORMA VALOR?</div>
@@ -1785,7 +1785,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
             {g.procs.map(p => (
               <div key={p.nome} style={{
                 ...colStyle,
-                padding:'9px 0',borderBottom:'1px solid #f1f5f9',
+                padding:'9px 14px',borderBottom:'1px solid #f1f5f9',
                 opacity: p.ativo ? 1 : 0.4,
                 transition:'opacity 0.15s',
                 alignItems:'center',
