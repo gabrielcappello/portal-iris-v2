@@ -1737,11 +1737,11 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
         const espValorVal = algumAtivo && todosComValor ? true : false;
 
         return (
-          <div key={g.nome} style={{marginBottom:28,background:'#fafbfc',borderRadius:10,padding:'12px 14px',border:'1px solid #f1f5f9'}}>
+          <div key={g.nome} style={{marginBottom:28,background:'rgba(43,122,120,0.06)',borderRadius:10,padding:'12px 14px',border:'1px solid rgba(43,122,120,0.2)'}}>
 
             {/* Header especialidade com toggles */}
             <div style={{...colStyle, alignItems:'center', marginBottom:10, paddingBottom:8, borderBottom:'2px solid #e8f0ef'}}>
-              <div style={{fontSize:13,fontWeight:700,color:'#1e293b',display:'flex',alignItems:'center',gap:8}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#2B7A78',display:'flex',alignItems:'center',gap:8}}>
                 {g.nome}
                 <span style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>
                   {ativos}/{g.procs.length}

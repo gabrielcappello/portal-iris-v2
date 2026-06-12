@@ -9,7 +9,6 @@ const TABS = [
   { href: "/dashboard",                   label: "Configuração",  icon: "⚙️" },
   { href: "/dashboard/pacientes",         label: "Pacientes",     icon: "👥" },
   { href: "/dashboard/agendamentos",      label: "Agendamentos",  icon: "📅" },
-  { href: "/dashboard/procedimentos",     label: "Procedimentos", icon: "🦷" },
   { href: "/dashboard/financeiro",        label: "Financeiro",    icon: "💰" },
 ];
 
