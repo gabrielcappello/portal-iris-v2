@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff, DollarSign } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 
@@ -329,6 +329,11 @@ export default function ConfigPage(){
       {/* DENTISTAS */}
       <CardSection id="dentistas" icon={<Users size={18}/>} title="Dentistas" subtitle="Até 10 profissionais com agendas independentes" open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
         <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')}/>
+      </CardSection>
+
+      {/* PROCEDIMENTOS */}
+      <CardSection id="procedimentos" icon={<DollarSign size={18}/>} title="Procedimentos & Preços" subtitle="Procedimentos oferecidos pela clínica, valores e informações para a Iris" open={open==='procedimentos'} onToggle={()=>toggle('procedimentos')}>
+        <ProcedimentosSection clinica={clinica} saving={saving==='procedimentos'} onSave={(d)=>save('procedimentos',d)}/>
       </CardSection>
 
       {/* DADOS DO AGENTE */}
@@ -1646,6 +1651,141 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
 
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
         <button onClick={handleSave} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Automações'}</button>
+      </div>
+    </div>
+  );
+}
+
+// ── PROCEDIMENTOS SECTION ───────────────────────────────────────────────────────
+type Preco = {
+  nome: string;
+  esp: string;
+  ativo: boolean;
+  valor: number;
+  mostrar_valor: boolean;
+  tempo: number;
+};
+
+function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+  const moeda = (clinica as unknown as Record<string,string>).clinica_moeda || 'R$';
+
+  const initPrecos = (): Preco[] => {
+    const raw = (clinica as unknown as Record<string,unknown>).precios;
+    const arr: Preco[] = Array.isArray(raw) ? raw as Preco[] : [];
+    // Garante que todos os campos existem
+    return ESPECIALIDADES.flatMap(esp =>
+      esp.procs.map(p => {
+        const salvo = arr.find(a => a.nome === p.nome);
+        return {
+          nome: p.nome,
+          esp: esp.nome,
+          ativo: salvo ? salvo.ativo !== false : true,
+          valor: salvo?.valor ?? 0,
+          mostrar_valor: salvo?.mostrar_valor ?? false,
+          tempo: salvo?.tempo ?? p.tempo,
+        };
+      })
+    );
+  };
+
+  const [precos, setPrecos] = useState<Preco[]>(initPrecos);
+
+  function update(nome: string, field: keyof Preco, value: boolean | number) {
+    setPrecos(prev => prev.map(p => p.nome === nome ? {...p, [field]: value} : p));
+  }
+
+  function handleSave() {
+    onSave({precios: precos});
+  }
+
+  // Agrupar por especialidade
+  const grupos = ESPECIALIDADES.map(esp => ({
+    nome: esp.nome,
+    procs: precos.filter(p => p.esp === esp.nome),
+  }));
+
+  const totalAtivos = precos.filter(p => p.ativo).length;
+
+  return (
+    <div>
+      <div style={{fontSize:12,color:'#94a3b8',marginBottom:16}}>
+        {totalAtivos} de {precos.length} procedimentos ativos
+      </div>
+
+      {grupos.map(g => {
+        const ativos = g.procs.filter(p => p.ativo).length;
+        return (
+          <div key={g.nome} style={{marginBottom:24}}>
+            {/* Header especialidade */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{g.nome}</div>
+              <div style={{fontSize:11,color:'#94a3b8'}}>{ativos}/{g.procs.length}</div>
+            </div>
+
+            {/* Header colunas */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 72px 88px 80px',gap:8,padding:'6px 0',borderBottom:'1px solid #f1f5f9',marginBottom:4}}>
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600}}>PROCEDIMENTO</div>
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>FAZ?</div>
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>INFORMA VALOR?</div>
+              <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>TEMPO (min)</div>
+            </div>
+
+            {g.procs.map(p => (
+              <div key={p.nome} style={{
+                display:'grid',gridTemplateColumns:'1fr 72px 88px 80px',gap:8,
+                padding:'10px 0',borderBottom:'1px solid #f8fafc',
+                opacity: p.ativo ? 1 : 0.45,
+                transition:'opacity 0.15s',
+              }}>
+                {/* Nome */}
+                <div style={{fontSize:13,color:'#1e293b',display:'flex',alignItems:'center'}}>{p.nome}</div>
+
+                {/* Faz? */}
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
+                  <Toggle on={p.ativo} onChange={v => update(p.nome,'ativo',v)}/>
+                </div>
+
+                {/* Informa valor? — só ativo se faz=true */}
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                  <Toggle on={p.mostrar_valor} onChange={v => p.ativo && update(p.nome,'mostrar_valor',v)}/>
+                  {p.ativo && p.mostrar_valor && (
+                    <input
+                      type="number" min={0} value={p.valor}
+                      onChange={e => update(p.nome,'valor',parseFloat(e.target.value)||0)}
+                      style={{width:68,fontSize:12,padding:'3px 6px',border:'1px solid #e2e8f0',borderRadius:6,textAlign:'right',fontFamily:"'Sora',sans-serif",color:'#1e293b'}}
+                      placeholder={moeda+' 0'}
+                    />
+                  )}
+                </div>
+
+                {/* Tempo */}
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
+                  <input
+                    type="number" min={5} max={480} step={5} value={p.tempo}
+                    onChange={e => update(p.nome,'tempo',parseInt(e.target.value)||30)}
+                    disabled={!p.ativo}
+                    style={{
+                      width:60,fontSize:12,padding:'4px 6px',
+                      border:'1px solid #e2e8f0',borderRadius:6,textAlign:'center',
+                      fontFamily:"'Sora',sans-serif",color:'#1e293b',
+                      opacity: p.ativo ? 1 : 0.4,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+
+      <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
+        <button onClick={handleSave} disabled={saving} style={{
+          padding:'10px 24px',background:'#2B7A78',color:'#fff',border:'none',
+          borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',
+          fontFamily:"'Sora',sans-serif",opacity:saving?0.7:1,
+        }}>
+          {saving ? 'Salvando...' : 'Salvar Procedimentos'}
+        </button>
       </div>
     </div>
   );
