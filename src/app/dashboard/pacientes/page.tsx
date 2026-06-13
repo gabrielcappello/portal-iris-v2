@@ -2,7 +2,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Search, ChevronDown } from "lucide-react";
-import { sb, type Paciente, type Agendamento, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, calcularIdade, type Paciente, type Agendamento, type AnamnesePaciente } from "@/lib/supabase";
 
 const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
   confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
@@ -189,10 +189,11 @@ export default function PacientesPage() {
                             <div style={{padding:"16px",background:"rgba(43,122,120,0.02)",display:"flex",flexDirection:"column",gap:14}}>
 
                               {/* Dados básicos */}
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12}}>
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:12}}>
                                 {[
                                   ["Documento",     p.documento||"—"],
                                   ["Nascimento",    p.data_nascimento||"—"],
+                                  ["Idade",         calcularIdade(p.data_nascimento)],
                                   ["Email",         p.email||"—"],
                                   ["Total",         String(total)],
                                   ["Última consulta", ultima||"—"],

@@ -37,6 +37,21 @@ export type Clinica = {
   precios?: {esp:string;nome:string;valor:number;tempo:number;mostrar_valor?:boolean}[];
 };
 
+export function calcularIdade(dataNascimento?: string|null): string {
+  if (!dataNascimento) return "";
+  const nasc = new Date(dataNascimento);
+  if (isNaN(nasc.getTime())) return "";
+  const hoje = new Date();
+  let anos = hoje.getFullYear() - nasc.getFullYear();
+  let meses = hoje.getMonth() - nasc.getMonth();
+  if (hoje.getDate() < nasc.getDate()) meses--;
+  if (meses < 0) { anos--; meses += 12; }
+  const totalMeses = anos * 12 + meses;
+  if (totalMeses < 24) return `${totalMeses} ${totalMeses === 1 ? "mês" : "meses"}`;
+  if (anos < 12) return `${anos} ${anos === 1 ? "ano" : "anos"} e ${meses} ${meses === 1 ? "mês" : "meses"}`;
+  return `${anos} ${anos === 1 ? "ano" : "anos"}`;
+}
+
 export type AnamnesePaciente = {
   alergias?: string; medicamentos_uso_continuo?: string;
   diabetes?: boolean; hipertensao?: boolean; gravidez?: boolean; fumante?: boolean;
