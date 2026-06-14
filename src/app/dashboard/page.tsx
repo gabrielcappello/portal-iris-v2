@@ -321,7 +321,7 @@ export default function ConfigPage(){
 
       {/* SECRETARIA */}
       <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`${t("config.card_agent")}${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle={t("config.card_agent_sub")} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
-        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)}/>
+        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)} t={t}/>
       </CardSection>
 
       {/* CLINICA */}
@@ -674,25 +674,28 @@ function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen,t}
 }
 
 // ── SECRETARIA SECTION ──────────────────────────────────────────────────────────
-const PERSONALIDADES_LIST = [
-  {v:'acolhedora', icon:'🤗', label:'Acolhedora',   sub:'Calorosa e empática'},
-  {v:'executiva',  icon:'💼', label:'Executiva',    sub:'Formal e precisa'},
-  {v:'moderna',    icon:'✨', label:'Moderna',      sub:'Descontraída e jovial'},
-  {v:'objetiva',   icon:'🎯', label:'Objetiva',     sub:'Direta e eficiente'},
-];
+function getPersonalidadesList(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string) {
+  return [
+    {v:'acolhedora', icon:'🤗', label:t("personality.warm"),       sub:t("personality.warm_desc")},
+    {v:'executiva',  icon:'💼', label:t("personality.executive"),  sub:t("personality.executive_desc")},
+    {v:'moderna',    icon:'✨', label:t("personality.modern"),     sub:t("personality.modern_desc")},
+    {v:'objetiva',   icon:'🎯', label:t("personality.objective"),  sub:t("personality.objective_desc")},
+  ];
+}
 
-function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;prefixo:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;prefixo:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const [nome,setNome]=useState(clinica.nome_agente||'');
   const [pers,setPers]=useState(clinica.personalidade||'');
   const [tel,setTel]=useState(clinica.telefone_agente||'');
+  const PERSONALIDADES_LIST = getPersonalidadesList(t);
   // Instância: só dígitos sem DDI e DDD
   const telDigits=tel.replace(/\D/g,'');
   const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits;
   const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
 
-  const labelTel=nome?`Telefone de ${nome}`:'Telefone WhatsApp';
+  const labelTel=nome?t("field.agent_phone",{nome}):t("field.agent_phone_default");
 
-  const falta=!nome?'Digite o nome da secretária':!pers?'Escolha uma personalidade':!tel?'Digite o telefone WhatsApp':null;
+  const falta=!nome?t("secretaria.validation_name"):!pers?t("secretaria.validation_personality"):!tel?t("secretaria.validation_phone"):null;
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:16}}>
@@ -700,12 +703,12 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
       {/* Linha 1: Nome + Personalidade cards */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <div>
-          <label style={labelSt}>Nome da Secretária</label>
+          <label style={labelSt}>{t("field.agent_name")}</label>
           <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Ex: Iris, Sofia, Ana..." style={inputSt}/>
-          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Nome com que a Iris se apresentará aos pacientes.</span>
+          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.agent_name_hint")}</span>
         </div>
         <div>
-          <label style={labelSt}>Personalidade</label>
+          <label style={labelSt}>{t("field.personality")}</label>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
             {PERSONALIDADES_LIST.map(p=>(
               <button key={p.v} onClick={()=>setPers(p.v)}
@@ -730,13 +733,13 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
         </div>
         {/* Instância sempre visível logo abaixo */}
         <div style={{marginTop:8}}>
-          <label style={{...labelSt,marginBottom:6,display:'block'}}>Instância WhatsApp</label>
+          <label style={{...labelSt,marginBottom:6,display:'block'}}>{t("field.whatsapp_instance")}</label>
         <div style={{display:'flex',border:'1px solid #DEF2F1',borderRadius:8,background:'#f0fdf9',width:'100%',boxSizing:'border-box'}}>
             <span style={{padding:'10px 10px',background:'#DEF2F1',borderRight:'1px solid #c8ebe9',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>CAPPIA-IRIS-</span>
             <input value={telSemDDI||''} readOnly
               style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:'monospace',background:'#f0fdf9',color:'#2B7A78',fontWeight:700,width:'100%',boxSizing:'border-box'}}/>
           </div>
-          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Formato: CAPPIA-IRIS-[número]</span>
+          <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.whatsapp_instance_format")}</span>
         </div>
       </div>
 
@@ -752,7 +755,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave}:{clinica:Clinica;pref
           onSave({nome_agente:nome,personalidade:pers,telefone_agente:tel,whatsapp_instancia:instancia});
         }} disabled={saving||!!falta}
           style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
-          {saving?'Salvando...':'Salvar Secretaria'}
+          {saving?t("procs.saving"):t("secretaria.btn_save")}
         </button>
       </div>
     </div>
