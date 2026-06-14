@@ -5,6 +5,7 @@ import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, Clipboar
 import { QRCodeSVG } from "qrcode.react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
+import type { TranslationKey } from "@/lib/i18n/translations";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
@@ -315,7 +316,7 @@ export default function ConfigPage(){
       {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
       <CardSection id="idioma" icon={<Globe size={18}/>} title={t("config.card_locale")} subtitle={t("config.card_locale_sub")}
         open={open==='idioma'} onToggle={()=>toggle('idioma')}>
-        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData} showToast={showToast}/>
+        <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData} showToast={showToast} t={t}/>
       </CardSection>
 
       {/* SECRETARIA */}
@@ -384,8 +385,8 @@ const PAIS_FLAGS: Record<string,string> = {
   sa:'🇸🇦',eg:'🇪🇬',ae:'🇦🇪',ma:'🇲🇦',dz:'🇩🇿',
 };
 
-function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepData,showToast}:{
-  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;onCepData:(d:Record<string,unknown>)=>void;showToast:(msg:string,ok?:boolean)=>void;
+function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepData,showToast,t}:{
+  clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;onPaisEstadoChange:(pais:string,estado:string)=>void;onCepData:(d:Record<string,unknown>)=>void;showToast:(msg:string,ok?:boolean)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   const idiomaVal=clinica.idioma||'português-br';
   const dash=idiomaVal.lastIndexOf('-');
@@ -517,7 +518,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
 
       {/* Idioma accordion */}
       <div>
-        <label style={labelSt}>Idioma</label>
+        <label style={labelSt}>{t("field.language")}</label>
         <button onClick={()=>setIdiomaOpen(p=>!p)}
           style={{width:'100%',padding:'10px 14px',border:`1px solid ${idiomaOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
           <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentIdioma?.label||lang}</span>
@@ -545,7 +546,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
 
       {/* País accordion */}
       <div>
-        <label style={labelSt}>País</label>
+        <label style={labelSt}>{t("field.country")}</label>
         <button onClick={()=>setPaisOpen(p=>!p)}
           style={{width:'100%',padding:'10px 14px',border:`1px solid ${paisOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
           <span style={{fontSize:18}}>{PAIS_FLAGS[pais]||'🌍'}</span>
@@ -588,7 +589,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       <div style={estadoOpts.length>0?{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}:undefined}>
         <div>
           <label style={labelSt}>
-            CEP / Código Postal
+            {t("field.postal_code")}
             {cepLoading&&<span style={{marginLeft:8,fontSize:11,color:'#2B7A78'}}>🔍 Buscando...</span>}
           </label>
           <input
@@ -611,7 +612,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
 
       {/* Fuso horário */}
       <div>
-        <label style={labelSt}>Fuso Horário</label>
+        <label style={labelSt}>{t("field.timezone")}</label>
         <input value={fuso} readOnly placeholder="Preenchido automaticamente ao selecionar o país"
           style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
       </div>
@@ -633,7 +634,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
           if(precisaEstado&&(!estado||(ESTADOS_MAP[pais]||[]).includes(estado)===false))return;
           onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado});
           onClose();
-        }} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Idioma'}</button>
+        }} disabled={saving} style={saveBtnSt}>{saving?t("procs.saving"):'Salvar Idioma'}</button>
       </div>
     </div>
   );
