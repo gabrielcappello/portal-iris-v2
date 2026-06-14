@@ -1495,6 +1495,9 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
                 </motion.div>
               </button>
               <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("dados.anamnesis_hint")}</div>
+              <div style={{marginTop:6,padding:'6px 10px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:8,fontSize:11,color:'#b45309',display:'inline-block'}}>
+                {t("dados.anamnesis_wip")}
+              </div>
             </div>
             <Toggle
               on={anamAtivo}
