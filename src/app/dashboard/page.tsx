@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
+import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/procedimentos-i18n";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
@@ -336,7 +337,7 @@ export default function ConfigPage(){
 
       {/* PROCEDIMENTOS */}
       <CardSection id="procedimentos" icon={<DollarSign size={18}/>} title={t("config.card_procedures")} subtitle={t("config.card_procedures_sub")} open={open==='procedimentos'} onToggle={()=>toggle('procedimentos')}>
-        <ProcedimentosSection clinica={clinica} saving={saving==='procedimentos'} onSave={(d)=>save('procedimentos',d)}/>
+        <ProcedimentosSection clinica={clinica} saving={saving==='procedimentos'} onSave={(d)=>save('procedimentos',d)} t={t}/>
       </CardSection>
 
       {/* DADOS DO AGENTE */}
@@ -1257,7 +1258,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               <SubBloco titulo={t("dentist.subbloco_especialidades")} nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
                 <label style={labelSt}>{t("field.dentist_specialties")}</label>
-                <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})}/>
+                <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})} t={t}/>
               </div>
               </SubBloco>
               {/* 4º bloco: Salvar */}
@@ -1345,7 +1346,7 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
   );
 }
 
-function EspecialidadesGrid({procs,onChange}:{procs:{nome:string;ativo:boolean;tempo:number}[];onChange:(p:{nome:string;ativo:boolean;tempo:number}[])=>void;}){
+function EspecialidadesGrid({procs,onChange,t}:{procs:{nome:string;ativo:boolean;tempo:number}[];onChange:(p:{nome:string;ativo:boolean;tempo:number}[])=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const [openEsp,setOpenEsp]=useState<number|null>(null);
   const procsMap:Record<string,{ativo:boolean;tempo:number}>={};
   procs.forEach(p=>{if(p.nome)procsMap[p.nome]={ativo:p.ativo!==false,tempo:p.tempo||30};});
@@ -1379,16 +1380,16 @@ function EspecialidadesGrid({procs,onChange}:{procs:{nome:string;ativo:boolean;t
               {/* Name + count — click to expand */}
               <button onClick={()=>setOpenEsp(isOpen?null:ei)} onMouseDown={e=>e.preventDefault()}
                 style={{flex:1,border:'none',background:'transparent',cursor:'pointer',textAlign:'left',padding:0,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:'#1e293b',lineHeight:1.2}}>{esp.nome}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#1e293b',lineHeight:1.2}}>{translateEspecialidade(esp.nome,t)}</div>
                 <div style={{fontSize:11,color:activeCount>0?'#2B7A78':'#94a3b8',marginTop:3}}>
-                  {activeCount>0?`${activeCount} de ${total} procedimento${total!==1?'s':''} selecionado${activeCount!==1?'s':''}`:'Nenhum selecionado'}
+                  {activeCount>0?t("especialidades.selected_count",{ativos:activeCount,total,plural:total!==1?'s':'',plural2:activeCount!==1?'s':''}):t("especialidades.no_selection")}
                 </div>
               </button>
               {/* Select-all button: ○ none / ✓ all / − partial */}
               <button
                 onClick={e=>{e.stopPropagation();toggleAll(ei);}}
                 onMouseDown={e=>e.preventDefault()}
-                title={allSelected?'Desmarcar todos':'Selecionar todos'}
+                title={allSelected?t("especialidades.toggle_all_off"):t("especialidades.toggle_all_on")}
                 style={{width:26,height:26,borderRadius:'50%',flexShrink:0,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.18s',
                   border:`2px solid ${allSelected?'#10b981':partial?'#f59e0b':'#cbd5e1'}`,
                   background:allSelected?'#10b981':partial?'#fffbeb':'transparent'}}>
@@ -1412,7 +1413,7 @@ function EspecialidadesGrid({procs,onChange}:{procs:{nome:string;ativo:boolean;t
                       return(
                         <button key={p.nome} onClick={()=>toggle(p.nome)} onMouseDown={e=>e.preventDefault()}
                           style={{padding:'5px 11px',borderRadius:99,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${on?'#2B7A78':'#e2e8f0'}`,background:on?'#DEF2F1':'transparent',color:on?'#2B7A78':'#64748b',fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
-                          {p.nome}
+                          {translateProcedimento(p.nome,t)}
                         </button>
                       );
                     })}
@@ -1675,7 +1676,7 @@ type Preco = {
   tempo: number;
 };
 
-function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const [moeda, setMoeda] = useState('R$');
 
   useEffect(() => {
@@ -1739,7 +1740,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
   return (
     <div>
       <div style={{fontSize:12,color:'#94a3b8',marginBottom:16}}>
-        {totalAtivos} de {precos.length} procedimentos ativos
+        {t("procs.active_count",{ativos:totalAtivos,total:precos.length})}
       </div>
 
       {grupos.map(g => {
@@ -1759,35 +1760,35 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
             {/* Header especialidade com toggles */}
             <div style={{...colStyle, alignItems:'center', padding:'10px 14px', background:'rgba(43,122,120,0.06)', border:'1px solid rgba(43,122,120,0.2)'}}>
               <div style={{fontSize:13,fontWeight:700,color:'#2B7A78',display:'flex',alignItems:'center',gap:8}}>
-                {g.nome}
+                {translateEspecialidade(g.nome,t)}
                 <span style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>
-                  {ativos}/{g.procs.length}
-                  {!todosAtivos && ativos>0 && ' • parcial'}
+                  {t("procs.specialty_count",{ativos,total:g.procs.length})}
+                  {!todosAtivos && ativos>0 && ` • ${t("procs.partial")}`}
                 </span>
               </div>
               {/* Toggle Faz? especialidade */}
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
                 <Toggle on={espAtivoVal} onChange={v => toggleEspAtivo(g.nome, v)}/>
-                <span style={{fontSize:9,color:'#94a3b8'}}>todos</span>
+                <span style={{fontSize:9,color:'#94a3b8'}}>{t("procs.toggle_all")}</span>
               </div>
               {/* Toggle Informa valor? especialidade */}
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
                 <Toggle on={espValorVal} onChange={v => algumAtivo && toggleEspMostrarValor(g.nome, v)}/>
-                <span style={{fontSize:9,color:'#94a3b8'}}>todos</span>
+                <span style={{fontSize:9,color:'#94a3b8'}}>{t("procs.toggle_all")}</span>
               </div>
               {/* Aviso tempo */}
               <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.3}}>modo<br/>proc.</span>
+                <span style={{fontSize:9,color:'#94a3b8',textAlign:'center',lineHeight:1.3}}>{t("procs.mode_proc_label")}</span>
               </div>
             </div>
 
             {/* Header colunas */}
             <div style={{...colStyle, padding:'8px 14px 4px', marginBottom:4}}>
-              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600}}>PROCEDIMENTO</div>
-              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>FAZ?</div>
-              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>INFORMA VALOR?</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600}}>{t("procs.col_procedure_header")}</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>{t("procs.col_do_header")}</div>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center'}}>{t("procs.col_show_value_header")}</div>
               <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,textAlign:'center',lineHeight:1.2}}>
-                TEMPO (min)
+                {t("procs.col_time_header")}
               </div>
             </div>
 
@@ -1800,7 +1801,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
                 alignItems:'center',
               }}>
                 {/* Nome */}
-                <div style={{fontSize:13,color:'#1e293b'}}>{p.nome}</div>
+                <div style={{fontSize:13,color:'#1e293b'}}>{translateProcedimento(p.nome,t)}</div>
 
                 {/* Faz? */}
                 <div style={{display:'flex',justifyContent:'center'}}>
@@ -1847,7 +1848,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
 
       {/* Legenda tempo */}
       <div style={{fontSize:11,color:'#94a3b8',marginBottom:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,borderLeft:'3px solid #e2e8f0'}}>
-        ⏱️ <strong>Tempo</strong> — usado somente quando o dentista está configurado no modo <strong>📋 Procedimento</strong>
+        ⏱️ {t("procs.time_legend")}
       </div>
 
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
@@ -1856,7 +1857,7 @@ function ProcedimentosSection({clinica,saving,onSave}:{clinica:Clinica;saving:bo
           borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',
           fontFamily:"'Sora',sans-serif",opacity:saving?0.7:1,
         }}>
-          {saving ? 'Salvando...' : 'Salvar Procedimentos'}
+          {saving ? t("procs.saving") : t("procs.btn_save_procedures")}
         </button>
       </div>
     </div>
