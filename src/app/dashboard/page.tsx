@@ -340,8 +340,8 @@ export default function ConfigPage(){
       </CardSection>
 
       {/* DADOS DO AGENTE */}
-      <CardSection id="dados" icon={<ClipboardList size={18}/>} title={`Dados que ${clinica.nome_agente||'o agente'} solicita`} subtitle={t("config.card_anamnesis_sub")} open={open==='dados'} onToggle={()=>toggle('dados')}>
-        <DadosAgenteSection clinica={clinica} saving={saving==='dados'} onSave={(d)=>save('dados',d)}/>
+      <CardSection id="dados" icon={<ClipboardList size={18}/>} title={t("config.card_dados_title",{agente:clinica.nome_agente||'o agente'})} subtitle={t("config.card_anamnesis_sub")} open={open==='dados'} onToggle={()=>toggle('dados')}>
+        <DadosAgenteSection clinica={clinica} saving={saving==='dados'} onSave={(d)=>save('dados',d)} t={t}/>
       </CardSection>
 
       {/* AUTOMACOES */}
@@ -1435,21 +1435,24 @@ const DOC_LABEL:Record<string,string>={
   pt:'NIF',ao:'BI',mz:'BI',cv:'BI',gw:'BI',st:'BI',tl:'BI',
 };
 
-const ANAMNESE_CAMPOS=[
-  {k:'alergias',        label:'Alergias',                    sub:'Pergunta se o paciente tem alergias a medicamentos ou materiais.'},
-  {k:'medicamentos',    label:'Medicamentos em uso contínuo', sub:'Solicita lista de medicamentos que o paciente usa regularmente.'},
-  {k:'diabetes',        label:'Diabetes',                    sub:'Pergunta se o paciente tem diagnóstico de diabetes.'},
-  {k:'hipertensao',     label:'Hipertensão',                 sub:'Pergunta se o paciente tem pressão alta.'},
-  {k:'gravidez',        label:'Gravidez',                    sub:'Pergunta se a paciente está grávida ou suspeita de gravidez.'},
-  {k:'fumante',         label:'Fumante',                     sub:'Pergunta se o paciente fuma ou já fumou.'},
-  {k:'observacoes',     label:'Observações de saúde gerais', sub:'Campo aberto para o paciente informar outras condições relevantes.'},
-];
+function getAnamneseCampos(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string) {
+  return [
+    {k:'alergias',     label:t("health.allergies"),    sub:t("health.allergies_sub")},
+    {k:'medicamentos', label:t("health.medications"),  sub:t("health.medications_sub")},
+    {k:'diabetes',     label:t("health.diabetes"),     sub:t("health.diabetes_sub")},
+    {k:'hipertensao',  label:t("health.hypertension"), sub:t("health.hypertension_sub")},
+    {k:'gravidez',     label:t("health.pregnancy"),    sub:t("health.pregnancy_sub")},
+    {k:'fumante',      label:t("health.smoker"),       sub:t("health.smoker_sub")},
+    {k:'observacoes',  label:t("health.notes"),        sub:t("health.notes_sub")},
+  ];
+}
 
-function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
   const [email,setEmail]=useState((a.solicitar_email as boolean)||false);
   const [resp,setResp]=useState((a.solicitar_responsavel as boolean)||false);
   const anam=(a.anamnese as Record<string,boolean>)||{};
+  const ANAMNESE_CAMPOS = getAnamneseCampos(t);
   const [anamCampos,setAnamCampos]=useState<Record<string,boolean>>(
     Object.fromEntries(ANAMNESE_CAMPOS.map(c=>[c.k,anam[c.k]||false]))
   );
@@ -1463,32 +1466,32 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
   return(
     <div style={{display:'flex',flexDirection:'column',gap:0}}>
       <div style={{padding:'10px 14px',background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.15)',borderRadius:8,fontSize:12,color:'#475569',marginBottom:16}}>
-        💡 Solicite apenas o necessário. Quanto menos campos, mais agradável a experiência do paciente.
+        💡 {t("dados.hint")}
       </div>
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>Campos Obrigatórios (Fixos)</div>
-        {['Nome','Telefone',docLabel,'Data de nascimento'].map(l=>(
+        <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>{t("dados.required_fields")}</div>
+        {[t("patients.col_name"),t("field.phone_short"),docLabel,t("dados.birthdate")].map(l=>(
           <div key={l} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #f1f5f9'}}>
             <span style={{fontSize:16}}>🔒</span>
             <span style={{flex:1,fontSize:14,fontWeight:500,color:'#1e293b'}}>{l}</span>
-            <span style={{fontSize:11,color:'#94a3b8',background:'#f1f5f9',padding:'2px 8px',borderRadius:99}}>obrigatório</span>
+            <span style={{fontSize:11,color:'#94a3b8',background:'#f1f5f9',padding:'2px 8px',borderRadius:99}}>{t("dados.required_badge")}</span>
           </div>
         ))}
       </div>
       <div>
-        <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>Campos Opcionais</div>
+        <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>{t("dados.optional_fields")}</div>
         {/* Anamnese — primeiro, com toggle pai + sub-campos inline */}
         <div style={{borderBottom:'1px solid #f1f5f9'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
             <div style={{flex:1}}>
               <button onClick={()=>setAnamOpen(p=>!p)} onMouseDown={e=>e.preventDefault()}
                 style={{display:'flex',alignItems:'center',gap:6,background:'transparent',border:'none',cursor:'pointer',padding:0,fontFamily:"'Sora',sans-serif",textAlign:'left'}}>
-                <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>Anamnese</div>
+                <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{t("dados.anamnesis_title")}</div>
                 <motion.div animate={{rotate:anamOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
                   <ChevronDown size={13}/>
                 </motion.div>
               </button>
-              <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Dados de saúde coletados pelo agente antes da consulta.</div>
+              <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("dados.anamnesis_hint")}</div>
             </div>
             <Toggle
               on={anamAtivo}
@@ -1515,8 +1518,8 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
         </div>
 
         {[
-          {k:'email',v:email,set:setEmail,label:'Email',               sub:'Quando ativado, o agente sempre solicitará o email do paciente.'},
-          {k:'resp', v:resp, set:setResp, label:'Responsável',         sub:'Quando ativado, o agente solicitará o nome do responsável (indicado para pacientes menores de idade).'},
+          {k:'email',v:email,set:setEmail,label:t("health.email_collect"), sub:t("health.email_sub")},
+          {k:'resp', v:resp, set:setResp, label:t("dados.responsible"),     sub:t("dados.responsible_hint")},
         ].map(f=>(
           <div key={f.k} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid #f1f5f9'}}>
             <div style={{flex:1}}>
@@ -1529,7 +1532,7 @@ function DadosAgenteSection({clinica,saving,onSave}:{clinica:Clinica;saving:bool
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
         <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:true,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
-          {saving?'Salvando...':'Salvar'}
+          {saving?t("procs.saving"):t("dados.btn_save")}
         </button>
       </div>
     </div>
