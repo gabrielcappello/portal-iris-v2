@@ -470,7 +470,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       const rows=await sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${p}&select=*`);
       if(rows[0]){
         const r=rows[0];
-        setPaisInfo({tipo_documento:String(r.tipo_documento||'Documento'),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0),moeda:String(r.moeda||'$'),moeda_codigo:String(r.moeda_codigo||'')});
+        setPaisInfo({tipo_documento:String(r.tipo_documento||t("field.document")),digitos_documento:Number(r.digitos_documento||0),digitos_telefone:Number(r.digitos_telefone||0),moeda:String(r.moeda||'$'),moeda_codigo:String(r.moeda_codigo||'')});
         const f=String(r.fuso_horario||r.timezone||'');
         if(f)setFuso(f); // Supabase tem prioridade sobre o mapa local
       }
@@ -1430,13 +1430,6 @@ function EspecialidadesGrid({procs,onChange,t}:{procs:{nome:string;ativo:boolean
 }
 
 // ── DADOS DO AGENTE ────────────────────────────────────────────────────────────
-const DOC_LABEL:Record<string,string>={
-  br:'CPF',ar:'DNI',co:'Cédula',mx:'CURP / INE',es:'DNI / NIE',pe:'DNI',
-  cl:'RUT',uy:'CI',ve:'Cédula',ec:'Cédula',bo:'CI',py:'CI',do:'Cédula',
-  gt:'DPI',cr:'Cédula',pa:'Cédula',sv:'DUI',hn:'DNI',ni:'Cédula',cu:'CI',
-  pt:'NIF',ao:'BI',mz:'BI',cv:'BI',gw:'BI',st:'BI',tl:'BI',
-};
-
 function getAnamneseCampos(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string) {
   return [
     {k:'alergias',     label:t("health.allergies"),    sub:t("health.allergies_sub")},
@@ -1460,7 +1453,15 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
   );
   const [anamOpen,setAnamOpen]=useState(false);
 
-  const docLabel=DOC_LABEL[clinica.pais_codigo||'']||'Documento';
+  const [tipoDocumento,setTipoDocumento]=useState('');
+  useEffect(()=>{
+    const p=clinica.pais_codigo;
+    if(!p){setTipoDocumento('');return;}
+    sb.query<Record<string,unknown>>('paises_config',`?codigo=eq.${p}&select=tipo_documento`)
+      .then(rows=>setTipoDocumento(String(rows[0]?.tipo_documento||'')))
+      .catch(()=>setTipoDocumento(''));
+  },[clinica.pais_codigo]);
+  const docLabel=tipoDocumento||t("field.document");
   const anamAtivo=Object.values(anamCampos).some(Boolean);
 
   function toggleAnam(k:string){setAnamCampos(p=>({...p,[k]:!p[k]}));}
