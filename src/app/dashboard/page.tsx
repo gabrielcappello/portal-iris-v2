@@ -326,7 +326,7 @@ export default function ConfigPage(){
 
       {/* CLINICA */}
       <CardSection id="clinica" icon={<Building2 size={18}/>} title={`${t("config.card_clinic")}${clinica.nome?` ${clinica.nome}`:''}`} subtitle={t("config.card_clinic_sub")} open={open==='clinica'} onToggle={()=>toggle('clinica')}>
-        <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')}/>
+        <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')} t={t}/>
       </CardSection>
 
       {/* DENTISTAS */}
@@ -763,7 +763,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
 }
 
 // ── CLINICA SECTION ────────────────────────────────────────────────────────────
-function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;}){
+function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clinica:Clinica;prefixo:string;estados:string[];saving:boolean;onSave:(d:Record<string,unknown>)=>void;onClose:()=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const c=clinica as unknown as Record<string,string>;
   const estadoSalvo=c.estado||'';
 
@@ -821,10 +821,10 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
   }
 
   const obrigatorios:[string,string][]=[
-    ['nome','Nome da Clínica'],['endereco','Endereço'],['bairro','Bairro'],
-    ['cidade','Cidade'],['cep','CEP'],['referencia','Referência'],
-    ['email_clinica','Email da Clínica'],['whatsapp_admin','WhatsApp do Administrador'],
-    ['maps_link','Link de Localização'],
+    ['nome',t("field.clinic_name")],['endereco',t("field.address")],['bairro',t("field.neighborhood")],
+    ['cidade',t("field.city")],['cep',t("field.postal_code")],['referencia',t("field.reference")],
+    ['email_clinica',t("field.email")],['whatsapp_admin',t("field.admin_whatsapp")],
+    ['maps_link',t("field.maps_link")],
   ];
   const falta=obrigatorios.find(([k])=>!(vals as Record<string,string>)[k]?.trim());
 
@@ -833,78 +833,78 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
 
       {/* L1: Nome da Clínica */}
       <div>
-        <label style={labelSt}>Nome da Clínica</label>
+        <label style={labelSt}>{t("field.clinic_name")}</label>
         <input value={vals.nome} onChange={e=>set('nome',e.target.value)} placeholder="Ex: Cleandent" style={inputSt}/>
       </div>
 
       {/* L2: Endereço */}
       <div>
-        <label style={labelSt}>Endereço (Rua e número)</label>
+        <label style={labelSt}>{t("field.address")}</label>
         <input value={vals.endereco} onChange={e=>set('endereco',e.target.value)} placeholder="Ex: Av. Paulista, 1234" style={inputSt}/>
       </div>
 
       {/* L3: Sala + Bairro */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
         <div>
-          <label style={labelSt}>Sala <span style={{color:'#94a3b8',fontWeight:400}}>(opcional)</span></label>
+          <label style={labelSt}>{t("field.room")} <span style={{color:'#94a3b8',fontWeight:400}}>({t("field.optional")})</span></label>
           <input value={vals.sala} onChange={e=>set('sala',e.target.value)} placeholder="Ex: 3º andar, Sala 302" style={inputSt}/>
         </div>
         <div>
-          <label style={labelSt}>Bairro</label>
+          <label style={labelSt}>{t("field.neighborhood")}</label>
           <input value={vals.bairro} onChange={e=>set('bairro',e.target.value)} placeholder="Ex: Centro" style={inputSt}/>
         </div>
       </div>
 
       {/* L4: Cidade */}
       <div>
-        <label style={labelSt}>Cidade</label>
+        <label style={labelSt}>{t("field.city")}</label>
         {cidadesOpts.length>0?(
           <select value={cidadeSel} onChange={e=>{
             const v=e.target.value;
             setCidadeSel(v);
             set('cidade', v==='__outra__'?'':v);
           }} style={inputSt}>
-            <option value="">Selecione a cidade...</option>
+            <option value="">{t("field.select_city")}</option>
             {cidadesOpts.map(ci=><option key={ci} value={ci}>{ci}</option>)}
-            <option value="__outra__">Outra cidade...</option>
+            <option value="__outra__">{t("field.other_city")}</option>
           </select>
         ):(
           <input value={vals.cidade} onChange={e=>set('cidade',e.target.value)} placeholder="Ex: São Paulo" style={inputSt}/>
         )}
         {cidadeSel==='__outra__'&&(
           <input value={vals.cidade} onChange={e=>set('cidade',e.target.value)}
-            placeholder="Nome da cidade" style={{...inputSt,marginTop:8}} autoFocus/>
+            placeholder={t("field.city_name")} style={{...inputSt,marginTop:8}} autoFocus/>
         )}
       </div>
 
       {/* L5: Referência */}
       <div>
-        <label style={labelSt}>Referência</label>
+        <label style={labelSt}>{t("field.reference")}</label>
         <input value={vals.referencia} onChange={e=>set('referencia',e.target.value)} placeholder="Ex: Em frente ao Banco do Brasil" style={inputSt}/>
       </div>
 
       {/* L6: Email */}
       <div>
-        <label style={labelSt}>Email da Clínica</label>
+        <label style={labelSt}>{t("field.email")}</label>
         <input type="email" value={vals.email_clinica} onChange={e=>set('email_clinica',e.target.value)} placeholder="clinica@exemplo.com" style={inputSt}/>
       </div>
 
       {/* L7: Estado (somente leitura — vem do Idioma) */}
       <div>
-        <label style={labelSt}>Estado / Província</label>
+        <label style={labelSt}>{t("field.state_province")}</label>
         <input value={estadoSalvo} readOnly
           style={{...inputSt,background:'#f8fafc',color:'#64748b',cursor:'default'}}/>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Definido em Idioma & Localização.</span>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.state_defined_in_locale")}</span>
       </div>
 
       {/* L7.5: Horário de Funcionamento */}
       <div>
-        <label style={labelSt}>Horário de Funcionamento</label>
+        <label style={labelSt}>{t("field.working_hours")}</label>
         <div style={{display:'flex',flexDirection:'column',gap:12,padding:12,border:'1px solid #e2e8f0',borderRadius:10,background:'#f8fafc'}}>
 
           {/* Segunda a sexta */}
           <div>
-            <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>Segunda a sexta</div>
+            <div style={{fontSize:12,fontWeight:600,color:'#475569',marginBottom:6}}>{t("dentist.sub_weekdays")}</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <input type="time" value={horario.seg_sex.inicio} onChange={e=>setHorarioField('seg_sex','inicio',e.target.value)} style={inputSt}/>
               <input type="time" value={horario.seg_sex.fim} onChange={e=>setHorarioField('seg_sex','fim',e.target.value)} style={inputSt}/>
@@ -914,7 +914,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
           {/* Intervalo de almoço */}
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.almoco.ativo?6:0}}>
-              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Intervalo de almoço</span>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.lunch_break")}</span>
               <Toggle on={horario.almoco.ativo} onChange={v=>setHorarioField('almoco','ativo',v)}/>
             </div>
             {horario.almoco.ativo&&(
@@ -928,7 +928,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
           {/* Sábado */}
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.sabado.ativo?6:0}}>
-              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Sábado</span>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.saturday")}</span>
               <Toggle on={horario.sabado.ativo} onChange={v=>setHorarioField('sabado','ativo',v)}/>
             </div>
             {horario.sabado.ativo&&(
@@ -942,7 +942,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
           {/* Domingo */}
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.domingo.ativo?6:0}}>
-              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>Domingo</span>
+              <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.sunday")}</span>
               <Toggle on={horario.domingo.ativo} onChange={v=>setHorarioField('domingo','ativo',v)}/>
             </div>
             {horario.domingo.ativo&&(
@@ -954,42 +954,42 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose}:{clinica
           </div>
 
         </div>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Define os horários em que a clínica está aberta para atendimento.</span>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.working_hours_hint")}</span>
       </div>
 
       {/* L8: WhatsApp do administrador */}
       <div>
-        <label style={labelSt}>WhatsApp do Administrador</label>
+        <label style={labelSt}>{t("field.admin_whatsapp")}</label>
         <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
           <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
           <input value={vals.whatsapp_admin} onChange={e=>set('whatsapp_admin',e.target.value)} placeholder="21999990000"
             style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>Usado pela Iris para identificar o gestor da clínica.</span>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.admin_whatsapp_hint")}</span>
       </div>
 
       {/* L9: Link Maps + botão geo */}
       <div>
-        <label style={labelSt}>Link de Localização (Google Maps)</label>
+        <label style={labelSt}>{t("field.maps_link")}</label>
         <input value={vals.maps_link} onChange={e=>set('maps_link',e.target.value)}
           placeholder="https://maps.google.com/?q=..." style={inputSt}/>
         <button onClick={useGeo}
           style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:13,color:'#2B7A78',cursor:'pointer',fontFamily:"'Sora',sans-serif",fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-          📍 Usar minha localização
+          📍 {t("field.use_my_location")}
         </button>
-        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>O agente enviará este link ao paciente quando solicitado.</span>
+        <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.maps_link_hint")}</span>
       </div>
 
       {/* Validação + Salvar */}
       <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'flex-end'}}>
         {falta&&(
           <div style={{fontSize:12,color:'#f59e0b',display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
-            <span>⚠️</span> Complete o campo: {falta[1]}
+            <span>⚠️</span> {t("clinica.validation_complete_field",{campo:falta[1]})}
           </div>
         )}
         <button onClick={()=>{if(!falta){onSave({...vals,horario_funcionamento:horario});onClose();}}} disabled={saving||!!falta}
           style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
-          {saving?'Salvando...':'Salvar'}
+          {saving?t("procs.saving"):t("clinica.btn_save")}
         </button>
       </div>
     </div>
