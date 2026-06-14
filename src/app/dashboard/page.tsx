@@ -331,7 +331,7 @@ export default function ConfigPage(){
 
       {/* DENTISTAS */}
       <CardSection id="dentistas" icon={<Users size={18}/>} title={t("config.card_dentists")} subtitle={t("config.card_dentists_sub")} open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
-        <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')}/>
+        <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')} t={t}/>
       </CardSection>
 
       {/* PROCEDIMENTOS */}
@@ -997,11 +997,11 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
 }
 
 // ── DENTISTAS SECTION ──────────────────────────────────────────────────────────
-function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose}:{
+function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
   clinica:Clinica;ddi:string;
   onSaveOne:(i:number,dents:Dentista[])=>Promise<void>;
   onSaveAll:(dents:Dentista[])=>Promise<void>;
-  saving:boolean;onClose:()=>void;
+  saving:boolean;onClose:()=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   const base=Array.isArray(clinica.dentistas)?clinica.dentistas:[];
   const [dents,setDents]=useState<Dentista[]>(()=>
@@ -1023,27 +1023,27 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose}:{
   return(
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <span style={{fontSize:12,color:'#94a3b8'}}>{ativos} de 10 ativos</span>
+        <span style={{fontSize:12,color:'#94a3b8'}}>{t("dentist.active_count",{n:ativos})}</span>
       </div>
       {dents.map((d,i)=>(
         <DentistaCard key={i} d={d} i={i} open={open===i} onToggle={()=>setOpen(p=>p===i?null:i)}
-          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i} clinicaId={clinica.id}/>
+          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i} clinicaId={clinica.id} t={t}/>
       ))}
       <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
         style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
-        ✕ Fechar Dentistas
+        {t("dentist.btn_close_all")}
       </button>
     </div>
   );
 }
 
-function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
+function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
-  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;clinicaId:string;
+  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;clinicaId:string;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   const semAlmoco = d.alm_ini === d.alm_fim;
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,semAlmoco?'00:00':(d.alm_ini||'12:00'),semAlmoco?'00:00':(d.alm_fim||'13:00')):[];
-  const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:`Dentista ${i+1}`;
+  const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:t("dentist.label_n",{n:i+1});
   const allComplete=!!d.nome?.trim()&&!!d.whatsapp?.trim()&&!!d.senha?.trim()&&
     !!d.calendar_id?.trim()&&d.calendar_id.trim().endsWith('@group.calendar.google.com')&&
     !!d.inicio&&!!d.fim&&(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
@@ -1057,18 +1057,18 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
 
   async function handleSave(){
     const errors:string[]=[];
-    if(!d.nome?.trim()) errors.push('Preencha o nome do dentista (bloco Dados)');
-    if(!d.whatsapp?.trim()) errors.push('Preencha o WhatsApp / Telefone do dentista (bloco Dados)');
-    if(!d.senha?.trim()) errors.push('Defina a senha de acesso (bloco Dados)');
+    if(!d.nome?.trim()) errors.push(t("dentist.error_name"));
+    if(!d.whatsapp?.trim()) errors.push(t("dentist.error_whatsapp"));
+    if(!d.senha?.trim()) errors.push(t("dentist.error_password"));
     if(!d.calendar_id?.trim()){
-      errors.push('Preencha o ID do Google Calendar (bloco Dados)');
+      errors.push(t("dentist.error_calendar_missing"));
     } else if(!d.calendar_id.trim().endsWith('@group.calendar.google.com')){
-      errors.push('ID do Google Calendar inválido — deve terminar com @group.calendar.google.com (ex: abc123@group.calendar.google.com)');
+      errors.push(t("dentist.error_calendar_invalid"));
     }
-    if(!d.inicio) errors.push('Complete o horário de abertura (bloco Horários)');
-    if(!d.fim) errors.push('Complete o horário de encerramento (bloco Horários)');
+    if(!d.inicio) errors.push(t("dentist.error_open_time"));
+    if(!d.fim) errors.push(t("dentist.error_close_time"));
     if(!(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo))
-      errors.push('Selecione ao menos uma especialidade (bloco Especialidades)');
+      errors.push(t("dentist.error_specialty"));
     if(errors.length>0){setValidErrors(errors);return;}
     setValidErrors([]);
     await onSave();
@@ -1081,11 +1081,11 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
         <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
           <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
-            <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>Dentista</span>
+            <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>{t("dentist.label")}</span>
             <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`${d.titulo||'Dr.'} ${d.nome}`}</span>
           </div>
         ):(
-          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`Dentista ${i+1}`}</span>
+          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{t("dentist.label_n",{n:i+1})}</span>
         )}
         <div style={{flex:1}}/>
         <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>onUpdate({ativo:v})}/></div>
@@ -1099,26 +1099,26 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
             exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
             <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
-              <SubBloco titulo="Dados" nomeDentista={nomeLabel} open={openSub==='dados'} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
+              <SubBloco titulo={t("dentist.subbloco_dados")} nomeDentista={nomeLabel} open={openSub==='dados'} onToggle={()=>setOpenSub(p=>p==='dados'?null:'dados')}>
               {/* Nome */}
               <div style={{display:'grid',gridTemplateColumns:'56px 1fr',gap:8}}>
                 <div>
-                  <label style={labelSt}>Título</label>
+                  <label style={labelSt}>{t("field.dentist_title")}</label>
                   <select value={d.titulo||'Dr.'} onChange={e=>onUpdate({titulo:e.target.value})} style={inputSt}>
                     <option>Dr.</option><option>Dra.</option>
                   </select>
                 </div>
                 <div>
-                  <label style={labelSt}>Nome do Dentista</label>
+                  <label style={labelSt}>{t("field.dentist_name")}</label>
                   <input value={d.nome||''} onChange={e=>onUpdate({nome:e.target.value})} placeholder="Nome completo" style={inputSt}/>
                 </div>
               </div>
               <div>
-                <label style={labelSt}>ID Google Calendar</label>
+                <label style={labelSt}>{t("field.calendar_id")}</label>
                 <input value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
               </div>
               <div>
-                <label style={labelSt}>Telefone / WhatsApp</label>
+                <label style={labelSt}>{t("field.phone")}</label>
                 <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
                   <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{ddi}</span>
                   <input value={d.whatsapp||''} onChange={e=>onUpdate({whatsapp:e.target.value})} placeholder="999999999"
@@ -1126,7 +1126,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 </div>
               </div>
               <div>
-                <label style={labelSt}>Senha de acesso ({nomeLabel})</label>
+                <label style={labelSt}>{t("dentist.password_for",{nome:nomeLabel})}</label>
                 <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
                   <input type={showSenha?'text':'password'} value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••"
                     style={{flex:1,minWidth:0,padding:'10px 12px',fontSize:13,border:'none',outline:'none',background:'transparent',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'}}/>
@@ -1137,25 +1137,25 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 </div>
               </div>
               </SubBloco>
-              <SubBloco titulo="Horários" nomeDentista={nomeLabel} open={openSub==='horarios'} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
+              <SubBloco titulo={t("dentist.subbloco_horarios")} nomeDentista={nomeLabel} open={openSub==='horarios'} onToggle={()=>setOpenSub(p=>p==='horarios'?null:'horarios')}>
               {/* Linha 1: Abertura + Encerramento */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
-                  <label style={labelSt}>Abertura</label>
+                  <label style={labelSt}>{t("field.open_time")}</label>
                   <input type="time" value={d.inicio||'08:00'} onChange={e=>onUpdate({inicio:e.target.value})} style={inputSt}/>
                 </div>
                 <div>
-                  <label style={labelSt}>Encerramento</label>
+                  <label style={labelSt}>{t("field.close_time")}</label>
                   <input type="time" value={d.fim||'18:00'} onChange={e=>onUpdate({fim:e.target.value})} style={inputSt}/>
                 </div>
               </div>
               {/* Linha 2: Almoço */}
               <div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                  <label style={{...labelSt,marginBottom:0}}>Almoço</label>
+                  <label style={{...labelSt,marginBottom:0}}>{t("dentist.lunch_label")}</label>
                   <div style={{display:'flex',alignItems:'center',gap:7}}>
                     <span style={{fontSize:11,color:semAlmoco?'#94a3b8':'#2B7A78',fontWeight:600,transition:'color 0.2s'}}>
-                      {semAlmoco?'Sem almoço':'Com almoço'}
+                      {semAlmoco?t("dentist.no_lunch"):t("dentist.has_lunch")}
                     </span>
                     <Toggle
                       on={!semAlmoco}
@@ -1166,7 +1166,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 </div>
                 {semAlmoco?(
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                    {['Início','Fim'].map(l=>(
+                    {[t("dentist.start"),t("dentist.end")].map(l=>(
                       <div key={l} style={{...inputSt,display:'flex',alignItems:'center',justifyContent:'center',
                         color:'#cbd5e1',background:'#f8fafc',userSelect:'none',cursor:'default',
                         fontWeight:700,fontSize:16,letterSpacing:2}}>—</div>
@@ -1175,11 +1175,11 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 ):(
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                     <div>
-                      <label style={labelSt}>Início</label>
+                      <label style={labelSt}>{t("dentist.start")}</label>
                       <input type="time" value={d.alm_ini||'12:00'} onChange={e=>onUpdate({alm_ini:e.target.value})} style={inputSt}/>
                     </div>
                     <div>
-                      <label style={labelSt}>Fim</label>
+                      <label style={labelSt}>{t("dentist.end")}</label>
                       <input type="time" value={d.alm_fim||'13:00'} onChange={e=>onUpdate({alm_fim:e.target.value})} style={inputSt}/>
                     </div>
                   </div>
@@ -1187,60 +1187,60 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
               </div>
               {/* Linha 3: Atende Sábado toggle */}
               <div style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0'}}>
-                <label style={{...labelSt,marginBottom:0}}>Atende Sábado?</label>
+                <label style={{...labelSt,marginBottom:0}}>{t("dentist.works_saturday")}</label>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginLeft:'auto'}}>
-                  <span style={{fontSize:12,fontWeight:600,color:!d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>Não</span>
+                  <span style={{fontSize:12,fontWeight:600,color:!d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>{t("dentist.no")}</span>
                   <Toggle on={!!d.sabado} onChange={v=>onUpdate({sabado:v})}/>
-                  <span style={{fontSize:12,fontWeight:600,color:d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>Sim</span>
+                  <span style={{fontSize:12,fontWeight:600,color:d.sabado?'#2B7A78':'#94a3b8',transition:'color 0.2s'}}>{t("dentist.yes")}</span>
                 </div>
               </div>
               {/* Linha 4: Horários de sábado (condicional) */}
               {d.sabado&&(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,padding:12,background:'#f8fafc',borderRadius:8}}>
                   <div>
-                    <label style={labelSt}>Abertura Sábado</label>
+                    <label style={labelSt}>{t("field.saturday_open")}</label>
                     <input type="time" value={d.sab_ini||'08:00'} onChange={e=>onUpdate({sab_ini:e.target.value})} style={inputSt}/>
                   </div>
                   <div>
-                    <label style={labelSt}>Encerramento Sábado</label>
+                    <label style={labelSt}>{t("field.saturday_close")}</label>
                     <input type="time" value={d.sab_fim||'13:00'} onChange={e=>onUpdate({sab_fim:e.target.value})} style={inputSt}/>
                   </div>
                 </div>
               )}
               {/* Modo horários */}
               <div>
-                <label style={{...labelSt,textAlign:'center',display:'block'}}>Modo de Horários</label>
+                <label style={{...labelSt,textAlign:'center',display:'block'}}>{t("field.schedule_mode")}</label>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,padding:4,background:'#f1f5f9',borderRadius:8,width:'100%',boxSizing:'border-box'}}>
                   {(['auto','manual','proc'] as const).map(m=>(
                     <button key={m} onClick={()=>onUpdate({modo:m})}
                       style={{padding:'7px 6px',borderRadius:6,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
                         background:d.modo===m?'#2B7A78':'transparent',color:d.modo===m?'#fff':'#64748b',transition:'all 0.2s'}}>
-                      {m==='auto'?'⚡ Automático':m==='manual'?'✏️ Manual':'📋 Procedimento'}
+                      {m==='auto'?`⚡ ${t("dentist.mode_auto")}`:m==='manual'?`✏️ ${t("dentist.mode_manual")}`:`📋 ${t("dentist.mode_procedure")}`}
                     </button>
                   ))}
                 </div>
                 {d.modo==='auto'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    ⚡ <strong>AUTOMÁTICO —</strong> Os turnos são gerados automaticamente — o intervalo entre cada horário depende da <strong>duração em minutos</strong> configurada abaixo.
+                    {t("dentist.mode_auto_desc")}
                   </div>
                 )}
                 {d.modo==='manual'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    ✏️ <strong>MANUAL —</strong> Você define exatamente quais horários estarão disponíveis, inserindo-os manualmente separados por vírgula.
+                    {t("dentist.mode_manual_desc")}
                   </div>
                 )}
                 {d.modo==='proc'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    📋 <strong>PROCEDIMENTO —</strong> O tempo de cada turno dependerá do <strong>tempo configurado em procedimentos</strong>.
+                    {t("dentist.mode_proc_desc")}
                   </div>
                 )}
               </div>
               {d.modo==='auto'&&(
                 <div>
-                  <label style={labelSt}>Duração (min)</label>
+                  <label style={labelSt}>{t("field.duration_min")}</label>
                   <input type="number" value={d.dur||60} onChange={e=>onUpdate({dur:parseInt(e.target.value)||60})} min={5} step={5}
                     style={{...inputSt,width:100}}/>
-                  <div style={{marginTop:8,fontSize:11,color:'#64748b',marginBottom:6}}>Slots gerados:</div>
+                  <div style={{marginTop:8,fontSize:11,color:'#64748b',marginBottom:6}}>{t("field.generated_slots")}:</div>
                   <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                     {slots.map(s=><span key={s} style={{padding:'4px 10px',background:'#DEF2F1',color:'#2B7A78',borderRadius:99,fontSize:12,fontWeight:600,fontFamily:'monospace'}}>{s}</span>)}
                   </div>
@@ -1248,15 +1248,15 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
               )}
               {d.modo==='manual'&&(
                 <div>
-                  <label style={labelSt}>Horários (separados por vírgula)</label>
+                  <label style={labelSt}>{t("field.manual_times")}</label>
                   <input value={d.horarios||''} onChange={e=>onUpdate({horarios:e.target.value})} placeholder="08:00,09:00,10:00,14:00,15:00"
                     style={{...inputSt,fontFamily:'monospace'}}/>
                 </div>
               )}
               </SubBloco>
-              <SubBloco titulo="Especialidades" nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
+              <SubBloco titulo={t("dentist.subbloco_especialidades")} nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
-                <label style={labelSt}>Especialidades do Profissional</label>
+                <label style={labelSt}>{t("field.dentist_specialties")}</label>
                 <EspecialidadesGrid procs={d.procedimentos||[]} onChange={procs=>onUpdate({procedimentos:procs})}/>
               </div>
               </SubBloco>
@@ -1273,30 +1273,30 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                   <button onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
                     style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/></svg>
-                    QR Code
+                    {t("dentist.qr_code")}
                   </button>
                   <button onClick={handleSave} disabled={saving}
                     style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,opacity:saving?0.6:1}}>
-                    {saving?'Salvando...':`💾 Salvar ${nomeLabel}`}
+                    {saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel})}
                   </button>
                 </div>
                 <AnimatePresence initial={false}>
                   {showQR&&(
                     <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22}} style={{overflow:'hidden'}}>
                       <div style={{marginTop:12,display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'16px',background:'#fff',borderRadius:10,border:'1px solid #e2e8f0'}}>
-                        <div style={{fontSize:12,fontWeight:600,color:'#1e293b',textAlign:'center'}}>App de {nomeLabel}</div>
+                        <div style={{fontSize:12,fontWeight:600,color:'#1e293b',textAlign:'center'}}>{t("dentist.app_of",{nome:nomeLabel})}</div>
                         {d.senha?(
                           <>
                             <div style={{padding:16,background:'#fff',borderRadius:12,boxShadow:'0 2px 12px rgba(0,0,0,0.08)'}}>
                               <QRCodeSVG value={qrUrl} size={180} fgColor="#000000" bgColor="#ffffff" level="M" marginSize={1}/>
                             </div>
                             <div style={{fontSize:11,color:'#94a3b8',textAlign:'center',maxWidth:200,lineHeight:1.4}}>
-                              Escaneie para acessar o app do dentista. Requer instalação.
+                              {t("dentist.qr_instruction")}
                             </div>
                           </>
                         ):(
                           <div style={{fontSize:12,color:'#f59e0b',textAlign:'center',padding:'12px 16px',background:'rgba(245,158,11,0.08)',borderRadius:8,border:'1px solid rgba(245,158,11,0.2)'}}>
-                            ⚠️ Defina a senha de acesso antes de gerar o QR Code
+                            {t("dentist.qr_password_warning")}
                           </div>
                         )}
                       </div>
@@ -1305,7 +1305,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId}:{
                 </AnimatePresence>
                 <button onClick={onToggle} onMouseDown={e=>e.preventDefault()}
                   style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid #e2e8f0',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
-                  Fechar
+                  {t("dentist.btn_close")}
                 </button>
               </div>
             </div>
