@@ -3,29 +3,35 @@ import { useState, useEffect, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown } from "lucide-react";
 import { sb, calcularIdade, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
+import { useLang } from "@/lib/i18n/LangContext";
+import type { TranslationKey } from "@/lib/i18n/translations";
 
-const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
-  confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
-  ok:         {bg:"rgba(16,185,129,0.12)",  color:"#059669", label:"✓ OK"},
-  faltou:     {bg:"rgba(239,68,68,0.12)",   color:"#dc2626", label:"✗ Faltou"},
-  cancelado:  {bg:"rgba(100,116,139,0.12)", color:"#64748b", label:"Cancelado"},
-  remarcado:  {bg:"rgba(245,158,11,0.12)",  color:"#d97706", label:"Remarcado"},
-};
+function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
+  return {
+    confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:t("status.confirmed")},
+    ok:         {bg:"rgba(16,185,129,0.12)",  color:"#059669", label:`✓ ${t("status.completed")}`},
+    faltou:     {bg:"rgba(239,68,68,0.12)",   color:"#dc2626", label:`✗ ${t("status.missed")}`},
+    cancelado:  {bg:"rgba(100,116,139,0.12)", color:"#64748b", label:t("status.cancelled")},
+    remarcado:  {bg:"rgba(245,158,11,0.12)",  color:"#d97706", label:t("status.rescheduled")},
+  };
+}
 
-function anamneseAlertas(a?: AnamnesePaciente): string[] {
+function anamneseAlertas(a: AnamnesePaciente|undefined, t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): string[] {
   if (!a) return [];
   const al: string[] = [];
-  if (a.diabetes)    al.push("Diabetes");
-  if (a.hipertensao) al.push("Hipertensão");
-  if (a.gravidez)    al.push("Gravidez");
-  if (a.fumante)     al.push("Fumante");
-  if (a.alergias?.trim())                  al.push(`Alergias: ${a.alergias.trim()}`);
-  if (a.medicamentos_uso_continuo?.trim()) al.push(`Medicamentos: ${a.medicamentos_uso_continuo.trim()}`);
-  if (a.observacoes_saude?.trim())         al.push(`Obs.: ${a.observacoes_saude.trim()}`);
+  if (a.diabetes)    al.push(t("health.diabetes"));
+  if (a.hipertensao) al.push(t("health.hypertension"));
+  if (a.gravidez)    al.push(t("health.pregnancy"));
+  if (a.fumante)     al.push(t("health.smoker"));
+  if (a.alergias?.trim())                  al.push(t("patients.alert_allergies",{valor:a.alergias.trim()}));
+  if (a.medicamentos_uso_continuo?.trim()) al.push(t("patients.alert_medications",{valor:a.medicamentos_uso_continuo.trim()}));
+  if (a.observacoes_saude?.trim())         al.push(t("patients.alert_notes",{valor:a.observacoes_saude.trim()}));
   return al;
 }
 
 export default function AgendamentosPage() {
+  const { t } = useLang();
+  const STATUS_STYLE = getStatusStyle(t);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [pacientes,    setPacientes]    = useState<Paciente[]>([]);
   const [search, setSearch]             = useState("");
@@ -68,15 +74,15 @@ export default function AgendamentosPage() {
     <div>
       <div style={{marginBottom:16}}>
         <h2 style={{fontSize:18,fontWeight:700,color:"#1e293b"}}>
-          Agendamentos
-          <span style={{fontSize:13,fontWeight:400,color:"#94a3b8",marginLeft:8}}>{agendamentos.length} total</span>
+          {t("appointments.title")}
+          <span style={{fontSize:13,fontWeight:400,color:"#94a3b8",marginLeft:8}}>{t("appointments.count",{n:agendamentos.length})}</span>
         </h2>
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
         <div style={{position:"relative",flex:1,minWidth:160}}>
           <Search size={13} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#94a3b8"}}/>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, data ou dentista..."
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t("appointments.search_placeholder")}
             style={{width:"100%",paddingLeft:30,paddingRight:12,paddingTop:9,paddingBottom:9,
               fontSize:13,border:"1px solid #e2e8f0",borderRadius:10,outline:"none",
               background:"#fff",fontFamily:"'Sora',sans-serif",boxSizing:"border-box"}}/>
@@ -84,12 +90,12 @@ export default function AgendamentosPage() {
         <select value={statusFiltro} onChange={e=>setStatusFiltro(e.target.value)}
           style={{padding:"9px 12px",fontSize:13,border:"1px solid #e2e8f0",borderRadius:10,
             outline:"none",background:"#fff",fontFamily:"'Sora',sans-serif",color:"#475569"}}>
-          <option value="">Todos</option>
-          <option value="confirmado">Confirmado</option>
-          <option value="ok">✓ OK</option>
-          <option value="faltou">✗ Faltou</option>
-          <option value="cancelado">Cancelado</option>
-          <option value="remarcado">Remarcado</option>
+          <option value="">{t("appointments.filter_all")}</option>
+          <option value="confirmado">{t("status.confirmed")}</option>
+          <option value="ok">✓ {t("status.completed")}</option>
+          <option value="faltou">✗ {t("status.missed")}</option>
+          <option value="cancelado">{t("status.cancelled")}</option>
+          <option value="remarcado">{t("status.rescheduled")}</option>
         </select>
       </div>
 
@@ -97,7 +103,7 @@ export default function AgendamentosPage() {
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}>
           <thead>
             <tr style={{background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
-              {["DATA","HORA","PACIENTE","DOCUMENTO","PROCEDIMENTO","DENTISTA","STATUS","AÇÃO",""].map(h=>(
+              {[t("appointments.col_date"),t("appointments.col_time"),t("appointments.col_patient"),t("appointments.col_document"),t("appointments.col_procedure"),t("appointments.col_dentist"),t("appointments.col_status"),t("appointments.col_action"),""].map(h=>(
                 <th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:10,fontWeight:700,
                   color:"#94a3b8",letterSpacing:"0.6px",whiteSpace:"nowrap",
                   position:"sticky",top:0,background:"#f8fafc",zIndex:2,
@@ -107,10 +113,10 @@ export default function AgendamentosPage() {
           </thead>
           <tbody>
             {loading&&(
-              <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>Carregando...</td></tr>
+              <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("appointments.loading")}</td></tr>
             )}
             {!loading&&filtered.length===0&&(
-              <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>Nenhum agendamento encontrado</td></tr>
+              <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("appointments.empty")}</td></tr>
             )}
 
             {filtered.map((a,i)=>{
@@ -118,7 +124,7 @@ export default function AgendamentosPage() {
               const isUpdating = updating===a.id;
               const isOpen = expanded===a.id;
               const pac = pacientes.find(p=>p.id===a.paciente_id||p.telefone===a.telefone);
-              const alertas = anamneseAlertas(pac?.anamnese);
+              const alertas = anamneseAlertas(pac?.anamnese,t);
               const fichaIsOpen = fichaOpen===a.id;
               const histPac = pac ? agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone) : [];
 
@@ -147,17 +153,17 @@ export default function AgendamentosPage() {
                     </td>
                     <td style={{padding:"12px 12px"}}>
                       {isUpdating?(
-                        <span style={{fontSize:11,color:"#94a3b8"}}>Salvando…</span>
+                        <span style={{fontSize:11,color:"#94a3b8"}}>{t("appointments.saving")}</span>
                       ):(
                         <select value={a.status} onChange={e=>{e.stopPropagation();changeStatus(a,e.target.value);}}
                           style={{fontSize:12,fontWeight:600,padding:"4px 8px",borderRadius:8,
                             border:`1px solid ${st.color}33`,background:st.bg,color:st.color,
                             cursor:"pointer",outline:"none",fontFamily:"'Sora',sans-serif"}}>
-                          <option value="confirmado">Confirmado</option>
-                          <option value="ok">✓ OK</option>
-                          <option value="faltou">✗ Faltou</option>
-                          <option value="cancelado">Cancelado</option>
-                          <option value="remarcado">Remarcado</option>
+                          <option value="confirmado">{t("status.confirmed")}</option>
+                          <option value="ok">✓ {t("status.completed")}</option>
+                          <option value="faltou">✗ {t("status.missed")}</option>
+                          <option value="cancelado">{t("status.cancelled")}</option>
+                          <option value="remarcado">{t("status.rescheduled")}</option>
                         </select>
                       )}
                     </td>
@@ -183,12 +189,12 @@ export default function AgendamentosPage() {
                               {/* Dados do agendamento */}
                               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
                                 {[
-                                  ["Data",         a.data||"—"],
-                                  ["Hora",         a.horario||"—"],
-                                  ["Procedimento", a.procedimento||"—"],
-                                  ["Dentista",     a.dentista_nome||"—"],
-                                  ["Documento",    a.documento||"—"],
-                                  ["Telefone",     a.telefone||"—"],
+                                  [t("appointments.detail_date"),         a.data||"—"],
+                                  [t("appointments.detail_time"),         a.horario||"—"],
+                                  [t("appointments.detail_procedure"), a.procedimento||"—"],
+                                  [t("appointments.detail_dentist"),     a.dentista_nome||"—"],
+                                  [t("appointments.detail_document"),    a.documento||"—"],
+                                  [t("appointments.detail_phone"),     a.telefone||"—"],
                                 ].map(([l,v])=>(
                                   <div key={l}>
                                     <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{l}</div>
@@ -204,8 +210,8 @@ export default function AgendamentosPage() {
                                   background:fichaIsOpen?"rgba(43,122,120,0.08)":"rgba(43,122,120,0.04)",
                                   cursor:"pointer",fontFamily:"'Sora',sans-serif",width:"100%",textAlign:"left"}}>
                                 <span style={{fontSize:13,fontWeight:700,color:"#2B7A78"}}>
-                                  📋 Ficha do Paciente{pac?` — ${pac.nome}`:""}
-                                  {alertas.length>0&&<span style={{marginLeft:8,fontSize:11,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",fontWeight:600}}>⚠️ {alertas.length} alerta{alertas.length>1?"s":""}</span>}
+                                  {t("appointments.patient_record")}{pac?` — ${pac.nome}`:""}
+                                  {alertas.length>0&&<span style={{marginLeft:8,fontSize:11,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",fontWeight:600}}>{t("appointments.alert_count",{n:alertas.length,plural:alertas.length>1?"s":""})}</span>}
                                 </span>
                                 <motion.div animate={{rotate:fichaIsOpen?180:0}} transition={{duration:0.2}} style={{color:"#2B7A78",flexShrink:0}}>
                                   <ChevronDown size={14}/>
@@ -219,7 +225,7 @@ export default function AgendamentosPage() {
                                     style={{overflow:"hidden"}}>
                                     <div style={{padding:"14px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0",display:"flex",flexDirection:"column",gap:12}}>
                                       {!pac?(
-                                        <div style={{fontSize:12,color:"#94a3b8",textAlign:"center"}}>Paciente não encontrado no cadastro</div>
+                                        <div style={{fontSize:12,color:"#94a3b8",textAlign:"center"}}>{t("patients.not_found")}</div>
                                       ):(
                                         <>
                                           {/* Header paciente */}
@@ -234,7 +240,7 @@ export default function AgendamentosPage() {
                                           </div>
                                           {/* Dados */}
                                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:10}}>
-                                            {[["Documento",pac.documento||"—"],["Nascimento",pac.data_nascimento||"—"],["Idade",calcularIdade(pac.data_nascimento)],["Email",pac.email||"—"],["Total consultas",String(agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone).filter(x=>["confirmado","ok"].includes(x.status)).length)]].map(([l,v])=>(
+                                            {[[t("patients.detail_document"),pac.documento||"—"],[t("patients.detail_birthdate"),pac.data_nascimento||"—"],[t("patients.detail_age"),calcularIdade(pac.data_nascimento)],[t("patients.detail_email"),pac.email||"—"],[t("patients.total_consults"),String(agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone).filter(x=>["confirmado","ok"].includes(x.status)).length)]].map(([l,v])=>(
                                               <div key={l}>
                                                 <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{l}</div>
                                                 <div style={{fontSize:13,color:"#334155",fontWeight:500}}>{v}</div>
@@ -249,11 +255,11 @@ export default function AgendamentosPage() {
                                                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:temAlerta?6:0}}>
                                                   <span>{temAlerta?"⚠️":"✓"}</span>
                                                   <div style={{fontSize:12,fontWeight:700,color:temAlerta?"#dc2626":"#059669",textTransform:"uppercase",letterSpacing:"0.5px"}}>
-                                                    {temAlerta?"Alertas de saúde":"Anamnese"}
+                                                    {temAlerta?t("patients.health_alerts"):t("patients.anamnesis_label")}
                                                   </div>
                                                 </div>
-                                                {!pac.anamnese&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>Não coletada</div>}
-                                                {pac.anamnese&&!temAlerta&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>Sem alertas registrados</div>}
+                                                {!pac.anamnese&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>{t("patients.anamnesis_none")}</div>}
+                                                {pac.anamnese&&!temAlerta&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>{t("patients.no_alerts")}</div>}
                                                 {temAlerta&&(
                                                   <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                                                     {alertas.map(al=>(
@@ -267,14 +273,14 @@ export default function AgendamentosPage() {
                                           {/* Histórico */}
                                           {histPac.length>0&&(
                                             <div>
-                                              <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Histórico</div>
+                                              <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{t("patients.history")}</div>
                                               <div style={{display:"flex",flexDirection:"column",gap:5}}>
                                                 {histPac.slice(0,4).map((x,xi)=>{
                                                   const xs=STATUS_STYLE[x.status]||{bg:"#f1f5f9",color:"#64748b",label:x.status};
                                                   return(
                                                     <div key={xi} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"#fff",borderRadius:8,border:"1px solid #f1f5f9"}}>
                                                       <div style={{flex:1,minWidth:0}}>
-                                                        <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{x.procedimento||"Consulta"}</div>
+                                                        <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{x.procedimento||t("patients.default_procedure")}</div>
                                                         <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{x.data} · {x.horario} · {x.dentista_nome}</div>
                                                       </div>
                                                       <span style={{fontSize:11,fontWeight:600,padding:"2px 7px",borderRadius:99,background:xs.bg,color:xs.color,flexShrink:0}}>{xs.label}</span>
@@ -286,8 +292,8 @@ export default function AgendamentosPage() {
                                           )}
                                           {/* Odontograma */}
                                           <div>
-                                            <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Odontograma</div>
-                                            <div style={{height:56,borderRadius:8,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1",background:"#fff"}}>Em desenvolvimento</div>
+                                            <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{t("patients.odontogram")}</div>
+                                            <div style={{height:56,borderRadius:8,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1",background:"#fff"}}>{t("patients.odontogram_wip")}</div>
                                           </div>
                                         </>
                                       )}
