@@ -4,18 +4,20 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { LogOut } from "lucide-react";
+import { LangProvider, useLang } from "@/lib/i18n/LangContext";
 
-const TABS = [
-  { href: "/dashboard",                   label: "Configuração",  icon: "⚙️" },
-  { href: "/dashboard/pacientes",         label: "Pacientes",     icon: "👥" },
-  { href: "/dashboard/agendamentos",      label: "Agendamentos",  icon: "📅" },
-  { href: "/dashboard/financeiro",        label: "Financeiro",    icon: "💰" },
-];
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardInner({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
   const [clinicaNome, setClinicaNome] = useState("Clínica");
+  const { t, dir, loading } = useLang();
+
+  const TABS = [
+    { href: "/dashboard",                   label: t("nav.tab_config"),       icon: "⚙️" },
+    { href: "/dashboard/pacientes",         label: t("nav.tab_patients"),     icon: "👥" },
+    { href: "/dashboard/agendamentos",      label: t("nav.tab_appointments"), icon: "📅" },
+    { href: "/dashboard/financeiro",        label: t("nav.tab_financial"),    icon: "💰" },
+  ];
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -26,8 +28,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   function logout() { localStorage.clear(); router.replace("/login"); }
 
+  if (loading) {
+    return (
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#94a3b8",fontSize:13}}>
+        {t("nav.loading_settings")}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen" style={{background:"#f8fafc"}}>
+    <div dir={dir} className="min-h-screen" style={{background:"#f8fafc"}}>
 
       {/* ── Header ── */}
       <header style={{
@@ -51,14 +61,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Título */}
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:15,fontWeight:700,color:"#1e293b",lineHeight:1.2}}>Iris Portal</div>
+          <div style={{fontSize:15,fontWeight:700,color:"#1e293b",lineHeight:1.2}}>{t("nav.app_name")}</div>
           <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
             {clinicaNome}
           </div>
         </div>
 
         {/* Sair — discreto */}
-        <button onClick={logout} title="Sair" style={{
+        <button onClick={logout} title={t("nav.logout")} style={{
           background:"transparent",border:"none",cursor:"pointer",
           color:"#cbd5e1",padding:"6px",borderRadius:8,
           display:"flex",alignItems:"center",justifyContent:"center",
@@ -114,5 +124,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </motion.div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <LangProvider>
+      <DashboardInner>{children}</DashboardInner>
+    </LangProvider>
   );
 }
