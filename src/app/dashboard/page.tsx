@@ -347,7 +347,7 @@ export default function ConfigPage(){
 
       {/* AUTOMACOES */}
       <CardSection id="automacoes" icon={<Zap size={18}/>} title={t("config.card_automations")} subtitle={t("config.card_automations_sub")} open={open==='automacoes'} onToggle={()=>toggle('automacoes')}>
-        <AutomacoesSection clinica={clinica} saving={saving==='automacoes'} onSave={(d)=>save('automacoes',d)}/>
+        <AutomacoesSection clinica={clinica} saving={saving==='automacoes'} onSave={(d)=>save('automacoes',d)} t={t}/>
       </CardSection>
 
       {/* TOAST */}
@@ -1541,7 +1541,7 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
 }
 
 // ── AUTOMAÇÕES ─────────────────────────────────────────────────────────────────
-function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;}){
+function AutomacoesSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
   const [lem2h,setLem2h]=useState((a.lembrete_2h as boolean)!==false);
   const [lem24h,setLem24h]=useState((a.lembrete_24h as boolean)||false);
@@ -1562,8 +1562,8 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
     <div style={{display:'flex',flexDirection:'column',gap:0}}>
       {/* Lembretes */}
       {[
-        {v:lem2h,set:setLem2h,label:'🔔 Lembrete 2 horas antes',sub:'Envia uma mensagem automática 2 horas antes de cada consulta'},
-        {v:lem24h,set:setLem24h,label:'🔔 Lembrete 24 horas antes',sub:'Envia uma mensagem automática 1 dia antes da consulta'},
+        {v:lem2h,set:setLem2h,label:t("auto.reminder_2h"),sub:t("auto.reminder_2h_sub")},
+        {v:lem24h,set:setLem24h,label:t("auto.reminder_24h"),sub:t("auto.reminder_24h_sub")},
       ].map(f=>(
         <div key={f.label} style={{display:'flex',alignItems:'center',gap:12,padding:'14px 0',borderBottom:'1px solid #f1f5f9'}}>
           <div style={{flex:1}}>
@@ -1579,15 +1579,15 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{flex:1}}>
             <div style={{fontSize:14,fontWeight:600,color:'#1e293b',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-              <span>⭐ Pós-consulta — Envio automático após</span>
+              <span>{t("auto.post_consult")}</span>
               <select value={posTempo} onChange={e=>setPosTempo(e.target.value)}
                 style={{fontSize:13,fontWeight:600,color:'#2B7A78',border:'1px solid rgba(43,122,120,0.3)',borderRadius:6,padding:'2px 6px',background:'rgba(43,122,120,0.05)',cursor:'pointer',fontFamily:"'Sora',sans-serif",outline:'none'}}>
-                <option value="2h">2 horas</option>
-                <option value="4h">4 horas</option>
-                <option value="24h">24 horas</option>
+                <option value="2h">{t("auto.time_2h")}</option>
+                <option value="4h">{t("auto.time_4h")}</option>
+                <option value="24h">{t("auto.time_24h")}</option>
               </select>
             </div>
-            <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Mensagem disparada automaticamente após o horário da consulta</div>
+            <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("auto.post_consult_sub")}</div>
           </div>
           <Toggle on={posAtivo} onChange={v=>{setPosAtivo(v);}}/>
         </div>
@@ -1596,9 +1596,9 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
             <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
               <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:0}}>
                 {[
-                  {v:'satisfacao',icon:'⭐',label:'Satisfação',desc:'Pergunta ao paciente como foi a consulta — se tudo correu bem e se ficou satisfeito com o atendimento.'},
-                  {v:'google',icon:'📊',label:'Avaliação Google',desc:'Convida o paciente a deixar uma avaliação no Google da clínica, ajudando a construir a reputação online.'},
-                  {v:'ambos',icon:'✨',label:'Satisfação + Google',desc:'Primeiro coleta a satisfação e, se a resposta for positiva, direciona para a avaliação no Google.'},
+                  {v:'satisfacao',icon:'⭐',label:t("auto.satisfaction"),desc:t("auto.satisfaction_desc")},
+                  {v:'google',icon:'📊',label:t("auto.google_review"),desc:t("auto.google_review_desc")},
+                  {v:'ambos',icon:'✨',label:t("auto.satisfaction_google"),desc:t("auto.satisfaction_google_desc")},
                 ].map((opt,oi,arr)=>(
                   <button key={opt.v} onClick={()=>setPosTipo(opt.v)}
                     style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 0',borderBottom:oi<arr.length-1?'1px solid #f8fafc':'none',background:'transparent',border:'none',cursor:'pointer',width:'100%',textAlign:'left',fontFamily:"'Sora',sans-serif"}}>
@@ -1613,7 +1613,7 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
                 ))}
                 {['google','ambos'].includes(posTipo)&&(
                   <div style={{marginTop:8}}>
-                    <label style={labelSt}>Link Google Review</label>
+                    <label style={labelSt}>{t("auto.google_review_link")}</label>
                     <input value={posLink} onChange={e=>setPosLink(e.target.value)} placeholder="https://g.page/r/..." style={inputSt}/>
                   </div>
                 )}
@@ -1626,12 +1626,12 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
       {/* Retorno automático */}
       <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 0',borderBottom:'1px solid #f1f5f9'}}>
         <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>🔄 Retorno automático</div>
-          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Lembra o paciente de agendar retorno após X meses</div>
+          <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{t("auto.return_reminder")}</div>
+          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("auto.return_reminder_sub")}</div>
           {retorno&&<div style={{marginTop:8,display:'flex',alignItems:'center',gap:8}}>
             <input type="number" value={retMeses} onChange={e=>setRetMeses(parseInt(e.target.value)||6)} min={1} max={24}
               style={{...inputSt,width:70}}/>
-            <span style={{fontSize:13,color:'#64748b'}}>meses</span>
+            <span style={{fontSize:13,color:'#64748b'}}>{t("auto.months")}</span>
           </div>}
         </div>
         <Toggle on={retorno} onChange={setRetorno}/>
@@ -1640,8 +1640,8 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
       {/* Lista de espera */}
       <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 0',borderBottom:'1px solid #f1f5f9'}}>
         <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>⏳ Lista de espera</div>
-          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Avisa o paciente quando um horário cancelado fica disponível</div>
+          <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{t("auto.waitlist")}</div>
+          <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("auto.waitlist_sub")}</div>
         </div>
         <Toggle on={espera} onChange={setEspera}/>
       </div>
@@ -1650,17 +1650,17 @@ function AutomacoesSection({clinica,saving,onSave}:{clinica:Clinica;saving:boole
       <div style={{display:'flex',alignItems:'center',gap:16,padding:'14px',marginTop:8,background:'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(251,191,36,0.05))',border:'1px solid rgba(245,158,11,0.25)',borderRadius:10}}>
         <div style={{fontSize:32,flexShrink:0}}>🎂</div>
         <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:600,color:'#d97706'}}>Parabéns automático</div>
-          <div style={{fontSize:12,color:'#92400e',marginTop:2}}>A Iris envia uma mensagem carinhosa no dia do aniversário do paciente</div>
+          <div style={{fontSize:14,fontWeight:600,color:'#d97706'}}>{t("auto.birthday")}</div>
+          <div style={{fontSize:12,color:'#92400e',marginTop:2}}>{t("auto.birthday_sub")}</div>
           <div style={{marginTop:6,padding:'8px 12px',background:'rgba(245,158,11,0.08)',borderLeft:'2px solid rgba(245,158,11,0.4)',borderRadius:'0 6px 6px 0',fontSize:12,color:'#78350f',fontStyle:'italic'}}>
-            &quot;Feliz aniversário! 🎉 Que seja um dia especial. Estamos aqui para cuidar do seu sorriso 😊&quot;
+            &quot;{t("auto.birthday_message")}&quot;
           </div>
         </div>
         <Toggle on={aniv} onChange={setAniv}/>
       </div>
 
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-        <button onClick={handleSave} disabled={saving} style={saveBtnSt}>{saving?'Salvando...':'Salvar Automações'}</button>
+        <button onClick={handleSave} disabled={saving} style={saveBtnSt}>{saving?t("procs.saving"):t("auto.btn_save")}</button>
       </div>
     </div>
   );
