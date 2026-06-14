@@ -223,7 +223,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
 
 // ── Page principal ─────────────────────────────────────────────────────────────
 export default function ConfigPage(){
-  const { t } = useLang();
+  const { t, refreshLang } = useLang();
   const [open,setOpen]=useState<string|null>(null);
   const [clinica,setClinica]=useState<Clinica|null>(null);
   const [saving,setSaving]=useState<string|null>(null);
@@ -280,6 +280,7 @@ export default function ConfigPage(){
       if(data.pais_codigo&&data.estado){
         loadDdd(String(data.pais_codigo),String(data.estado));
       }
+      if(data.idioma)refreshLang();
       showToast('Salvo com sucesso ✓');
       setOpen(null);
     }catch{showToast('Erro ao salvar',false);}
