@@ -578,9 +578,9 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
         {paisInfo&&(
           <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
             style={{display:'flex',gap:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,border:'1px solid #e2e8f0',fontSize:12,color:'#475569',flexWrap:'wrap'}}>
-            <span>📄 Documento: <strong>{paisInfo.tipo_documento}</strong> ({paisInfo.digitos_documento} dígitos)</span>
-            <span>📱 Telefone: <strong>{paisInfo.digitos_telefone} dígitos</strong></span>
-            <span>💰 Moeda: <strong>{paisInfo.moeda}{paisInfo.moeda_codigo?` (${paisInfo.moeda_codigo})`:''}</strong></span>
+            <span>📄 {t("field.document")}: <strong>{paisInfo.tipo_documento}</strong> ({paisInfo.digitos_documento} {t("field.digits")})</span>
+            <span>📱 {t("field.phone_short")}: <strong>{paisInfo.digitos_telefone} {t("field.digits")}</strong></span>
+            <span>💰 {t("field.currency")}: <strong>{paisInfo.moeda}{paisInfo.moeda_codigo?` (${paisInfo.moeda_codigo})`:''}</strong></span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -601,12 +601,12 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
           />
           {cepErro&&<span style={{fontSize:11,color:'#ef4444',marginTop:4,display:'block'}}>{cepErro}</span>}
           {!cepErro&&<span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>
-            {pais==='br'?'Identifica endereço, bairro, cidade e estado automaticamente.':'Identifica cidade e estado automaticamente.'}
+            {pais==='br'?t("field.postal_auto_br"):t("field.postal_auto_intl")}
           </span>}
         </div>
         {estadoOpts.length>0&&(
           <EstadoAccordion estado={estado} estadoOpts={estadoOpts} onSelect={selectEstado}
-            estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen}/>
+            estadoOpen={estadoOpen} setEstadoOpen={setEstadoOpen} t={t}/>
         )}
       </div>
 
@@ -640,13 +640,13 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
   );
 }
 
-function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen}:{
+function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen,t}:{
   estado:string;estadoOpts:string[];onSelect:(s:string)=>void;
-  estadoOpen:boolean;setEstadoOpen:(v:boolean)=>void;
+  estadoOpen:boolean;setEstadoOpen:(v:boolean)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   return(
     <div>
-      <label style={labelSt}>Estado / Província</label>
+      <label style={labelSt}>{t("field.state_province")}</label>
       <button onClick={()=>setEstadoOpen(!estadoOpen)}
         style={{width:'100%',padding:'10px 14px',border:`1px solid ${estadoOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
         <span style={{flex:1,fontSize:14,fontWeight:600,color:estado?'#1e293b':'#94a3b8',textAlign:'left'}}>{estado||'Selecione...'}</span>
