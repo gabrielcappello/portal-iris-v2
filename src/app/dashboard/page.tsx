@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff, DollarSign } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
+import { useLang } from "@/lib/i18n/LangContext";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
@@ -220,6 +221,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
 
 // ── Page principal ─────────────────────────────────────────────────────────────
 export default function ConfigPage(){
+  const { t } = useLang();
   const [open,setOpen]=useState<string|null>(null);
   const [clinica,setClinica]=useState<Clinica|null>(null);
   const [saving,setSaving]=useState<string|null>(null);
@@ -308,41 +310,41 @@ export default function ConfigPage(){
 
   return(
     <div>
-      <h2 style={{fontSize:18,fontWeight:700,color:'#1e293b',marginBottom:16}}>Configuração</h2>
+      <h2 style={{fontSize:18,fontWeight:700,color:'#1e293b',marginBottom:16}}>{t("nav.tab_config")}</h2>
 
       {/* IDIOMA — fecha ao salvar mas sempre pode reabrir */}
-      <CardSection id="idioma" icon={<Globe size={18}/>} title="Idioma & Localização" subtitle="Idioma, país e fuso horário da clínica"
+      <CardSection id="idioma" icon={<Globe size={18}/>} title={t("config.card_locale")} subtitle={t("config.card_locale_sub")}
         open={open==='idioma'} onToggle={()=>toggle('idioma')}>
         <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData} showToast={showToast}/>
       </CardSection>
 
       {/* SECRETARIA */}
-      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`Dados da assistente${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle="Identidade e configurações da assistente virtual" open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
+      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`${t("config.card_agent")}${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle={t("config.card_agent_sub")} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
         <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)}/>
       </CardSection>
 
       {/* CLINICA */}
-      <CardSection id="clinica" icon={<Building2 size={18}/>} title={`Dados da clínica${clinica.nome?` ${clinica.nome}`:''}`} subtitle="Informações usadas pelo agente nas conversas" open={open==='clinica'} onToggle={()=>toggle('clinica')}>
+      <CardSection id="clinica" icon={<Building2 size={18}/>} title={`${t("config.card_clinic")}${clinica.nome?` ${clinica.nome}`:''}`} subtitle={t("config.card_clinic_sub")} open={open==='clinica'} onToggle={()=>toggle('clinica')}>
         <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')}/>
       </CardSection>
 
       {/* DENTISTAS */}
-      <CardSection id="dentistas" icon={<Users size={18}/>} title="Dentistas" subtitle="Até 10 profissionais com agendas independentes" open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
+      <CardSection id="dentistas" icon={<Users size={18}/>} title={t("config.card_dentists")} subtitle={t("config.card_dentists_sub")} open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
         <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')}/>
       </CardSection>
 
       {/* PROCEDIMENTOS */}
-      <CardSection id="procedimentos" icon={<DollarSign size={18}/>} title="Procedimentos & Preços" subtitle="Procedimentos oferecidos pela clínica, valores e informações para a Iris" open={open==='procedimentos'} onToggle={()=>toggle('procedimentos')}>
+      <CardSection id="procedimentos" icon={<DollarSign size={18}/>} title={t("config.card_procedures")} subtitle={t("config.card_procedures_sub")} open={open==='procedimentos'} onToggle={()=>toggle('procedimentos')}>
         <ProcedimentosSection clinica={clinica} saving={saving==='procedimentos'} onSave={(d)=>save('procedimentos',d)}/>
       </CardSection>
 
       {/* DADOS DO AGENTE */}
-      <CardSection id="dados" icon={<ClipboardList size={18}/>} title={`Dados que ${clinica.nome_agente||'o agente'} solicita`} subtitle="Escolha quais informações o agente irá coletar do paciente" open={open==='dados'} onToggle={()=>toggle('dados')}>
+      <CardSection id="dados" icon={<ClipboardList size={18}/>} title={`Dados que ${clinica.nome_agente||'o agente'} solicita`} subtitle={t("config.card_anamnesis_sub")} open={open==='dados'} onToggle={()=>toggle('dados')}>
         <DadosAgenteSection clinica={clinica} saving={saving==='dados'} onSave={(d)=>save('dados',d)}/>
       </CardSection>
 
       {/* AUTOMACOES */}
-      <CardSection id="automacoes" icon={<Zap size={18}/>} title="Automações" subtitle="Mensagens automáticas para pacientes" open={open==='automacoes'} onToggle={()=>toggle('automacoes')}>
+      <CardSection id="automacoes" icon={<Zap size={18}/>} title={t("config.card_automations")} subtitle={t("config.card_automations_sub")} open={open==='automacoes'} onToggle={()=>toggle('automacoes')}>
         <AutomacoesSection clinica={clinica} saving={saving==='automacoes'} onSave={(d)=>save('automacoes',d)}/>
       </CardSection>
 
