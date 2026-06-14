@@ -3,37 +3,41 @@ import { useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Search, ChevronDown } from "lucide-react";
 import { sb, calcularIdade, type Paciente, type Agendamento, type AnamnesePaciente } from "@/lib/supabase";
+import { useLang } from "@/lib/i18n/LangContext";
+import type { TranslationKey } from "@/lib/i18n/translations";
 
-const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
-  confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
-  ok:         {bg:"rgba(16,185,129,0.12)",  color:"#059669", label:"✓ OK"},
-  faltou:     {bg:"rgba(239,68,68,0.12)",   color:"#dc2626", label:"✗ Faltou"},
-  cancelado:  {bg:"rgba(100,116,139,0.12)", color:"#64748b", label:"Cancelado"},
-  remarcado:  {bg:"rgba(245,158,11,0.12)",  color:"#d97706", label:"Remarcado"},
-};
+function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
+  return {
+    confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:t("status.confirmed")},
+    ok:         {bg:"rgba(16,185,129,0.12)",  color:"#059669", label:`✓ ${t("status.completed")}`},
+    faltou:     {bg:"rgba(239,68,68,0.12)",   color:"#dc2626", label:`✗ ${t("status.missed")}`},
+    cancelado:  {bg:"rgba(100,116,139,0.12)", color:"#64748b", label:t("status.cancelled")},
+    remarcado:  {bg:"rgba(245,158,11,0.12)",  color:"#d97706", label:t("status.rescheduled")},
+  };
+}
 
-function anamneseAlertas(a?: AnamnesePaciente): string[] {
+function anamneseAlertas(a: AnamnesePaciente|undefined, t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): string[] {
   if (!a) return [];
   const al: string[] = [];
-  if (a.diabetes)    al.push("Diabetes");
-  if (a.hipertensao) al.push("Hipertensão");
-  if (a.gravidez)    al.push("Gravidez");
-  if (a.fumante)     al.push("Fumante");
-  if (a.alergias?.trim())                   al.push(`Alergias: ${a.alergias.trim()}`);
-  if (a.medicamentos_uso_continuo?.trim())  al.push(`Medicamentos: ${a.medicamentos_uso_continuo.trim()}`);
-  if (a.observacoes_saude?.trim())          al.push(`Obs.: ${a.observacoes_saude.trim()}`);
+  if (a.diabetes)    al.push(t("health.diabetes"));
+  if (a.hipertensao) al.push(t("health.hypertension"));
+  if (a.gravidez)    al.push(t("health.pregnancy"));
+  if (a.fumante)     al.push(t("health.smoker"));
+  if (a.alergias?.trim())                   al.push(t("patients.alert_allergies",{valor:a.alergias.trim()}));
+  if (a.medicamentos_uso_continuo?.trim())  al.push(t("patients.alert_medications",{valor:a.medicamentos_uso_continuo.trim()}));
+  if (a.observacoes_saude?.trim())          al.push(t("patients.alert_notes",{valor:a.observacoes_saude.trim()}));
   return al;
 }
 
-function AnamneseCard({anamnese}: {anamnese?: AnamnesePaciente}) {
-  const alertas = anamneseAlertas(anamnese);
+function AnamneseCard({anamnese,t}: {anamnese?: AnamnesePaciente; t:(key:TranslationKey,vars?:Record<string,string|number>)=>string}) {
+  const alertas = anamneseAlertas(anamnese,t);
   const temAlerta = alertas.length > 0;
   const bg    = temAlerta ? "rgba(239,68,68,0.06)"   : "rgba(16,185,129,0.06)";
   const border= temAlerta ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(16,185,129,0.25)";
   const color = temAlerta ? "#dc2626" : "#059669";
   const icon  = temAlerta ? "⚠️" : "✓";
-  const titulo= temAlerta ? "Alertas de saúde" : "Anamnese";
-  const sub   = !anamnese ? "Não coletada" : temAlerta ? "" : "Sem alertas registrados";
+  const titulo= temAlerta ? t("patients.health_alerts") : t("patients.anamnesis_label");
+  const sub   = !anamnese ? t("patients.anamnesis_none") : temAlerta ? "" : t("patients.no_alerts");
   return (
     <div style={{padding:"12px 14px",background:bg,border,borderRadius:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:temAlerta?8:0}}>
@@ -61,6 +65,8 @@ function AnamneseCard({anamnese}: {anamnese?: AnamnesePaciente}) {
 }
 
 export default function PacientesPage() {
+  const { t } = useLang();
+  const STATUS_STYLE = getStatusStyle(t);
   const [pacientes, setPacientes]       = useState<Paciente[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [search, setSearch]             = useState("");
@@ -100,12 +106,12 @@ export default function PacientesPage() {
       {/* Título + busca */}
       <div style={{marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
         <h2 style={{fontSize:18,fontWeight:700,color:"#1e293b"}}>
-          Pacientes
-          <span style={{fontSize:13,fontWeight:400,color:"#94a3b8",marginLeft:8}}>{pacientes.length} registrados</span>
+          {t("patients.title")}
+          <span style={{fontSize:13,fontWeight:400,color:"#94a3b8",marginLeft:8}}>{t("patients.count",{n:pacientes.length})}</span>
         </h2>
         <div style={{position:"relative",flex:1,minWidth:160,maxWidth:320}}>
           <Search size={13} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#94a3b8"}}/>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, telefone ou documento..."
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t("patients.search_placeholder")}
             style={{width:"100%",paddingLeft:30,paddingRight:12,paddingTop:9,paddingBottom:9,
               fontSize:13,border:"1px solid #e2e8f0",borderRadius:10,outline:"none",
               background:"#fff",fontFamily:"'Sora',sans-serif",boxSizing:"border-box"}}/>
@@ -117,7 +123,7 @@ export default function PacientesPage() {
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
           <thead>
             <tr style={{background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
-              {["NOME","TELEFONE","DOCUMENTO","ÚLTIMA CONSULTA","TOTAL","PROCEDIMENTO",""].map(h=>(
+              {[t("patients.col_name"),t("patients.col_phone"),t("patients.col_document"),t("patients.col_last_visit"),t("patients.col_total"),t("patients.col_procedure"),""].map(h=>(
                 <th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:10,fontWeight:700,
                   color:"#94a3b8",letterSpacing:"0.6px",whiteSpace:"nowrap",
                   position:"sticky",top:0,background:"#f8fafc",zIndex:2,
@@ -127,15 +133,15 @@ export default function PacientesPage() {
           </thead>
           <tbody>
             {loading&&(
-              <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>Carregando...</td></tr>
+              <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("patients.loading")}</td></tr>
             )}
             {!loading&&filtered.length===0&&(
-              <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>Nenhum paciente encontrado</td></tr>
+              <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("patients.empty")}</td></tr>
             )}
             {filtered.map((p,i)=>{
               const {total, ultima, ultimaProc} = stats(p);
               const isOpen = expanded===p.id;
-              const alertas = anamneseAlertas(p.anamnese);
+              const alertas = anamneseAlertas(p.anamnese,t);
               return (
                 <Fragment key={p.id}>
                   <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.01}}
@@ -191,12 +197,12 @@ export default function PacientesPage() {
                               {/* Dados básicos */}
                               <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:12}}>
                                 {[
-                                  ["Documento",     p.documento||"—"],
-                                  ["Nascimento",    p.data_nascimento||"—"],
-                                  ["Idade",         calcularIdade(p.data_nascimento)],
-                                  ["Email",         p.email||"—"],
-                                  ["Total",         String(total)],
-                                  ["Última consulta", ultima||"—"],
+                                  [t("patients.detail_document"),     p.documento||"—"],
+                                  [t("patients.detail_birthdate"),    p.data_nascimento||"—"],
+                                  [t("patients.detail_age"),         calcularIdade(p.data_nascimento)],
+                                  [t("patients.detail_email"),         p.email||"—"],
+                                  [t("patients.detail_total"),         String(total)],
+                                  [t("patients.detail_last"), ultima||"—"],
                                 ].map(([l,v])=>(
                                   <div key={l}>
                                     <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:3}}>{l}</div>
@@ -206,19 +212,19 @@ export default function PacientesPage() {
                               </div>
 
                               {/* Anamnese */}
-                              <AnamneseCard anamnese={p.anamnese}/>
+                              <AnamneseCard anamnese={p.anamnese} t={t}/>
 
                               {/* Histórico */}
                               {histPaciente(p).length>0&&(
                                 <div>
-                                  <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>Histórico</div>
+                                  <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>{t("patients.history")}</div>
                                   <div style={{display:"flex",flexDirection:"column",gap:5}}>
                                     {histPaciente(p).slice(0,5).map((a,ai)=>{
                                       const st=STATUS_STYLE[a.status]||{bg:"#f1f5f9",color:"#64748b",label:a.status};
                                       return(
                                         <div key={ai} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#fff",borderRadius:8,border:"1px solid #f1f5f9"}}>
                                           <div style={{flex:1,minWidth:0}}>
-                                            <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{a.procedimento||"Consulta"}</div>
+                                            <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{a.procedimento||t("patients.default_procedure")}</div>
                                             <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{a.data} · {a.horario} · {a.dentista_nome}</div>
                                           </div>
                                           <span style={{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:99,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span>
@@ -231,14 +237,14 @@ export default function PacientesPage() {
 
                               {/* Odontograma */}
                               <div>
-                                <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>Odontograma</div>
-                                <div style={{height:64,borderRadius:10,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1"}}>Em desenvolvimento</div>
+                                <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{t("patients.odontogram")}</div>
+                                <div style={{height:64,borderRadius:10,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1"}}>{t("patients.odontogram_wip")}</div>
                               </div>
 
                               {/* Fechar */}
                               <button onClick={()=>setExpanded(null)}
                                 style={{alignSelf:"flex-start",padding:"8px 16px",border:"1px solid #cbd5e1",borderRadius:8,background:"#f1f5f9",cursor:"pointer",fontSize:12,fontWeight:700,color:"#475569",fontFamily:"'Sora',sans-serif"}}>
-                                ✕ Fechar
+                                ✕ {t("patients.btn_close")}
                               </button>
                             </div>
                       </motion.div>

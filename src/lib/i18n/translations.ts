@@ -356,6 +356,10 @@ export const translations = {
     'auto.birthday_sub': 'A Iris envia uma mensagem carinhosa no dia do aniversário do paciente',
     'auto.birthday_message': 'Feliz aniversário! 🎉 Que seja um dia especial. Estamos aqui para cuidar do seu sorriso 😊',
     'auto.btn_save': 'Salvar Automações',
+    'patients.alert_allergies': 'Alergias: {valor}',
+    'patients.alert_medications': 'Medicamentos: {valor}',
+    'patients.alert_notes': 'Obs.: {valor}',
+    'patients.default_procedure': 'Consulta',
   },
   es: {
     'nav.app_name': 'Portal Iris',
@@ -711,6 +715,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris envía un mensaje cariñoso el día del cumpleaños del paciente',
     'auto.birthday_message': '¡Feliz cumpleaños! 🎉 Que sea un día especial. Estamos aquí para cuidar tu sonrisa 😊',
     'auto.btn_save': 'Guardar Automatizaciones',
+    'patients.alert_allergies': 'Alergias: {valor}',
+    'patients.alert_medications': 'Medicamentos: {valor}',
+    'patients.alert_notes': 'Obs.: {valor}',
+    'patients.default_procedure': 'Consulta',
   },
   en: {
     'nav.app_name': 'Iris Portal',
@@ -1066,6 +1074,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris sends a warm message on the patient\'s birthday',
     'auto.birthday_message': 'Happy birthday! 🎉 Have a special day. We\'re here to take care of your smile 😊',
     'auto.btn_save': 'Save Automations',
+    'patients.alert_allergies': 'Allergies: {valor}',
+    'patients.alert_medications': 'Medications: {valor}',
+    'patients.alert_notes': 'Notes: {valor}',
+    'patients.default_procedure': 'Appointment',
   },
   fr: {
     'nav.app_name': 'Portail Iris',
@@ -1421,6 +1433,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris envoie un message chaleureux le jour de l\'anniversaire du patient',
     'auto.birthday_message': 'Joyeux anniversaire ! 🎉 Que ce soit une journée spéciale. Nous sommes là pour prendre soin de votre sourire 😊',
     'auto.btn_save': 'Enregistrer les automatisations',
+    'patients.alert_allergies': 'Allergies : {valor}',
+    'patients.alert_medications': 'Médicaments : {valor}',
+    'patients.alert_notes': 'Obs. : {valor}',
+    'patients.default_procedure': 'Rendez-vous',
   },
   de: {
     'nav.app_name': 'Iris-Portal',
@@ -1776,6 +1792,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris sendet am Geburtstag des Patienten eine herzliche Nachricht',
     'auto.birthday_message': 'Alles Gute zum Geburtstag! 🎉 Wir wünschen einen besonderen Tag. Wir sind hier, um uns um Ihr Lächeln zu kümmern 😊',
     'auto.btn_save': 'Automatisierungen speichern',
+    'patients.alert_allergies': 'Allergien: {valor}',
+    'patients.alert_medications': 'Medikamente: {valor}',
+    'patients.alert_notes': 'Anm.: {valor}',
+    'patients.default_procedure': 'Termin',
   },
   it: {
     'nav.app_name': 'Portale Iris',
@@ -2131,6 +2151,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris invia un messaggio affettuoso il giorno del compleanno del paziente',
     'auto.birthday_message': 'Buon compleanno! 🎉 Che sia una giornata speciale. Siamo qui per prenderci cura del tuo sorriso 😊',
     'auto.btn_save': 'Salva Automazioni',
+    'patients.alert_allergies': 'Allergie: {valor}',
+    'patients.alert_medications': 'Farmaci: {valor}',
+    'patients.alert_notes': 'Note: {valor}',
+    'patients.default_procedure': 'Appuntamento',
   },
   ru: {
     'nav.app_name': 'Портал Iris',
@@ -2486,6 +2510,10 @@ export const translations = {
     'auto.birthday_sub': 'Iris отправляет тёплое сообщение в день рождения пациента',
     'auto.birthday_message': 'С днём рождения! 🎉 Желаем особенного дня. Мы здесь, чтобы заботиться о вашей улыбке 😊',
     'auto.btn_save': 'Сохранить автоматизации',
+    'patients.alert_allergies': 'Аллергии: {valor}',
+    'patients.alert_medications': 'Лекарства: {valor}',
+    'patients.alert_notes': 'Примечания: {valor}',
+    'patients.default_procedure': 'Приём',
   },
   ar: {
     'nav.app_name': 'بوابة إيريس',
@@ -2841,6 +2869,10 @@ export const translations = {
     'auto.birthday_sub': 'ترسل Iris رسالة ودية في يوم ميلاد المريض',
     'auto.birthday_message': 'عيد ميلاد سعيد! 🎉 نتمنى لك يومًا مميزًا. نحن هنا للعناية بابتسامتك 😊',
     'auto.btn_save': 'حفظ الأتمتة',
+    'patients.alert_allergies': 'الحساسية: {valor}',
+    'patients.alert_medications': 'الأدوية: {valor}',
+    'patients.alert_notes': 'ملاحظات: {valor}',
+    'patients.default_procedure': 'موعد',
   },
 };
 
