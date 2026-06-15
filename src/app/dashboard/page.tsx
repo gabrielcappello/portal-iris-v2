@@ -20,6 +20,22 @@ const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
   'العربية':[{v:'sa',l:'المملكة العربية السعودية'},{v:'eg',l:'مصر'},{v:'ae',l:'الإمارات'},{v:'ma',l:'المغرب'},{v:'dz',l:'الجزائر'}],
 };
 
+// Nome do país em português (minúsculas), para a coluna texto "pais" da tabela clinicas.
+// Mesmo conjunto de códigos de PAIS_OPTIONS acima.
+const PAIS_NOME_PT: Record<string,string> = {
+  br:'brasil',pt:'portugal',ao:'angola',mz:'moçambique',cv:'cabo verde',gw:'guiné-bissau',
+  st:'são tomé e príncipe',tl:'timor-leste',
+  mx:'méxico',co:'colômbia',ar:'argentina',es:'espanha',pe:'peru',ve:'venezuela',cl:'chile',
+  ec:'equador',gt:'guatemala',cu:'cuba',bo:'bolívia',do:'república dominicana',hn:'honduras',
+  py:'paraguai',sv:'el salvador',ni:'nicarágua',cr:'costa rica',pa:'panamá',uy:'uruguai',
+  us:'estados unidos',uk:'reino unido',au:'austrália',ca:'canadá',ng:'nigéria',za:'áfrica do sul',
+  gh:'gana',ke:'quênia',in:'índia',ph:'filipinas',sg:'singapura',nz:'nova zelândia',ie:'irlanda',
+  fr:'frança',be:'bélgica',ch:'suíça',sn:'senegal',ci:'costa do marfim',cm:'camarões',mg:'madagascar',
+  de:'alemanha',at:'áustria',it:'itália',
+  ru:'rússia',by:'bielorrússia',kz:'cazaquistão',ua:'ucrânia',
+  sa:'arábia saudita',eg:'egito',ae:'emirados árabes unidos',ma:'marrocos',dz:'argélia',
+};
+
 const DDI_MAP: Record<string,string> = {
   br:'+55',pt:'+351',ao:'+244',mz:'+258',cv:'+238',gw:'+245',st:'+239',tl:'+670',
   mx:'+52',co:'+57',ar:'+54',es:'+34',pe:'+51',ve:'+58',cl:'+56',ec:'+593',
@@ -634,7 +650,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
           if(!lang||!pais)return;
           const precisaEstado=(ESTADOS_MAP[pais]||[]).length>0;
           if(precisaEstado&&(!estado||(ESTADOS_MAP[pais]||[]).includes(estado)===false))return;
-          onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,fuso_horario:fuso,estado});
+          onSave({idioma:`${lang}-${pais}`,pais_codigo:pais,pais:PAIS_NOME_PT[pais]||'',fuso_horario:fuso,estado});
           onClose();
         }} disabled={saving} style={saveBtnSt}>{saving?t("procs.saving"):'Salvar Idioma'}</button>
       </div>
