@@ -1120,6 +1120,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
       setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
     }
     if(!calOk){
+      onUpdate({ativo:false});
       if(!open)onToggle();
       setTimeout(()=>calInputRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),350);
       setCalError(true);
