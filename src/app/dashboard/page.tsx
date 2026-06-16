@@ -1076,12 +1076,13 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
 
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
-  const [calToggleErr,setCalToggleErr]=useState(false);
+  const [calToggleErrMsg,setCalToggleErrMsg]=useState('');
   const [calValidating,setCalValidating]=useState(false);
   const [calValResult,setCalValResult]=useState<{valido:boolean;calendar_name:string;timezone:string;motivo:string}|null>(null);
   const [calError,setCalError]=useState(false);
+  const [calValidated,setCalValidated]=useState(d.ativo);
   const calInputRef=useRef<HTMLInputElement>(null);
-  useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErr(false);setCalValResult(null);}},[d.calendar_id]);
+  useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErrMsg('');setCalValResult(null);setCalValidated(false);}},[d.calendar_id]);
 
   async function handleSave(){
     const errors:string[]=[];
@@ -1121,12 +1122,14 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
     }
     if(!calOk){
       onUpdate({ativo:false});
+      setCalValidated(false);
       if(!open)onToggle();
       setTimeout(()=>calInputRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),350);
       setCalError(true);
       setTimeout(()=>setCalError(false),3000);
       return;
     }
+    setCalValidated(true);
     await onSave();
     setOpenSub(null);
   }
@@ -1144,15 +1147,19 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
           <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{t("dentist.label_n",{n:i+1})}</span>
         )}
         <div style={{flex:1}}/>
-        <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>{if(v&&!d.calendar_id?.trim()){setCalToggleErr(true);return;}setCalToggleErr(false);onUpdate({ativo:v});}}/></div>
+        <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>{
+          if(v&&!d.calendar_id?.trim()){setCalToggleErrMsg('Preencha o Google Calendar ID antes de ativar este dentista.');return;}
+          if(v&&!calValidated){setCalToggleErrMsg('Salve o dentista com sucesso antes de ativar.');return;}
+          setCalToggleErrMsg('');onUpdate({ativo:v});
+        }}/></div>
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
           <ChevronDown size={14}/>
         </motion.div>
       </button>
 
-      {calToggleErr&&(
+      {calToggleErrMsg&&(
         <div style={{margin:'0 14px 8px',padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,fontSize:11,color:'#dc2626',fontWeight:500}}>
-          Preencha o Google Calendar ID antes de ativar este dentista.
+          {calToggleErrMsg}
         </div>
       )}
       <AnimatePresence initial={false}>
