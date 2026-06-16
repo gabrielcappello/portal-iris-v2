@@ -1139,6 +1139,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
       return;
     }
     setCalValidated(true);
+    setCalToggleErrMsg('');
     onUpdate({ativo:true});
     await onSave({ativo:true});
     setOpenSub(null);
