@@ -170,7 +170,7 @@
       "position": [1680, 60],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ valido: true, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', access_role: 'writer', motivo: '' }) }}",
+        "responseBody": "={{ JSON.stringify({ valido: true, tipo: 'ok', calendario_ok: true, compartilhamento_ok: true, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', motivo: '' }) }}",
         "options": {
           "responseCode": 200
         }
@@ -184,7 +184,7 @@
       "position": [1440, 260],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ valido: false, tipo: 'sem_permissao', calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', motivo: 'Agenda encontrada, mas a Iris não tem permissão para criar eventos. Altere a permissão da conta da Iris para: Fazer alterações nos eventos.' }) }}",
+        "responseBody": "={{ JSON.stringify({ valido: false, tipo: 'sem_permissao', calendario_ok: true, compartilhamento_ok: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', motivo: 'Agenda encontrada, mas a Iris não tem permissão para criar eventos. Altere a permissão para: Fazer alterações nos eventos.' }) }}",
         "options": {
           "responseCode": 200
         }
@@ -198,7 +198,7 @@
       "position": [960, 440],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ (function(){ const code = $('Get Calendar').item.json.statusCode; const tipo = code === 404 ? 'nao_encontrado' : code === 403 ? 'nao_compartilhado' : 'erro'; const motivo = code === 404 ? 'Calendário não encontrado. Verifique se o ID da agenda foi copiado corretamente.' : code === 403 ? 'Agenda não compartilhada com a Iris. Compartilhe esta agenda com a conta de serviço com permissão: Fazer alterações nos eventos.' : 'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'; return JSON.stringify({ valido: false, tipo, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: '', timezone: '', motivo }); })() }}",
+        "responseBody": "={{ (function(){ const code = $('Get Calendar').item.json.statusCode; const tipo = code === 403 ? 'nao_compartilhado' : 'nao_encontrado'; const calOk = code === 403; const motivo = calOk ? 'Agenda não compartilhada com a Iris.' : 'Calendário não encontrado. Verifique se o ID foi copiado corretamente.'; return JSON.stringify({ valido: false, tipo, calendario_ok: calOk, compartilhamento_ok: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: '', timezone: '', motivo }); })() }}",
         "options": {
           "responseCode": 200
         }
