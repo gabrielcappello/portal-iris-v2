@@ -217,7 +217,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
   open:boolean;onToggle:()=>void;children:React.ReactNode;badge?:string;
 }){
   return(
-    <motion.div layout style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'#e2e8f0'}`,boxShadow:'0 1px 3px rgba(0,0,0,0.06)',overflow:'hidden',marginBottom:12}}>
+    <motion.div layout style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 1px 3px rgba(0,0,0,0.06)',overflow:'hidden',marginBottom:12}}>
       <button onClick={onToggle} style={{width:'100%',padding:'14px 16px',border:'none',background:open?'rgba(43,122,120,0.04)':'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left'}}>
         <div style={{width:36,height:36,borderRadius:9,background:'linear-gradient(135deg,#DEF2F1,rgba(58,175,169,0.1))',color:'#2B7A78',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</div>
         <div style={{flex:1,minWidth:0}}>
@@ -542,7 +542,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       <div>
         <label style={labelSt}>{t("field.language")}</label>
         <button onClick={()=>setIdiomaOpen(p=>!p)}
-          style={{width:'100%',padding:'10px 14px',border:`1px solid ${idiomaOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+          style={{width:'100%',padding:'10px 14px',border:`1px solid ${idiomaOpen?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
           <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentIdioma?.label||lang}</span>
           <motion.div animate={{rotate:idiomaOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
             <ChevronDown size={16}/>
@@ -555,7 +555,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,padding:'10px 0 4px'}}>
                 {IDIOMAS.map(id=>(
                   <button key={id.v} onClick={()=>selectLang(id.v)}
-                    style={{padding:'10px 4px',border:`1px solid ${lang===id.v?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s',minHeight:52,boxSizing:'border-box'}}>
+                    style={{padding:'10px 4px',border:`1px solid ${lang===id.v?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:10,background:lang===id.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s',minHeight:52,boxSizing:'border-box'}}>
                     <span style={{fontSize:12,fontWeight:600,color:lang===id.v?'#2B7A78':'#475569',textAlign:'center',lineHeight:1.2,wordBreak:'break-word'}}>{id.label}</span>
                     {lang===id.v&&<Check size={10} color="#2B7A78"/>}
                   </button>
@@ -570,7 +570,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       <div>
         <label style={labelSt}>{t("field.country")}</label>
         <button onClick={()=>setPaisOpen(p=>!p)}
-          style={{width:'100%',padding:'10px 14px',border:`1px solid ${paisOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+          style={{width:'100%',padding:'10px 14px',border:`1px solid ${paisOpen?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
           <span style={{fontSize:18}}>{PAIS_FLAGS[pais]||'🌍'}</span>
           <span style={{flex:1,fontSize:14,fontWeight:600,color:'#1e293b',textAlign:'left'}}>{currentPais?.l||pais}</span>
           <motion.div animate={{rotate:paisOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
@@ -584,7 +584,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6,padding:'10px 0 4px'}}>
                 {paisOpts.map(o=>(
                   <button key={o.v} onClick={()=>selectPais(o.v)}
-                    style={{padding:'9px 12px',border:`1px solid ${pais===o.v?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:pais===o.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:8,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                    style={{padding:'9px 12px',border:`1px solid ${pais===o.v?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:8,background:pais===o.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:8,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
                     <span style={{fontSize:16}}>{PAIS_FLAGS[o.v]||'🌍'}</span>
                     <span style={{fontSize:12,fontWeight:pais===o.v?600:400,color:pais===o.v?'#2B7A78':'#475569'}}>{o.l}</span>
                   </button>
@@ -670,7 +670,7 @@ function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen,t}
     <div>
       <label style={labelSt}>{t("field.state_province")}</label>
       <button onClick={()=>setEstadoOpen(!estadoOpen)}
-        style={{width:'100%',padding:'10px 14px',border:`1px solid ${estadoOpen?'#2B7A78':'#e2e8f0'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
+        style={{width:'100%',padding:'10px 14px',border:`1px solid ${estadoOpen?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',gap:10,fontFamily:"'Sora',sans-serif",transition:'all 0.2s'}}>
         <span style={{flex:1,fontSize:14,fontWeight:600,color:estado?'#1e293b':'#94a3b8',textAlign:'left'}}>{estado||'Selecione...'}</span>
         <motion.div animate={{rotate:estadoOpen?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8'}}>
           <ChevronDown size={16}/>
@@ -683,7 +683,7 @@ function EstadoAccordion({estado,estadoOpts,onSelect,estadoOpen,setEstadoOpen,t}
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6,padding:'10px 0 4px',maxHeight:280,overflowY:'auto'}}>
               {estadoOpts.map(s=>(
                 <button key={s} onClick={()=>onSelect(s)}
-                  style={{padding:'8px 10px',border:`1px solid ${estado===s?'#2B7A78':'#e2e8f0'}`,borderRadius:8,background:estado===s?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',fontSize:12,fontWeight:estado===s?600:400,color:estado===s?'#2B7A78':'#475569',fontFamily:"'Sora',sans-serif",transition:'all 0.15s',textAlign:'left'}}>
+                  style={{padding:'8px 10px',border:`1px solid ${estado===s?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:8,background:estado===s?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',fontSize:12,fontWeight:estado===s?600:400,color:estado===s?'#2B7A78':'#475569',fontFamily:"'Sora',sans-serif",transition:'all 0.15s',textAlign:'left'}}>
                   {s}
                 </button>
               ))}
@@ -734,7 +734,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
             {PERSONALIDADES_LIST.map(p=>(
               <button key={p.v} onClick={()=>setPers(p.v)}
-                style={{padding:'10px 8px',border:`1px solid ${pers===p.v?'#2B7A78':'#e2e8f0'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                style={{padding:'10px 8px',border:`1px solid ${pers===p.v?'#2B7A78':'rgba(43,122,120,0.35)'}`,borderRadius:9,background:pers===p.v?'rgba(43,122,120,0.08)':'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
                 <span style={{fontSize:20}}>{p.icon}</span>
                 <span style={{fontSize:11,fontWeight:600,color:pers===p.v?'#2B7A78':'#475569',textAlign:'center'}}>{p.label}</span>
                 <span style={{fontSize:10,color:'#94a3b8',textAlign:'center',lineHeight:1.2}}>{p.sub}</span>
@@ -1520,7 +1520,7 @@ function EspecialidadesGrid({procs,onChange,t}:{procs:{nome:string;ativo:boolean
         const allSelected=total>0&&activeCount===total;
         const partial=activeCount>0&&activeCount<total;
         return(
-          <div key={ei} style={{border:`1px solid ${activeCount>0?'rgba(43,122,120,0.25)':'#e2e8f0'}`,borderRadius:8,overflow:'hidden'}}>
+          <div key={ei} style={{border:`1px solid ${activeCount>0?'rgba(43,122,120,0.35)':'rgba(43,122,120,0.2)'}`,borderRadius:8,overflow:'hidden'}}>
             <div style={{display:'flex',alignItems:'center',padding:'10px 12px',gap:8,background:activeCount>0?'rgba(43,122,120,0.04)':'#f8fafc'}}>
               {/* Name + count — click to expand */}
               <button onClick={()=>setOpenEsp(isOpen?null:ei)} onMouseDown={e=>e.preventDefault()}
@@ -1557,7 +1557,7 @@ function EspecialidadesGrid({procs,onChange,t}:{procs:{nome:string;ativo:boolean
                       const on=procsMap[p.nome]?.ativo||false;
                       return(
                         <button key={p.nome} onClick={()=>toggle(p.nome)} onMouseDown={e=>e.preventDefault()}
-                          style={{padding:'5px 11px',borderRadius:99,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${on?'#2B7A78':'#e2e8f0'}`,background:on?'#DEF2F1':'transparent',color:on?'#2B7A78':'#64748b',fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
+                          style={{padding:'5px 11px',borderRadius:99,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${on?'#2B7A78':'rgba(43,122,120,0.35)'}`,background:on?'#DEF2F1':'transparent',color:on?'#2B7A78':'#64748b',fontFamily:"'Sora',sans-serif",transition:'all 0.15s'}}>
                           {translateProcedimento(p.nome,t)}
                         </button>
                       );
@@ -1996,7 +1996,7 @@ function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:
       })}
 
       {/* Legenda tempo */}
-      <div style={{fontSize:11,color:'#94a3b8',marginBottom:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,borderLeft:'3px solid #e2e8f0'}}>
+      <div style={{fontSize:11,color:'#94a3b8',marginBottom:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,borderLeft:'3px solid rgba(43,122,120,0.35)'}}>
         ⏱️ {t("procs.time_legend")}
       </div>
 
