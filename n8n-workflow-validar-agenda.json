@@ -184,7 +184,7 @@
       "position": [1440, 260],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ valido: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', access_role: 'reader', motivo: 'Calendário encontrado, mas a conta de serviço da Iris não tem permissão para criar eventos. Compartilhe a agenda com permissão de alteração (\"Fazer alterações nos eventos\").' }) }}",
+        "responseBody": "={{ JSON.stringify({ valido: false, tipo: 'sem_permissao', calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', motivo: 'Agenda encontrada, mas a Iris não tem permissão para criar eventos. Altere a permissão da conta da Iris para: Fazer alterações nos eventos.' }) }}",
         "options": {
           "responseCode": 200
         }
@@ -198,7 +198,7 @@
       "position": [960, 440],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ valido: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: '', timezone: '', access_role: '', motivo: $('Get Calendar').item.json.statusCode === 404 ? 'Calendário não encontrado ou não compartilhado com a conta de serviço da Iris. Verifique o ID e compartilhe a agenda com o e-mail da service account.' : $('Get Calendar').item.json.statusCode === 403 ? 'Sem acesso ao calendário. Compartilhe a agenda com o e-mail da service account com permissão para alterar eventos.' : 'Não foi possível acessar a agenda (erro ' + $(\\'Get Calendar\\').item.json.statusCode + '). Verifique o ID e tente novamente.' }) }}",
+        "responseBody": "={{ (function(){ const code = $('Get Calendar').item.json.statusCode; const tipo = code === 404 ? 'nao_encontrado' : code === 403 ? 'nao_compartilhado' : 'erro'; const motivo = code === 404 ? 'Calendário não encontrado. Verifique se o ID da agenda foi copiado corretamente.' : code === 403 ? 'Agenda não compartilhada com a Iris. Compartilhe esta agenda com a conta de serviço com permissão: Fazer alterações nos eventos.' : 'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'; return JSON.stringify({ valido: false, tipo, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: '', timezone: '', motivo }); })() }}",
         "options": {
           "responseCode": 200
         }

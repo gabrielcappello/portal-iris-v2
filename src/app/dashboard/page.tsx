@@ -1078,7 +1078,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
   const [showSenha,setShowSenha]=useState(false);
   const [calToggleErrMsg,setCalToggleErrMsg]=useState('');
   const [calValidating,setCalValidating]=useState(false);
-  const [calValResult,setCalValResult]=useState<{valido:boolean;calendar_name:string;timezone:string;motivo:string}|null>(null);
+  const [calValResult,setCalValResult]=useState<{valido:boolean;tipo?:string;calendar_name:string;timezone:string;motivo:string}|null>(null);
   const [btnErrMsg,setBtnErrMsg]=useState('');
   const [calValidated,setCalValidated]=useState(d.ativo);
   const calInputRef=useRef<HTMLInputElement>(null);
@@ -1202,9 +1202,21 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                     {calValResult.timezone&&<div style={{fontSize:11,color:'#64748b',marginTop:2}}>{calValResult.timezone}</div>}
                   </div>
                 ):(
-                  <div style={{marginTop:6,padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
-                    {calValResult.calendar_name&&<div style={{fontSize:12,fontWeight:600,color:'#dc2626',marginBottom:2}}>&quot;{calValResult.calendar_name}&quot;</div>}
-                    <div style={{fontSize:11,color:'#dc2626'}}>{calValResult.motivo}</div>
+                  <div style={{marginTop:6,padding:'10px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
+                    {calValResult.calendar_name&&<div style={{fontSize:12,fontWeight:600,color:'#dc2626',marginBottom:4}}>&quot;{calValResult.calendar_name}&quot;</div>}
+                    <div style={{fontSize:11,color:'#dc2626',lineHeight:1.5}}>{calValResult.motivo}</div>
+                    {calValResult.tipo==='nao_compartilhado'&&(
+                      <div style={{marginTop:8,padding:'8px 10px',background:'#fff5f5',border:'1px solid #fecaca',borderRadius:5}}>
+                        <div style={{fontSize:10,color:'#64748b',marginBottom:5,fontWeight:600}}>Compartilhe a agenda com esta conta:</div>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <code style={{fontSize:10,color:'#1e293b',flex:1,wordBreak:'break-all',lineHeight:1.4}}>cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com</code>
+                          <button onClick={()=>navigator.clipboard.writeText('cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com')}
+                            style={{flexShrink:0,padding:'4px 10px',background:'#2B7A78',color:'#fff',border:'none',borderRadius:5,cursor:'pointer',fontSize:10,fontWeight:700}}>
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
