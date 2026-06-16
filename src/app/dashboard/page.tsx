@@ -10,7 +10,7 @@ import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/proced
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Preencher após criar o workflow no n8n:
-const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/v4";
+const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
@@ -1095,6 +1095,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
     setValidErrors([]);
     setCalValidating(true);
     setCalValResult(null);
+    console.log('[IRIS] Validando calendar_id:', d.calendar_id, '→', N8N_VALIDATE_CALENDAR_URL);
+    let calOk = false;
     try{
       const ctrl=new AbortController();
       const timer=setTimeout(()=>ctrl.abort(),10000);
@@ -1106,14 +1108,16 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
       });
       clearTimeout(timer);
       const data=await res.json();
+      console.log('[IRIS] Resposta n8n:', data);
       setCalValResult(data);
       setCalValidating(false);
-      if(!data.valido)return;
-    }catch{
+      calOk = data.valido === true;
+    }catch(err){
+      console.error('[IRIS] Erro ao validar calendar:', err);
       setCalValidating(false);
       setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
-      return;
     }
+    if(!calOk)return;
     await onSave();
     setOpenSub(null);
   }
