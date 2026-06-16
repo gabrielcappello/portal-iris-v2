@@ -1072,6 +1072,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
 
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
+  const [calToggleErr,setCalToggleErr]=useState(false);
+  useEffect(()=>{if(d.calendar_id?.trim())setCalToggleErr(false);},[d.calendar_id]);
 
   async function handleSave(){
     const errors:string[]=[];
@@ -1106,12 +1108,17 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
           <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{t("dentist.label_n",{n:i+1})}</span>
         )}
         <div style={{flex:1}}/>
-        <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>onUpdate({ativo:v})}/></div>
+        <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>{if(v&&!d.calendar_id?.trim()){setCalToggleErr(true);return;}setCalToggleErr(false);onUpdate({ativo:v});}}/></div>
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
           <ChevronDown size={14}/>
         </motion.div>
       </button>
 
+      {calToggleErr&&(
+        <div style={{margin:'0 14px 8px',padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,fontSize:11,color:'#dc2626',fontWeight:500}}>
+          Preencha o Google Calendar ID antes de ativar este dentista.
+        </div>
+      )}
       <AnimatePresence initial={false}>
         {open&&(
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
