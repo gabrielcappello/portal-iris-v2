@@ -10,7 +10,7 @@ import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/proced
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Preencher após criar o workflow no n8n:
-const N8N_VALIDATE_CALENDAR_URL = "PREENCHER_APOS_CRIAR_WORKFLOW_N8N";
+const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/v4";
 
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
