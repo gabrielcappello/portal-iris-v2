@@ -1079,6 +1079,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
   const [calToggleErr,setCalToggleErr]=useState(false);
   const [calValidating,setCalValidating]=useState(false);
   const [calValResult,setCalValResult]=useState<{valido:boolean;calendar_name:string;timezone:string;motivo:string}|null>(null);
+  const [calError,setCalError]=useState(false);
+  const calInputRef=useRef<HTMLInputElement>(null);
   useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErr(false);setCalValResult(null);}},[d.calendar_id]);
 
   async function handleSave(){
@@ -1117,7 +1119,13 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
       setCalValidating(false);
       setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
     }
-    if(!calOk)return;
+    if(!calOk){
+      if(!open)onToggle();
+      setTimeout(()=>calInputRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),350);
+      setCalError(true);
+      setTimeout(()=>setCalError(false),3000);
+      return;
+    }
     await onSave();
     setOpenSub(null);
   }
@@ -1167,7 +1175,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               </div>
               <div>
                 <label style={labelSt}>{t("field.calendar_id")}</label>
-                <input value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
+                <input ref={calInputRef} value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
                 {calValidating&&<div style={{marginTop:6,fontSize:12,color:'#64748b'}}>🔄 Verificando agenda no Google...</div>}
                 {!calValidating&&calValResult&&(calValResult.valido?(
                   <div style={{marginTop:6,padding:'8px 12px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6}}>
@@ -1340,8 +1348,10 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                     {t("dentist.qr_code")}
                   </button>
                   <button onClick={handleSave} disabled={saving||calValidating}
-                    style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,opacity:(saving||calValidating)?0.6:1}}>
-                    {calValidating?'Verificando agenda...':(saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
+                    style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,
+                      background:calError?'#dc2626':saveBtnSt.background,
+                      opacity:(saving||calValidating)?0.6:1,transition:'background 0.2s'}}>
+                    {calValidating?'Verificando agenda...':calError?'Erro na agenda':(saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
                   </button>
                 </div>
                 <AnimatePresence initial={false}>
