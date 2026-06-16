@@ -1204,14 +1204,22 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                 ):(
                   <div style={{marginTop:6,padding:'10px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
                     {calValResult.calendar_name&&<div style={{fontSize:12,fontWeight:600,color:'#dc2626',marginBottom:4}}>&quot;{calValResult.calendar_name}&quot;</div>}
-                    <div style={{fontSize:11,color:'#dc2626',lineHeight:1.5}}>{calValResult.motivo}</div>
-                    {calValResult.tipo==='nao_compartilhado'&&(
-                      <div style={{marginTop:8,padding:'8px 10px',background:'#fff5f5',border:'1px solid #fecaca',borderRadius:5}}>
-                        <div style={{fontSize:10,color:'#64748b',marginBottom:5,fontWeight:600}}>Compartilhe a agenda com esta conta:</div>
+                    <div style={{fontSize:11,color:'#dc2626',lineHeight:1.5,marginBottom:8}}>
+                      {calValResult.tipo==='nao_encontrado'
+                        ?'Calendário não encontrado. Verifique se o ID da agenda foi copiado corretamente.'
+                        :calValResult.tipo==='sem_permissao'
+                        ?'Agenda encontrada, mas a Iris não tem permissão para criar eventos. Altere a permissão para: Fazer alterações nos eventos.'
+                        :calValResult.tipo==='nao_compartilhado'
+                        ?'Agenda não compartilhada com a Iris. Compartilhe esta agenda com a conta abaixo com permissão: Fazer alterações nos eventos.'
+                        :calValResult.motivo}
+                    </div>
+                    {calValResult.tipo!=='nao_encontrado'&&(
+                      <div style={{padding:'8px 10px',background:'#fff5f5',border:'1px solid #fecaca',borderRadius:5}}>
+                        <div style={{fontSize:10,color:'#64748b',marginBottom:5,fontWeight:600}}>Compartilhe a agenda com esta conta de serviço:</div>
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <code style={{fontSize:10,color:'#1e293b',flex:1,wordBreak:'break-all',lineHeight:1.4}}>cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com</code>
                           <button onClick={()=>navigator.clipboard.writeText('cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com')}
-                            style={{flexShrink:0,padding:'4px 10px',background:'#2B7A78',color:'#fff',border:'none',borderRadius:5,cursor:'pointer',fontSize:10,fontWeight:700}}>
+                            style={{flexShrink:0,padding:'4px 10px',background:'#2B7A78',color:'#fff',border:'none',borderRadius:5,cursor:'pointer',fontSize:10,fontWeight:700,fontFamily:"'Sora',sans-serif"}}>
                             Copiar
                           </button>
                         </div>
