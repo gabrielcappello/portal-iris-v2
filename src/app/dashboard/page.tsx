@@ -599,7 +599,7 @@ function IdiomaSection({clinica,saving,onSave,onClose,onPaisEstadoChange,onCepDa
       <AnimatePresence>
         {paisInfo&&(
           <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}}
-            style={{display:'flex',gap:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,border:'1px solid #e2e8f0',fontSize:12,color:'#475569',flexWrap:'wrap'}}>
+            style={{display:'flex',gap:16,padding:'8px 12px',background:'#f8fafc',borderRadius:8,border:'1px solid rgba(43,122,120,0.35)',fontSize:12,color:'#475569',flexWrap:'wrap'}}>
             <span>📄 {t("field.document")}: <strong>{paisInfo.tipo_documento}</strong> ({paisInfo.digitos_documento} {t("field.digits")})</span>
             <span>📱 {t("field.phone_short")}: <strong>{paisInfo.digitos_telefone} {t("field.digits")}</strong></span>
             <span>💰 {t("field.currency")}: <strong>{paisInfo.moeda}{paisInfo.moeda_codigo?` (${paisInfo.moeda_codigo})`:''}</strong></span>
@@ -922,7 +922,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
       {/* L7.5: Horário de Funcionamento */}
       <div>
         <label style={labelSt}>{t("field.working_hours")}</label>
-        <div style={{display:'flex',flexDirection:'column',gap:12,padding:12,border:'1px solid #e2e8f0',borderRadius:10,background:'#f8fafc'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:12,padding:12,border:'1px solid rgba(43,122,120,0.35)',borderRadius:10,background:'#f8fafc'}}>
 
           {/* Segunda a sexta */}
           <div>
@@ -1429,7 +1429,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
                 <AnimatePresence initial={false}>
                   {showQR&&(
                     <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22}} style={{overflow:'hidden'}}>
-                      <div style={{marginTop:12,display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'16px',background:'#fff',borderRadius:10,border:'1px solid #e2e8f0'}}>
+                      <div style={{marginTop:12,display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'16px',background:'#fff',borderRadius:10,border:'1px solid rgba(43,122,120,0.35)'}}>
                         <div style={{fontSize:12,fontWeight:600,color:'#1e293b',textAlign:'center'}}>{t("dentist.app_of",{nome:nomeLabel})}</div>
                         {d.senha?(
                           <>
