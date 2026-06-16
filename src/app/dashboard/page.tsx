@@ -1330,67 +1330,80 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               )}
               </SubBloco>
               <SubBloco titulo={t("dentist.subbloco_calendario")} nomeDentista={nomeLabel} open={openSub==='calendario'} onToggle={()=>setOpenSub(p=>p==='calendario'?null:'calendario')}>
+              {/* Campo ID */}
               <div>
                 <label style={labelSt}>{t("field.calendar_id")}</label>
                 <input ref={calInputRef} value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
-                {calValidating&&<div style={{marginTop:8,fontSize:12,color:'#64748b',display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:14}}>🔄</span> Verificando agenda no Google...</div>}
-                {!calValidating&&calValResult&&(()=>{
-                  const calFound=calValResult.valido||calValResult.tipo==='nao_compartilhado'||calValResult.tipo==='sem_permissao';
-                  const sharingOk=calValResult.valido===true;
-                  const sharingBad=calValResult.tipo==='nao_compartilhado';
-                  const permBad=calValResult.tipo==='sem_permissao';
-                  return(
-                    <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:6}}>
-                      {/* Linha 1 — Calendário */}
-                      {calFound?(
-                        <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6}}>
-                          <span style={{fontSize:14}}>✅</span>
+              </div>
+              {/* Bloco fixo — sempre visível */}
+              <div style={{padding:'10px 12px',background:'#f0fdf9',border:'1px solid #99f6e4',borderRadius:8}}>
+                <div style={{fontSize:11,color:'#0f766e',fontWeight:600,marginBottom:6}}>Para funcionar, a agenda precisa ser compartilhada com a conta da Iris:</div>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                  <code style={{fontSize:10,color:'#134e4a',flex:1,wordBreak:'break-all',lineHeight:1.5,background:'#ccfbf1',padding:'4px 7px',borderRadius:4}}>cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com</code>
+                  <button onClick={()=>navigator.clipboard.writeText('cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com')}
+                    style={{flexShrink:0,padding:'5px 10px',background:'#2B7A78',color:'#fff',border:'none',borderRadius:5,cursor:'pointer',fontSize:10,fontWeight:700,fontFamily:"'Sora',sans-serif"}}>
+                    Copiar
+                  </button>
+                </div>
+                <div style={{fontSize:10,color:'#0f766e'}}>Permissão necessária: <strong>Fazer alterações nos eventos</strong></div>
+              </div>
+              {/* Resultado da validação */}
+              {calValidating&&(
+                <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#64748b',padding:'6px 0'}}>
+                  <span>🔄</span> Verificando a agenda no Google...
+                </div>
+              )}
+              {!calValidating&&calValResult&&(()=>{
+                const permBad=calValResult.tipo==='sem_permissao';
+                const allOk=calValResult.valido===true;
+                const calFound=allOk||permBad;
+                return(
+                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                    {calFound?(
+                      <>
+                        {/* Linha 1 — agenda encontrada */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:7}}>
+                          <span style={{fontSize:15}}>✅</span>
                           <div>
-                            <div style={{fontSize:12,fontWeight:600,color:'#16a34a'}}>Calendário: &quot;{calValResult.calendar_name}&quot;</div>
+                            <div style={{fontSize:12,fontWeight:600,color:'#16a34a'}}>Agenda encontrada: &quot;{calValResult.calendar_name}&quot;</div>
                             {calValResult.timezone&&<div style={{fontSize:10,color:'#64748b',marginTop:1}}>{calValResult.timezone}</div>}
                           </div>
                         </div>
-                      ):(
-                        <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
-                          <span style={{fontSize:14}}>❌</span>
-                          <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>Calendário não encontrado — verifique se o ID foi copiado corretamente</div>
-                        </div>
-                      )}
-                      {/* Linha 2 — Compartilhamento (só aparece se o calendário foi encontrado) */}
-                      {calFound&&(sharingOk?(
-                        <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6}}>
-                          <span style={{fontSize:14}}>✅</span>
-                          <div style={{fontSize:12,fontWeight:600,color:'#16a34a'}}>Compartilhamento: OK</div>
-                        </div>
-                      ):(
-                        <div style={{padding:'8px 10px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                            <span style={{fontSize:14}}>❌</span>
-                            <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>
-                              {permBad
-                                ?'Permissão insuficiente — altere para: Fazer alterações nos eventos'
-                                :'Falta compartilhar a agenda com a Iris'}
+                        {/* Linha 2 — compartilhamento */}
+                        {allOk?(
+                          <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:7}}>
+                            <span style={{fontSize:15}}>✅</span>
+                            <div style={{fontSize:12,fontWeight:600,color:'#16a34a'}}>Compartilhamento: tudo certo!</div>
+                          </div>
+                        ):(
+                          <div style={{padding:'8px 10px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:7}}>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <span style={{fontSize:15}}>❌</span>
+                              <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>A permissão está errada</div>
+                            </div>
+                            <div style={{fontSize:11,color:'#b91c1c',marginTop:4,lineHeight:1.5}}>
+                              A Iris encontrou a agenda, mas não consegue criar eventos nela. Mude a permissão da conta da Iris para: <strong>Fazer alterações nos eventos</strong>
                             </div>
                           </div>
-                          <div style={{padding:'7px 10px',background:'#fff5f5',border:'1px solid #fecaca',borderRadius:5}}>
-                            <div style={{fontSize:10,color:'#64748b',marginBottom:5,fontWeight:600}}>
-                              {sharingBad?'Compartilhe com esta conta de serviço:':'Conta de serviço da Iris:'}
-                            </div>
-                            <div style={{display:'flex',alignItems:'center',gap:6}}>
-                              <code style={{fontSize:10,color:'#1e293b',flex:1,wordBreak:'break-all',lineHeight:1.4}}>cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com</code>
-                              <button onClick={()=>navigator.clipboard.writeText('cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com')}
-                                style={{flexShrink:0,padding:'4px 10px',background:'#2B7A78',color:'#fff',border:'none',borderRadius:5,cursor:'pointer',fontSize:10,fontWeight:700,fontFamily:"'Sora',sans-serif"}}>
-                                Copiar
-                              </button>
-                            </div>
-                            {permBad&&<div style={{marginTop:6,fontSize:10,color:'#dc2626',fontWeight:500}}>Permissão necessária: <strong>Fazer alterações nos eventos</strong></div>}
-                          </div>
+                        )}
+                      </>
+                    ):(
+                      /* 404 ou nao_compartilhado — dois possíveis motivos */
+                      <div style={{padding:'10px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:7}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                          <span style={{fontSize:15}}>❌</span>
+                          <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>Não conseguimos encontrar esta agenda</div>
                         </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
+                        <div style={{fontSize:11,color:'#b91c1c',lineHeight:1.6}}>
+                          Isso pode ter dois motivos:<br/>
+                          <span style={{paddingLeft:8}}>• O ID foi digitado errado — confira se copiou certinho</span><br/>
+                          <span style={{paddingLeft:8}}>• A agenda ainda não foi compartilhada com a conta da Iris</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               </SubBloco>
               <SubBloco titulo={t("dentist.subbloco_especialidades")} nomeDentista={nomeLabel} open={openSub==='especialidades'} onToggle={()=>setOpenSub(p=>p==='especialidades'?null:'especialidades')}>
               <div>
