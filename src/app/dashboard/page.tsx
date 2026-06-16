@@ -1146,7 +1146,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   }
 
   return(
-    <div style={{border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid #e2e8f0'}}>
+    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid rgba(43,122,120,0.2)'}}>
       <button onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
         <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
@@ -1412,7 +1412,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
               </div>
               </SubBloco>
               {/* 4º bloco: Salvar */}
-              <div style={{border:'1px solid #e2e8f0',borderRadius:8,padding:'12px 14px',background:'#f8fafc'}}>
+              <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,padding:'12px 14px',background:'#f8fafc'}}>
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
                     style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
@@ -1467,7 +1467,7 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
   onToggle:()=>void;children:React.ReactNode;
 }){
   return(
-    <div style={{border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
+    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden'}}>
       <button
         onClick={onToggle}
         onMouseDown={e=>e.preventDefault()}
