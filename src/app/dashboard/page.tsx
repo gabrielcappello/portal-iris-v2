@@ -302,7 +302,7 @@ export default function ConfigPage(){
       }
       if(data.idioma)refreshLang();
       showToast('Salvo com sucesso ✓');
-      setOpen(null);
+      if(section!=='dentistas_save') setOpen(null);
     }catch{showToast('Erro ao salvar',false);}
     finally{setSaving(null);}
   }
@@ -1034,9 +1034,10 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
 
   function upd(i:number,data:Partial<Dentista>){setDents(prev=>prev.map((d,j)=>j===i?{...d,...data}:d));}
 
-  async function saveOne(i:number){
+  async function saveOne(i:number,patch?:Partial<Dentista>){
     setSavingIdx(i);
-    await onSaveOne(i,dents);
+    const toSave=patch?dents.map((d,j)=>j===i?{...d,...patch}:d):dents;
+    await onSaveOne(i,toSave);
     setSavingIdx(null);
   }
 
@@ -1049,7 +1050,7 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
       </div>
       {dents.map((d,i)=>(
         <DentistaCard key={i} d={d} i={i} open={open===i} onToggle={()=>setOpen(p=>p===i?null:i)}
-          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={()=>saveOne(i)} saving={savingIdx===i} clinicaId={clinica.id} t={t}/>
+          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={(patch)=>saveOne(i,patch)} saving={savingIdx===i} clinicaId={clinica.id} t={t}/>
       ))}
       <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
         style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
@@ -1061,7 +1062,7 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
 
 function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
-  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:()=>Promise<void>;saving:boolean;clinicaId:string;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
+  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:(patch?:Partial<Dentista>)=>Promise<void>;saving:boolean;clinicaId:string;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   const semAlmoco = d.alm_ini === d.alm_fim;
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,semAlmoco?'00:00':(d.alm_ini||'12:00'),semAlmoco?'00:00':(d.alm_fim||'13:00')):[];
@@ -1139,7 +1140,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
     }
     setCalValidated(true);
     onUpdate({ativo:true});
-    await onSave();
+    await onSave({ativo:true});
     setOpenSub(null);
   }
 
