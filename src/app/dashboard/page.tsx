@@ -1074,28 +1074,31 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
   const [showQR,setShowQR]=useState(false);
   const qrUrl=typeof window!=='undefined'?`${window.location.origin}/dentista/${clinicaId}/${i}?t=${encodeURIComponent(d.senha||'')}`:`/dentista/${clinicaId}/${i}`;
 
-  const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
   const [calToggleErrMsg,setCalToggleErrMsg]=useState('');
   const [calValidating,setCalValidating]=useState(false);
   const [calValResult,setCalValResult]=useState<{valido:boolean;calendar_name:string;timezone:string;motivo:string}|null>(null);
-  const [calError,setCalError]=useState(false);
+  const [btnErrMsg,setBtnErrMsg]=useState('');
   const [calValidated,setCalValidated]=useState(d.ativo);
   const calInputRef=useRef<HTMLInputElement>(null);
   useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErrMsg('');setCalValResult(null);setCalValidated(false);}},[d.calendar_id]);
 
   async function handleSave(){
-    const errors:string[]=[];
-    if(!d.nome?.trim()) errors.push(t("dentist.error_name"));
-    if(!d.whatsapp?.trim()) errors.push(t("dentist.error_whatsapp"));
-    if(!d.senha?.trim()) errors.push(t("dentist.error_password"));
-    if(!d.calendar_id?.trim()) errors.push(t("dentist.error_calendar_missing"));
-    if(!d.inicio) errors.push(t("dentist.error_open_time"));
-    if(!d.fim) errors.push(t("dentist.error_close_time"));
+    const faltam:string[]=[];
+    if(!d.nome?.trim()) faltam.push('Nome');
+    if(!d.whatsapp?.trim()) faltam.push('WhatsApp');
+    if(!d.senha?.trim()) faltam.push('Senha');
+    if(!d.calendar_id?.trim()) faltam.push('Calendar ID');
+    if(!d.inicio) faltam.push('Horário início');
+    if(!d.fim) faltam.push('Horário fim');
     if(!(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo))
-      errors.push(t("dentist.error_specialty"));
-    if(errors.length>0){setValidErrors(errors);return;}
-    setValidErrors([]);
+      faltam.push('Especialidade');
+    if(faltam.length>0){
+      setBtnErrMsg('Falta: '+faltam.join(' · '));
+      setTimeout(()=>setBtnErrMsg(''),3500);
+      return;
+    }
+    setBtnErrMsg('');
     setCalValidating(true);
     setCalValResult(null);
     console.log('[IRIS] Validando calendar_id:', d.calendar_id, '→', N8N_VALIDATE_CALENDAR_URL);
@@ -1115,21 +1118,27 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
       setCalValResult(data);
       setCalValidating(false);
       calOk = data.valido === true;
+      if(!calOk){
+        const msg=(data.motivo||'Calendar inválido').slice(0,60);
+        setBtnErrMsg('Erro: '+msg);
+        setTimeout(()=>setBtnErrMsg(''),4000);
+      }
     }catch(err){
       console.error('[IRIS] Erro ao validar calendar:', err);
       setCalValidating(false);
       setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
+      setBtnErrMsg('Erro: Não foi possível verificar a agenda');
+      setTimeout(()=>setBtnErrMsg(''),4000);
     }
     if(!calOk){
       onUpdate({ativo:false});
       setCalValidated(false);
       if(!open)onToggle();
       setTimeout(()=>calInputRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),350);
-      setCalError(true);
-      setTimeout(()=>setCalError(false),3000);
       return;
     }
     setCalValidated(true);
+    onUpdate({ativo:true});
     await onSave();
     setOpenSub(null);
   }
@@ -1342,13 +1351,6 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               </SubBloco>
               {/* 4º bloco: Salvar */}
               <div style={{border:'1px solid #e2e8f0',borderRadius:8,padding:'12px 14px',background:'#f8fafc'}}>
-                {validErrors.length>0&&(
-                  <div style={{marginBottom:10,padding:'10px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
-                    {validErrors.map((e,ei)=>(
-                      <div key={ei} style={{fontSize:11,color:'#dc2626',fontWeight:500,lineHeight:1.6}}>• {e}</div>
-                    ))}
-                  </div>
-                )}
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
                     style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
@@ -1357,9 +1359,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                   </button>
                   <button onClick={handleSave} disabled={saving||calValidating}
                     style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,
-                      background:calError?'#dc2626':saveBtnSt.background,
-                      opacity:(saving||calValidating)?0.6:1,transition:'background 0.2s'}}>
-                    {calValidating?'Verificando agenda...':calError?'Erro na agenda':(saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
+                      background:btnErrMsg?'#dc2626':saveBtnSt.background,
+                      opacity:(saving||calValidating)?0.6:1,transition:'background 0.3s'}}>
+                    {calValidating?'Verificando agenda...':btnErrMsg||( saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
                   </button>
                 </div>
                 <AnimatePresence initial={false}>
