@@ -1050,7 +1050,7 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
       </div>
       {dents.map((d,i)=>(
         <DentistaCard key={i} d={d} i={i} open={open===i} onToggle={()=>setOpen(p=>p===i?null:i)}
-          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={(patch)=>saveOne(i,patch)} saving={savingIdx===i} clinicaId={clinica.id} t={t}/>
+          onUpdate={(data)=>upd(i,data)} ddi={ddi} onSave={(patch)=>saveOne(i,patch)} saving={savingIdx===i} clinicaId={clinica.id} nomeAgente={clinica.nome_agente||'Iris'} t={t}/>
       ))}
       <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
         style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
@@ -1060,9 +1060,9 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
   );
 }
 
-function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}:{
+function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,nomeAgente,t}:{
   d:Dentista;i:number;open:boolean;onToggle:()=>void;
-  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:(patch?:Partial<Dentista>)=>Promise<void>;saving:boolean;clinicaId:string;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
+  onUpdate:(data:Partial<Dentista>)=>void;ddi:string;onSave:(patch?:Partial<Dentista>)=>Promise<void>;saving:boolean;clinicaId:string;nomeAgente:string;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;
 }){
   const semAlmoco = d.alm_ini === d.alm_fim;
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,semAlmoco?'00:00':(d.alm_ini||'12:00'),semAlmoco?'00:00':(d.alm_fim||'13:00')):[];
@@ -1337,7 +1337,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               </div>
               {/* Bloco fixo — sempre visível */}
               <div style={{padding:'10px 12px',background:'#f0fdf9',border:'1px solid #99f6e4',borderRadius:8}}>
-                <div style={{fontSize:11,color:'#0f766e',fontWeight:600,marginBottom:6}}>Para funcionar, a agenda precisa ser compartilhada com a conta da Iris:</div>
+                <div style={{fontSize:11,color:'#0f766e',fontWeight:600,marginBottom:6}}>Para funcionar, a agenda precisa ser compartilhada com a conta da {nomeAgente}:</div>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
                   <code style={{fontSize:10,color:'#134e4a',flex:1,wordBreak:'break-all',lineHeight:1.5,background:'#ccfbf1',padding:'4px 7px',borderRadius:4}}>cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com</code>
                   <button onClick={()=>navigator.clipboard.writeText('cappia-calendar-service@trans-sunset-494302-j8.iam.gserviceaccount.com')}
@@ -1382,7 +1382,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                               <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>A permissão está errada</div>
                             </div>
                             <div style={{fontSize:11,color:'#b91c1c',marginTop:4,lineHeight:1.5}}>
-                              A Iris encontrou a agenda, mas não consegue criar eventos nela. Mude a permissão da conta da Iris para: <strong>Fazer alterações nos eventos</strong>
+                              A {nomeAgente} encontrou a agenda, mas não consegue criar eventos nela. Mude a permissão da conta da {nomeAgente} para: <strong>Fazer alterações nos eventos</strong>
                             </div>
                           </div>
                         )}
@@ -1397,7 +1397,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                         <div style={{fontSize:11,color:'#b91c1c',lineHeight:1.6}}>
                           Isso pode ter dois motivos:<br/>
                           <span style={{paddingLeft:8}}>• O ID foi digitado errado — confira se copiou certinho</span><br/>
-                          <span style={{paddingLeft:8}}>• A agenda ainda não foi compartilhada com a conta da Iris</span>
+                          <span style={{paddingLeft:8}}>• A agenda ainda não foi compartilhada com a conta da {nomeAgente}</span>
                         </div>
                       </div>
                     )}
