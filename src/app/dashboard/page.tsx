@@ -323,7 +323,7 @@ export default function ConfigPage(){
   const ddi=DDI_MAP[paisCode]||'+55';
   const prefixo=ddd?`${ddi} (${ddd})`:`${ddi}`;
   const paisOpts=PAIS_OPTIONS[idioma]||[];
-  const ativos=(Array.isArray(clinica.dentistas)?clinica.dentistas:[] as Dentista[]).filter((d:Dentista)=>d.ativo).length;
+  const ativos=(Array.isArray(clinica.dentistas)?clinica.dentistas:[] as Dentista[]).filter((d:Dentista)=>d?.ativo).length;
 
   const idiomaConfigurado=!!(clinica.idioma&&clinica.pais_codigo&&(clinica as unknown as Record<string,string>).estado||(clinica.idioma&&clinica.pais_codigo&&!(ESTADOS_MAP[clinica.pais_codigo]?.length>0)));
 
@@ -1036,7 +1036,7 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
     setSavingIdx(null);
   }
 
-  const ativos=dents.filter(d=>d.ativo).length;
+  const ativos=dents.filter(d=>d?.ativo).length;
 
   return(
     <div>
@@ -1754,7 +1754,7 @@ function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:
     procs: precos.filter(p => p.esp === esp.nome),
   }));
 
-  const totalAtivos = precos.filter(p => p.ativo).length;
+  const totalAtivos = precos.filter(p => p?.ativo).length;
 
   const colStyle: React.CSSProperties = {display:'grid',gridTemplateColumns:'1fr 80px 110px 90px',gap:8};
 
@@ -1765,11 +1765,11 @@ function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:
       </div>
 
       {grupos.map(g => {
-        const ativos = g.procs.filter(p => p.ativo).length;
+        const ativos = g.procs.filter(p => p?.ativo).length;
         const todosAtivos = ativos === g.procs.length;
         const algumAtivo = ativos > 0;
-        const todosComValor = g.procs.filter(p=>p.ativo).every(p=>p.mostrar_valor);
-        const algumComValor = g.procs.filter(p=>p.ativo).some(p=>p.mostrar_valor);
+        const todosComValor = g.procs.filter(p=>p?.ativo).every(p=>p.mostrar_valor);
+        const algumComValor = g.procs.filter(p=>p?.ativo).some(p=>p.mostrar_valor);
 
         // Estado indeterminado para o toggle de especialidade
         const espAtivoVal = todosAtivos ? true : false;
