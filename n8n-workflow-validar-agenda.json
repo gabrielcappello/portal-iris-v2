@@ -1,0 +1,251 @@
+{
+  "name": "Tool - Validar Agenda Google",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "cappia-validate-calendar",
+      "parameters": {
+        "path": "validate-calendar",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-get-calendar",
+      "name": "Get Calendar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/{{ encodeURIComponent($json.body.calendar_id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "autoDetect",
+              "fullResponse": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SUBSTITUIR_PELO_ID_DA_CREDENCIAL",
+          "name": "SUBSTITUIR_PELO_NOME_DA_CREDENCIAL"
+        }
+      }
+    },
+    {
+      "id": "node-if-calendar-ok",
+      "name": "IF Calendar OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c-cal-ok",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-create-event",
+      "name": "Create Test Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 160],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/{{ encodeURIComponent($('Webhook').item.json.body.calendar_id) }}/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ summary: 'Cappia - validação de agenda', start: { dateTime: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0] + 'T10:00:00Z', timeZone: 'UTC' }, end: { dateTime: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0] + 'T10:30:00Z', timeZone: 'UTC' } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "autoDetect",
+              "fullResponse": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SUBSTITUIR_PELO_ID_DA_CREDENCIAL",
+          "name": "SUBSTITUIR_PELO_NOME_DA_CREDENCIAL"
+        }
+      }
+    },
+    {
+      "id": "node-if-event-created",
+      "name": "IF Event Created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 160],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c-event-ok",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-delete-event",
+      "name": "Delete Test Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 60],
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/{{ encodeURIComponent($('Webhook').item.json.body.calendar_id) }}/events/{{ $('Create Test Event').item.json.body.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SUBSTITUIR_PELO_ID_DA_CREDENCIAL",
+          "name": "SUBSTITUIR_PELO_NOME_DA_CREDENCIAL"
+        }
+      }
+    },
+    {
+      "id": "node-respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1680, 60],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ valido: true, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', access_role: 'writer', motivo: '' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "node-respond-no-write",
+      "name": "Respond No Write Permission",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1440, 260],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ valido: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: $('Get Calendar').item.json.body.summary || '', timezone: $('Get Calendar').item.json.body.timeZone || '', access_role: 'reader', motivo: 'Calendário encontrado, mas a conta de serviço da Iris não tem permissão para criar eventos. Compartilhe a agenda com permissão de alteração (\"Fazer alterações nos eventos\").' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "node-respond-not-found",
+      "name": "Respond Not Found",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 440],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ valido: false, calendar_id: $('Webhook').item.json.body.calendar_id, calendar_name: '', timezone: '', access_role: '', motivo: $('Get Calendar').item.json.statusCode === 404 ? 'Calendário não encontrado ou não compartilhado com a conta de serviço da Iris. Verifique o ID e compartilhe a agenda com o e-mail da service account.' : $('Get Calendar').item.json.statusCode === 403 ? 'Sem acesso ao calendário. Compartilhe a agenda com o e-mail da service account com permissão para alterar eventos.' : 'Não foi possível acessar a agenda (erro ' + $(\\'Get Calendar\\').item.json.statusCode + '). Verifique o ID e tente novamente.' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{"node": "Get Calendar", "type": "main", "index": 0}]
+      ]
+    },
+    "Get Calendar": {
+      "main": [
+        [{"node": "IF Calendar OK", "type": "main", "index": 0}]
+      ]
+    },
+    "IF Calendar OK": {
+      "main": [
+        [{"node": "Create Test Event", "type": "main", "index": 0}],
+        [{"node": "Respond Not Found", "type": "main", "index": 0}]
+      ]
+    },
+    "Create Test Event": {
+      "main": [
+        [{"node": "IF Event Created", "type": "main", "index": 0}]
+      ]
+    },
+    "IF Event Created": {
+      "main": [
+        [{"node": "Delete Test Event", "type": "main", "index": 0}],
+        [{"node": "Respond No Write Permission", "type": "main", "index": 0}]
+      ]
+    },
+    "Delete Test Event": {
+      "main": [
+        [{"node": "Respond Success", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}

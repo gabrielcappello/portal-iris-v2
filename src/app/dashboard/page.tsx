@@ -8,6 +8,10 @@ import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/procedimentos-i18n";
 
+// ── Config ─────────────────────────────────────────────────────────────────────
+// Preencher após criar o workflow no n8n:
+const N8N_VALIDATE_CALENDAR_URL = "PREENCHER_APOS_CRIAR_WORKFLOW_N8N";
+
 // ── Dados estáticos ────────────────────────────────────────────────────────────
 const PAIS_OPTIONS: Record<string,{v:string;l:string}[]> = {
   'português':[{v:'br',l:'Brasil'},{v:'pt',l:'Portugal'},{v:'ao',l:'Angola'},{v:'mz',l:'Moçambique'},{v:'cv',l:'Cabo Verde'},{v:'gw',l:'Guiné-Bissau'},{v:'st',l:'São Tomé e Príncipe'},{v:'tl',l:'Timor-Leste'}],
@@ -1063,7 +1067,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
   const slots=d.modo==='auto'?calcSlots(d.inicio||'08:00',d.fim||'18:00',d.dur||60,semAlmoco?'00:00':(d.alm_ini||'12:00'),semAlmoco?'00:00':(d.alm_fim||'13:00')):[];
   const nomeLabel=d.nome?`${d.titulo||'Dr.'} ${d.nome}`:t("dentist.label_n",{n:i+1});
   const allComplete=!!d.nome?.trim()&&!!d.whatsapp?.trim()&&!!d.senha?.trim()&&
-    !!d.calendar_id?.trim()&&d.calendar_id.trim().endsWith('@group.calendar.google.com')&&
+    !!d.calendar_id?.trim()&&
     !!d.inicio&&!!d.fim&&(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo);
   const dotColor=!d.ativo?'#e2e8f0':allComplete?'#10b981':'#f59e0b';
   const [openSub,setOpenSub]=useState<'dados'|'horarios'|'especialidades'|null>(null);
@@ -1073,24 +1077,43 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
   const [validErrors,setValidErrors]=useState<string[]>([]);
   const [showSenha,setShowSenha]=useState(false);
   const [calToggleErr,setCalToggleErr]=useState(false);
-  useEffect(()=>{if(d.calendar_id?.trim())setCalToggleErr(false);},[d.calendar_id]);
+  const [calValidating,setCalValidating]=useState(false);
+  const [calValResult,setCalValResult]=useState<{valido:boolean;calendar_name:string;timezone:string;motivo:string}|null>(null);
+  useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErr(false);setCalValResult(null);}},[d.calendar_id]);
 
   async function handleSave(){
     const errors:string[]=[];
     if(!d.nome?.trim()) errors.push(t("dentist.error_name"));
     if(!d.whatsapp?.trim()) errors.push(t("dentist.error_whatsapp"));
     if(!d.senha?.trim()) errors.push(t("dentist.error_password"));
-    if(!d.calendar_id?.trim()){
-      errors.push(t("dentist.error_calendar_missing"));
-    } else if(!d.calendar_id.trim().endsWith('@group.calendar.google.com')){
-      errors.push(t("dentist.error_calendar_invalid"));
-    }
+    if(!d.calendar_id?.trim()) errors.push(t("dentist.error_calendar_missing"));
     if(!d.inicio) errors.push(t("dentist.error_open_time"));
     if(!d.fim) errors.push(t("dentist.error_close_time"));
     if(!(d.procedimentos||[]).some((p:{ativo:boolean})=>p.ativo))
       errors.push(t("dentist.error_specialty"));
     if(errors.length>0){setValidErrors(errors);return;}
     setValidErrors([]);
+    setCalValidating(true);
+    setCalValResult(null);
+    try{
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>ctrl.abort(),10000);
+      const res=await fetch(N8N_VALIDATE_CALENDAR_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({calendar_id:d.calendar_id}),
+        signal:ctrl.signal,
+      });
+      clearTimeout(timer);
+      const data=await res.json();
+      setCalValResult(data);
+      setCalValidating(false);
+      if(!data.valido)return;
+    }catch{
+      setCalValidating(false);
+      setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
+      return;
+    }
     await onSave();
     setOpenSub(null);
   }
@@ -1141,6 +1164,18 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
               <div>
                 <label style={labelSt}>{t("field.calendar_id")}</label>
                 <input value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
+                {calValidating&&<div style={{marginTop:6,fontSize:12,color:'#64748b'}}>🔄 Verificando agenda no Google...</div>}
+                {!calValidating&&calValResult&&(calValResult.valido?(
+                  <div style={{marginTop:6,padding:'8px 12px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6}}>
+                    <div style={{fontSize:12,fontWeight:600,color:'#16a34a'}}>✅ Agenda verificada: &quot;{calValResult.calendar_name}&quot;</div>
+                    {calValResult.timezone&&<div style={{fontSize:11,color:'#64748b',marginTop:2}}>{calValResult.timezone}</div>}
+                  </div>
+                ):(
+                  <div style={{marginTop:6,padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6}}>
+                    {calValResult.calendar_name&&<div style={{fontSize:12,fontWeight:600,color:'#dc2626',marginBottom:2}}>&quot;{calValResult.calendar_name}&quot;</div>}
+                    <div style={{fontSize:11,color:'#dc2626'}}>{calValResult.motivo}</div>
+                  </div>
+                ))}
               </div>
               <div>
                 <label style={labelSt}>{t("field.phone")}</label>
@@ -1300,9 +1335,9 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,t}
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/></svg>
                     {t("dentist.qr_code")}
                   </button>
-                  <button onClick={handleSave} disabled={saving}
-                    style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,opacity:saving?0.6:1}}>
-                    {saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel})}
+                  <button onClick={handleSave} disabled={saving||calValidating}
+                    style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,opacity:(saving||calValidating)?0.6:1}}>
+                    {calValidating?'Verificando agenda...':(saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
                   </button>
                 </div>
                 <AnimatePresence initial={false}>
