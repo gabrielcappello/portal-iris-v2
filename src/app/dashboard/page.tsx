@@ -202,8 +202,8 @@ const inputSt:React.CSSProperties={width:'100%',padding:'10px 12px',fontSize:13,
 const labelSt:React.CSSProperties={display:'block',fontSize:11,fontWeight:600,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6};
 const saveBtnSt:React.CSSProperties={padding:'10px 20px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#2B7A78,#3AAFA9)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif"};
 
-function Toggle({on,onChange,partial,inactiveBg}:{on:boolean;onChange:(v:boolean)=>void;partial?:boolean;inactiveBg?:string}){
-  const bg=on?(partial?'#f59e0b':'#2B7A78'):(inactiveBg??'#e2e8f0');
+function Toggle({on,onChange,partial,inactiveBg='#94a3b8'}:{on:boolean;onChange:(v:boolean)=>void;partial?:boolean;inactiveBg?:string}){
+  const bg=on?(partial?'#f59e0b':'#2B7A78'):inactiveBg;
   return(
     <button onClick={()=>onChange(!on)} style={{width:44,height:24,borderRadius:99,border:'none',cursor:'pointer',position:'relative',transition:'background 0.2s',background:bg,flexShrink:0}}>
       <motion.div animate={{x:on?20:2}} transition={{type:'spring',stiffness:500,damping:30}}
@@ -1003,7 +1003,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.almoco.ativo?6:0}}>
               <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.lunch_break")}</span>
-              <Toggle on={horario.almoco.ativo} onChange={v=>setHorarioField('almoco','ativo',v)} inactiveBg="#94a3b8"/>
+              <Toggle on={horario.almoco.ativo} onChange={v=>setHorarioField('almoco','ativo',v)}/>
             </div>
             {horario.almoco.ativo&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
@@ -1017,7 +1017,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.sabado.ativo?6:0}}>
               <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.saturday")}</span>
-              <Toggle on={horario.sabado.ativo} onChange={v=>setHorarioField('sabado','ativo',v)} inactiveBg="#94a3b8"/>
+              <Toggle on={horario.sabado.ativo} onChange={v=>setHorarioField('sabado','ativo',v)}/>
             </div>
             {horario.sabado.ativo&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
@@ -1031,7 +1031,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
           <div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:horario.domingo.ativo?6:0}}>
               <span style={{fontSize:12,fontWeight:600,color:'#475569'}}>{t("field.sunday")}</span>
-              <Toggle on={horario.domingo.ativo} onChange={v=>setHorarioField('domingo','ativo',v)} inactiveBg="#94a3b8"/>
+              <Toggle on={horario.domingo.ativo} onChange={v=>setHorarioField('domingo','ativo',v)}/>
             </div>
             {horario.domingo.ativo&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
