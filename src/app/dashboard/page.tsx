@@ -1670,6 +1670,7 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
   );
   const [anamOpen,setAnamOpen]=useState(false);
 
+  const [nascimento,setNascimento]=useState((a.solicitar_nascimento as boolean)!==false);
   const [tipoDocumento,setTipoDocumento]=useState('');
   useEffect(()=>{
     const p=clinica.pais_codigo;
@@ -1685,12 +1686,9 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:0}}>
-      <div style={{padding:'10px 14px',background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.15)',borderRadius:8,fontSize:12,color:'#475569',marginBottom:16}}>
-        💡 {t("dados.hint")}
-      </div>
       <div style={{marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:10}}>{t("dados.required_fields")}</div>
-        {[t("patients.col_name"),t("field.phone_short"),docLabel,t("dados.birthdate")].map(l=>(
+        {[t("patients.col_name"),t("field.phone_short"),docLabel].map(l=>(
           <div key={l} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:'1px solid #f1f5f9'}}>
             <span style={{fontSize:16}}>🔒</span>
             <span style={{flex:1,fontSize:14,fontWeight:500,color:'#1e293b'}}>{l}</span>
@@ -1700,6 +1698,15 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
       </div>
       <div>
         <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>{t("dados.optional_fields")}</div>
+        {/* Data de nascimento — opcional */}
+        <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid #f1f5f9'}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{t("dados.birthdate")}</div>
+            <div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{t("dados.birthdate_hint")}</div>
+          </div>
+          <Toggle on={nascimento} onChange={setNascimento}/>
+        </div>
+
         {/* Anamnese — primeiro, com toggle pai + sub-campos inline */}
         <div style={{borderBottom:'1px solid #f1f5f9'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
@@ -1753,7 +1760,7 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
         ))}
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:true,solicitar_email:email,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
+        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:nascimento,solicitar_email:email,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
           {saving?t("procs.saving"):t("dados.btn_save")}
         </button>
       </div>
