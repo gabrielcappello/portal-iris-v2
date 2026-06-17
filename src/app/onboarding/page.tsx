@@ -430,10 +430,19 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (!res.ok || data.sucesso === false || data.success === false)
         throw new Error(data.erro || data.error || data.message || tx.err_create);
+      const clinicaId = data.clinica_id || data.id || "";
       localStorage.setItem("auth_token",   data.auth_token  || data.token || senhaHash);
-      localStorage.setItem("clinica_id",   data.clinica_id  || data.id    || "");
+      localStorage.setItem("clinica_id",   clinicaId);
       localStorage.setItem("user_id",      data.user_id     || "");
       localStorage.setItem("clinica_nome", nome);
+      // Garante que estado e cep ficam salvos (Edge Function pode não persistir)
+      if (clinicaId && (estado || cep)) {
+        await fetch(`${SUPABASE_URL}/rest/v1/clinicas?id=eq.${clinicaId}`, {
+          method: "PATCH",
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...(estado && { estado }), ...(cep && { cep }) }),
+        });
+      }
       router.replace("/dashboard");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : tx.err_create);
