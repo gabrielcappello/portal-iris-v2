@@ -341,11 +341,6 @@ export default function ConfigPage(){
         <IdiomaSection clinica={clinica} saving={saving==='idioma'} onSave={(d)=>save('idioma',d)} onClose={()=>toggle('idioma')} onPaisEstadoChange={onIdiomaPaisEstadoChange} onCepData={onCepData} showToast={showToast} t={t}/>
       </CardSection>
 
-      {/* SECRETARIA */}
-      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`${t("config.card_agent")}${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle={t("config.card_agent_sub")} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
-        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)} t={t}/>
-      </CardSection>
-
       {/* CLINICA */}
       <CardSection id="clinica" icon={<Building2 size={18}/>} title={`${t("config.card_clinic")}${clinica.nome?` ${clinica.nome}`:''}`} subtitle={t("config.card_clinic_sub")} open={open==='clinica'} onToggle={()=>toggle('clinica')}>
         <ClinicaSection clinica={clinica} prefixo={prefixo} estados={estados} saving={saving==='clinica'} onSave={(d)=>save('clinica',d)} onClose={()=>toggle('clinica')} t={t}/>
@@ -369,6 +364,11 @@ export default function ConfigPage(){
       {/* AUTOMACOES */}
       <CardSection id="automacoes" icon={<Zap size={18}/>} title={t("config.card_automations")} subtitle={t("config.card_automations_sub")} open={open==='automacoes'} onToggle={()=>toggle('automacoes')}>
         <AutomacoesSection clinica={clinica} saving={saving==='automacoes'} onSave={(d)=>save('automacoes',d)} t={t}/>
+      </CardSection>
+
+      {/* SECRETARIA */}
+      <CardSection id="secretaria" icon={<Stethoscope size={18}/>} title={`${t("config.card_agent")}${clinica.nome_agente?` ${clinica.nome_agente}`:''}`} subtitle={t("config.card_agent_sub")} open={open==='secretaria'} onToggle={()=>toggle('secretaria')}>
+        <SecretariaSection clinica={clinica} prefixo={prefixo} saving={saving==='secretaria'} onSave={(d)=>save('secretaria',d)} t={t}/>
       </CardSection>
 
       {/* TOAST */}
