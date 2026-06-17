@@ -910,7 +910,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
 
   const obrigatorios:[string,string][]=[
     ['nome',t("field.clinic_name")],['endereco',t("field.address")],['bairro',t("field.neighborhood")],
-    ['cidade',t("field.city")],['cep',t("field.postal_code")],['referencia',t("field.reference")],
+    ['cidade',t("field.city")],['cep',t("field.postal_code")],
     ['email_clinica',t("field.email")],['whatsapp_admin',t("field.admin_whatsapp")],
     ['maps_link',t("field.maps_link")],
   ];
@@ -967,7 +967,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
 
       {/* L5: Referência */}
       <div>
-        <label style={labelSt}>{t("field.reference")}</label>
+        <label style={labelSt}>{t("field.reference")} <span style={{color:'#94a3b8',fontWeight:400}}>({t("field.optional")})</span></label>
         <input value={vals.referencia} onChange={e=>set('referencia',e.target.value)} placeholder="Ex: Em frente ao Banco do Brasil" style={inputSt}/>
       </div>
 
