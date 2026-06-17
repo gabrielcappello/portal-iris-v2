@@ -198,7 +198,7 @@ function calcSlots(ini:string,fim:string,dur:number,almIni:string,almFim:string)
 }
 
 // ── Componentes utilitários ────────────────────────────────────────────────────
-const inputSt:React.CSSProperties={width:'100%',padding:'10px 12px',fontSize:13,border:'1px solid #e2e8f0',borderRadius:8,outline:'none',background:'#fff',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'};
+const inputSt:React.CSSProperties={width:'100%',padding:'10px 12px',fontSize:13,border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,outline:'none',background:'#fff',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'};
 const labelSt:React.CSSProperties={display:'block',fontSize:11,fontWeight:600,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6};
 const saveBtnSt:React.CSSProperties={padding:'10px 20px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#2B7A78,#3AAFA9)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif"};
 
@@ -748,8 +748,8 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
       {/* Linha 2: Telefone + Instância (empilhados em coluna) */}
       <div>
         <label style={labelSt}>{labelTel}</label>
-        <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
-          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{prefixo}</span>
+        <div style={{display:'flex',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid rgba(43,122,120,0.35)',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{prefixo}</span>
           <input value={tel} onChange={e=>setTel(e.target.value)} placeholder="999999999"
             style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif",width:'100%',textAlign:'left',direction:'ltr'}}/>
         </div>
@@ -982,8 +982,8 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
       {/* L8: WhatsApp do administrador */}
       <div>
         <label style={labelSt}>{t("field.admin_whatsapp")}</label>
-        <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden'}}>
-          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
+        <div style={{display:'flex',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden'}}>
+          <span style={{padding:'10px 10px',background:'#f1f5f9',borderRight:'1px solid rgba(43,122,120,0.35)',fontFamily:'monospace',fontSize:13,color:'#2B7A78',whiteSpace:'nowrap'}}>{prefixo}</span>
           <input value={vals.whatsapp_admin} onChange={e=>set('whatsapp_admin',e.target.value)} placeholder="21999990000"
             style={{flex:1,padding:'10px',fontSize:13,border:'none',outline:'none',fontFamily:"'Sora',sans-serif"}}/>
         </div>
@@ -996,7 +996,7 @@ function ClinicaSection({clinica,prefixo,estados,saving,onSave,onClose,t}:{clini
         <input value={vals.maps_link} onChange={e=>set('maps_link',e.target.value)}
           placeholder="https://maps.google.com/?q=..." style={inputSt}/>
         <button onClick={useGeo}
-          style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:13,color:'#2B7A78',cursor:'pointer',fontFamily:"'Sora',sans-serif",fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'1px solid rgba(43,122,120,0.35)',background:'#f8fafc',fontSize:13,color:'#2B7A78',cursor:'pointer',fontFamily:"'Sora',sans-serif",fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
           📍 {t("field.use_my_location")}
         </button>
         <span style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'block'}}>{t("field.maps_link_hint")}</span>
@@ -1194,15 +1194,15 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
               </div>
               <div>
                 <label style={labelSt}>{t("field.phone")}</label>
-                <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
-                  <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid #e2e8f0',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{ddi}</span>
+                <div style={{display:'flex',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+                  <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid rgba(43,122,120,0.35)',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{ddi}</span>
                   <input value={d.whatsapp||''} onChange={e=>onUpdate({whatsapp:e.target.value})} placeholder="999999999"
                     style={{flex:1,minWidth:0,padding:'10px',fontSize:13,border:'none',outline:'none',width:'100%',boxSizing:'border-box'}}/>
                 </div>
               </div>
               <div>
                 <label style={labelSt}>{t("dentist.password_for",{nome:nomeLabel})}</label>
-                <div style={{display:'flex',border:'1px solid #e2e8f0',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+                <div style={{display:'flex',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
                   <input type={showSenha?'text':'password'} value={d.senha||''} onChange={e=>onUpdate({senha:e.target.value})} placeholder="••••••"
                     style={{flex:1,minWidth:0,padding:'10px 12px',fontSize:13,border:'none',outline:'none',background:'transparent',fontFamily:"'Sora',sans-serif",boxSizing:'border-box'}}/>
                   <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>setShowSenha(p=>!p)}
@@ -1450,7 +1450,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
                   )}
                 </AnimatePresence>
                 <button onClick={onToggle} onMouseDown={e=>e.preventDefault()}
-                  style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid #e2e8f0',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
+                  style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
                   {t("dentist.btn_close")}
                 </button>
               </div>
@@ -1969,7 +1969,7 @@ function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:
                     <input
                       type="number" min={0} value={p.valor}
                       onChange={e => update(p.nome,'valor',parseFloat(e.target.value)||0)}
-                      style={{width:72,fontSize:12,padding:'3px 6px',border:'1px solid #e2e8f0',borderRadius:6,textAlign:'right',fontFamily:"'Sora',sans-serif",color:'#1e293b'}}
+                      style={{width:72,fontSize:12,padding:'3px 6px',border:'1px solid rgba(43,122,120,0.35)',borderRadius:6,textAlign:'right',fontFamily:"'Sora',sans-serif",color:'#1e293b'}}
                       placeholder={moeda+' 0'}
                     />
                   )}
@@ -1983,7 +1983,7 @@ function ProcedimentosSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:
                     disabled={!p.ativo}
                     style={{
                       width:64,fontSize:12,padding:'4px 6px',
-                      border:'1px solid #e2e8f0',borderRadius:6,textAlign:'center',
+                      border:'1px solid rgba(43,122,120,0.35)',borderRadius:6,textAlign:'center',
                       fontFamily:"'Sora',sans-serif",color:'#1e293b',
                       background: p.ativo ? '#fff' : '#f8fafc',
                     }}
