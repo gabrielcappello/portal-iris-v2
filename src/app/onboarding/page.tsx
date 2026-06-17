@@ -103,6 +103,204 @@ const LANGUAGES = [
 
 const STEPS = ["Idioma", "País", "Clínica", "Iris"];
 
+const OB_T = {
+  "pt-br": {
+    dir:"ltr", setup:"Configuração inicial",
+    steps:["Idioma","País","Clínica","Iris"],
+    s0_title:"Escolha o idioma", s0_sub:"O painel e a Iris vão usar este idioma.",
+    s1_title:"País & Localização", s1_sub:"Onde fica sua clínica?",
+    s1_country:"País", s1_postal_br:"CEP", s1_postal:"Código Postal",
+    s1_postal_hint_br:"Identifica o estado automaticamente.",
+    s1_postal_hint:"Identifica a cidade automaticamente.",
+    s1_state:"Estado / Província", s1_select:"Selecione...", s1_timezone:"Fuso Horário",
+    s1_searching:"🔍 Buscando...", s1_cep_err:"CEP não encontrado.", s1_cep_err2:"Erro ao buscar CEP.",
+    s1_postal_err:"Código postal não encontrado.", s1_postal_err2:"Erro ao buscar código postal.",
+    s2_title:"Dados da clínica", s2_sub:"Informações para criar sua conta.",
+    s2_name:"Nome da clínica", s2_name_ph:"Ex: Clínica Odonto Prime",
+    s2_email:"E-mail de acesso", s2_email_ph:"clinica@exemplo.com",
+    s2_pass:"Senha", s2_pass_ph:"Mínimo 6 caracteres",
+    s3_title:"Telefone da Iris", s3_sub:"O número do WhatsApp que a Iris vai usar para atender seus pacientes.",
+    s3_label:"Número WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"DDI e DDD preenchidos automaticamente — digite só os dígitos finais.",
+    s3_hint:"Este número vai aparecer pré-preenchido na seção Secretária Virtual do painel.",
+    btn_back:"Voltar", btn_next:"Continuar →", btn_finish:"Concluir e entrar", btn_loading:"Criando conta...",
+    footer:"Já tem conta?", footer_link:"Entrar",
+    err_state:"Escolha um estado / província", err_name:"Informe o nome da clínica",
+    err_email:"Informe o e-mail de acesso", err_pass:"A senha deve ter pelo menos 6 caracteres",
+    err_phone:"Informe o número do WhatsApp da Iris", err_create:"Erro ao criar clínica",
+  },
+  "es": {
+    dir:"ltr", setup:"Configuración inicial",
+    steps:["Idioma","País","Clínica","Iris"],
+    s0_title:"Elige el idioma", s0_sub:"El panel y la Iris usarán este idioma.",
+    s1_title:"País & Localización", s1_sub:"¿Dónde está tu clínica?",
+    s1_country:"País", s1_postal_br:"Código Postal", s1_postal:"Código Postal",
+    s1_postal_hint_br:"Identifica el estado automáticamente.",
+    s1_postal_hint:"Identifica la ciudad automáticamente.",
+    s1_state:"Estado / Provincia", s1_select:"Seleccionar...", s1_timezone:"Zona Horaria",
+    s1_searching:"🔍 Buscando...", s1_cep_err:"Código postal no encontrado.", s1_cep_err2:"Error al buscar.",
+    s1_postal_err:"Código postal no encontrado.", s1_postal_err2:"Error al buscar código postal.",
+    s2_title:"Datos de la clínica", s2_sub:"Información para crear tu cuenta.",
+    s2_name:"Nombre de la clínica", s2_name_ph:"Ej: Clínica Dental Prime",
+    s2_email:"Correo electrónico", s2_email_ph:"clinica@ejemplo.com",
+    s2_pass:"Contraseña", s2_pass_ph:"Mínimo 6 caracteres",
+    s3_title:"Teléfono de Iris", s3_sub:"El número de WhatsApp que Iris usará para atender a tus pacientes.",
+    s3_label:"Número WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"DDI y código de área completados automáticamente — ingresa solo los dígitos finales.",
+    s3_hint:"Este número aparecerá precargado en la sección Secretaria Virtual del panel.",
+    btn_back:"Volver", btn_next:"Continuar →", btn_finish:"Finalizar y entrar", btn_loading:"Creando cuenta...",
+    footer:"¿Ya tienes cuenta?", footer_link:"Entrar",
+    err_state:"Elige un estado / provincia", err_name:"Ingresa el nombre de la clínica",
+    err_email:"Ingresa el correo electrónico", err_pass:"La contraseña debe tener al menos 6 caracteres",
+    err_phone:"Ingresa el número de WhatsApp de Iris", err_create:"Error al crear la clínica",
+  },
+  "en": {
+    dir:"ltr", setup:"Initial setup",
+    steps:["Language","Country","Clinic","Iris"],
+    s0_title:"Choose language", s0_sub:"The panel and Iris will use this language.",
+    s1_title:"Country & Location", s1_sub:"Where is your clinic?",
+    s1_country:"Country", s1_postal_br:"ZIP Code", s1_postal:"Postal Code",
+    s1_postal_hint_br:"Auto-fills state.", s1_postal_hint:"Auto-fills city.",
+    s1_state:"State / Province", s1_select:"Select...", s1_timezone:"Timezone",
+    s1_searching:"🔍 Searching...", s1_cep_err:"ZIP code not found.", s1_cep_err2:"Error fetching ZIP.",
+    s1_postal_err:"Postal code not found.", s1_postal_err2:"Error fetching postal code.",
+    s2_title:"Clinic details", s2_sub:"Information to create your account.",
+    s2_name:"Clinic name", s2_name_ph:"Ex: Prime Dental Clinic",
+    s2_email:"Email address", s2_email_ph:"clinic@example.com",
+    s2_pass:"Password", s2_pass_ph:"Minimum 6 characters",
+    s3_title:"Iris phone number", s3_sub:"The WhatsApp number Iris will use to serve your patients.",
+    s3_label:"WhatsApp number", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"Country code and area code filled automatically — enter only the final digits.",
+    s3_hint:"This number will appear pre-filled in the Virtual Secretary section.",
+    btn_back:"Back", btn_next:"Continue →", btn_finish:"Finish & sign in", btn_loading:"Creating account...",
+    footer:"Already have an account?", footer_link:"Sign in",
+    err_state:"Choose a state / province", err_name:"Enter the clinic name",
+    err_email:"Enter the email address", err_pass:"Password must be at least 6 characters",
+    err_phone:"Enter Iris' WhatsApp number", err_create:"Error creating clinic",
+  },
+  "fr": {
+    dir:"ltr", setup:"Configuration initiale",
+    steps:["Langue","Pays","Clinique","Iris"],
+    s0_title:"Choisissez la langue", s0_sub:"Le panneau et Iris utiliseront cette langue.",
+    s1_title:"Pays & Localisation", s1_sub:"Où se trouve votre clinique?",
+    s1_country:"Pays", s1_postal_br:"Code Postal", s1_postal:"Code Postal",
+    s1_postal_hint_br:"Identifie l'état automatiquement.", s1_postal_hint:"Identifie la ville automatiquement.",
+    s1_state:"État / Province", s1_select:"Sélectionner...", s1_timezone:"Fuseau Horaire",
+    s1_searching:"🔍 Recherche...", s1_cep_err:"Code postal introuvable.", s1_cep_err2:"Erreur de recherche.",
+    s1_postal_err:"Code postal introuvable.", s1_postal_err2:"Erreur de recherche du code postal.",
+    s2_title:"Données de la clinique", s2_sub:"Informations pour créer votre compte.",
+    s2_name:"Nom de la clinique", s2_name_ph:"Ex: Clinique Dentaire Prime",
+    s2_email:"Adresse e-mail", s2_email_ph:"clinique@exemple.com",
+    s2_pass:"Mot de passe", s2_pass_ph:"Minimum 6 caractères",
+    s3_title:"Téléphone d'Iris", s3_sub:"Le numéro WhatsApp qu'Iris utilisera pour servir vos patients.",
+    s3_label:"Numéro WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"Indicatif et préfixe complétés automatiquement — entrez seulement les chiffres finaux.",
+    s3_hint:"Ce numéro apparaîtra pré-rempli dans la section Secrétaire Virtuelle.",
+    btn_back:"Retour", btn_next:"Continuer →", btn_finish:"Terminer & se connecter", btn_loading:"Création du compte...",
+    footer:"Déjà un compte?", footer_link:"Se connecter",
+    err_state:"Choisissez un état / province", err_name:"Entrez le nom de la clinique",
+    err_email:"Entrez l'adresse e-mail", err_pass:"Le mot de passe doit comporter au moins 6 caractères",
+    err_phone:"Entrez le numéro WhatsApp d'Iris", err_create:"Erreur lors de la création",
+  },
+  "de": {
+    dir:"ltr", setup:"Ersteinrichtung",
+    steps:["Sprache","Land","Klinik","Iris"],
+    s0_title:"Sprache wählen", s0_sub:"Das Panel und Iris werden diese Sprache verwenden.",
+    s1_title:"Land & Standort", s1_sub:"Wo befindet sich Ihre Klinik?",
+    s1_country:"Land", s1_postal_br:"Postleitzahl", s1_postal:"Postleitzahl",
+    s1_postal_hint_br:"Ermittelt das Bundesland automatisch.", s1_postal_hint:"Ermittelt die Stadt automatisch.",
+    s1_state:"Bundesland / Provinz", s1_select:"Auswählen...", s1_timezone:"Zeitzone",
+    s1_searching:"🔍 Suche...", s1_cep_err:"Postleitzahl nicht gefunden.", s1_cep_err2:"Fehler bei der Suche.",
+    s1_postal_err:"Postleitzahl nicht gefunden.", s1_postal_err2:"Fehler bei der Suche.",
+    s2_title:"Klinikdaten", s2_sub:"Informationen zur Erstellung Ihres Kontos.",
+    s2_name:"Klinikname", s2_name_ph:"z.B. Zahnarztpraxis Prime",
+    s2_email:"E-Mail-Adresse", s2_email_ph:"klinik@beispiel.de",
+    s2_pass:"Passwort", s2_pass_ph:"Mindestens 6 Zeichen",
+    s3_title:"Iris-Telefonnummer", s3_sub:"Die WhatsApp-Nummer, die Iris verwendet, um Ihre Patienten zu betreuen.",
+    s3_label:"WhatsApp-Nummer", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"Ländervorwahl und Vorwahl automatisch ausgefüllt — geben Sie nur die letzten Ziffern ein.",
+    s3_hint:"Diese Nummer wird im Bereich Virtuelle Sekretärin vorausgefüllt.",
+    btn_back:"Zurück", btn_next:"Weiter →", btn_finish:"Abschließen & anmelden", btn_loading:"Konto wird erstellt...",
+    footer:"Bereits ein Konto?", footer_link:"Anmelden",
+    err_state:"Wählen Sie ein Bundesland / eine Provinz", err_name:"Geben Sie den Kliniknamen ein",
+    err_email:"Geben Sie die E-Mail-Adresse ein", err_pass:"Das Passwort muss mindestens 6 Zeichen lang sein",
+    err_phone:"Geben Sie Iris' WhatsApp-Nummer ein", err_create:"Fehler beim Erstellen der Klinik",
+  },
+  "it": {
+    dir:"ltr", setup:"Configurazione iniziale",
+    steps:["Lingua","Paese","Clinica","Iris"],
+    s0_title:"Scegli la lingua", s0_sub:"Il pannello e Iris useranno questa lingua.",
+    s1_title:"Paese & Localizzazione", s1_sub:"Dove si trova la tua clinica?",
+    s1_country:"Paese", s1_postal_br:"CAP", s1_postal:"Codice Postale",
+    s1_postal_hint_br:"Identifica lo stato automaticamente.", s1_postal_hint:"Identifica la città automaticamente.",
+    s1_state:"Stato / Provincia", s1_select:"Seleziona...", s1_timezone:"Fuso Orario",
+    s1_searching:"🔍 Ricerca...", s1_cep_err:"Codice postale non trovato.", s1_cep_err2:"Errore nella ricerca.",
+    s1_postal_err:"Codice postale non trovato.", s1_postal_err2:"Errore nella ricerca.",
+    s2_title:"Dati della clinica", s2_sub:"Informazioni per creare il tuo account.",
+    s2_name:"Nome della clinica", s2_name_ph:"Es: Clinica Dentale Prime",
+    s2_email:"Indirizzo e-mail", s2_email_ph:"clinica@esempio.it",
+    s2_pass:"Password", s2_pass_ph:"Minimo 6 caratteri",
+    s3_title:"Telefono di Iris", s3_sub:"Il numero WhatsApp che Iris utilizzerà per assistere i tuoi pazienti.",
+    s3_label:"Numero WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"Prefisso internazionale e locale compilati automaticamente — inserisci solo le ultime cifre.",
+    s3_hint:"Questo numero apparirà precompilato nella sezione Segretaria Virtuale.",
+    btn_back:"Indietro", btn_next:"Continua →", btn_finish:"Completa e accedi", btn_loading:"Creazione account...",
+    footer:"Hai già un account?", footer_link:"Accedi",
+    err_state:"Scegli uno stato / provincia", err_name:"Inserisci il nome della clinica",
+    err_email:"Inserisci l'indirizzo e-mail", err_pass:"La password deve contenere almeno 6 caratteri",
+    err_phone:"Inserisci il numero WhatsApp di Iris", err_create:"Errore nella creazione della clinica",
+  },
+  "ru": {
+    dir:"ltr", setup:"Начальная настройка",
+    steps:["Язык","Страна","Клиника","Iris"],
+    s0_title:"Выберите язык", s0_sub:"Панель и Iris будут использовать этот язык.",
+    s1_title:"Страна и местоположение", s1_sub:"Где находится ваша клиника?",
+    s1_country:"Страна", s1_postal_br:"Почтовый индекс", s1_postal:"Почтовый индекс",
+    s1_postal_hint_br:"Определяет регион автоматически.", s1_postal_hint:"Определяет город автоматически.",
+    s1_state:"Регион / Область", s1_select:"Выбрать...", s1_timezone:"Часовой пояс",
+    s1_searching:"🔍 Поиск...", s1_cep_err:"Индекс не найден.", s1_cep_err2:"Ошибка поиска.",
+    s1_postal_err:"Индекс не найден.", s1_postal_err2:"Ошибка поиска индекса.",
+    s2_title:"Данные клиники", s2_sub:"Информация для создания вашего аккаунта.",
+    s2_name:"Название клиники", s2_name_ph:"Напр: Стоматологическая клиника",
+    s2_email:"Адрес электронной почты", s2_email_ph:"clinica@example.com",
+    s2_pass:"Пароль", s2_pass_ph:"Минимум 6 символов",
+    s3_title:"Телефон Iris", s3_sub:"Номер WhatsApp, который Iris будет использовать для обслуживания ваших пациентов.",
+    s3_label:"Номер WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"Код страны и региона заполнены автоматически — введите только последние цифры.",
+    s3_hint:"Этот номер будет предзаполнен в разделе Виртуальная Секретарь.",
+    btn_back:"Назад", btn_next:"Продолжить →", btn_finish:"Завершить и войти", btn_loading:"Создание аккаунта...",
+    footer:"Уже есть аккаунт?", footer_link:"Войти",
+    err_state:"Выберите регион / область", err_name:"Введите название клиники",
+    err_email:"Введите адрес электронной почты", err_pass:"Пароль должен содержать не менее 6 символов",
+    err_phone:"Введите номер WhatsApp Iris", err_create:"Ошибка при создании клиники",
+  },
+  "ar": {
+    dir:"rtl", setup:"الإعداد الأولي",
+    steps:["اللغة","البلد","العيادة","Iris"],
+    s0_title:"اختر اللغة", s0_sub:"سيستخدم اللوحة وIris هذه اللغة.",
+    s1_title:"البلد والموقع", s1_sub:"أين تقع عيادتك؟",
+    s1_country:"البلد", s1_postal_br:"الرمز البريدي", s1_postal:"الرمز البريدي",
+    s1_postal_hint_br:"يحدد الولاية تلقائياً.", s1_postal_hint:"يحدد المدينة تلقائياً.",
+    s1_state:"الولاية / المقاطعة", s1_select:"اختر...", s1_timezone:"المنطقة الزمنية",
+    s1_searching:"🔍 جارٍ البحث...", s1_cep_err:"الرمز البريدي غير موجود.", s1_cep_err2:"خطأ في البحث.",
+    s1_postal_err:"الرمز البريدي غير موجود.", s1_postal_err2:"خطأ في البحث.",
+    s2_title:"بيانات العيادة", s2_sub:"معلومات لإنشاء حسابك.",
+    s2_name:"اسم العيادة", s2_name_ph:"مثال: عيادة طب الأسنان",
+    s2_email:"البريد الإلكتروني", s2_email_ph:"clinic@example.com",
+    s2_pass:"كلمة المرور", s2_pass_ph:"6 أحرف على الأقل",
+    s3_title:"هاتف Iris", s3_sub:"رقم WhatsApp الذي ستستخدمه Iris لخدمة مرضاك.",
+    s3_label:"رقم WhatsApp", s3_ph_ddd:"9 9999-9999", s3_ph:"99 9 9999-9999",
+    s3_auto:"تم ملء رمز البلد والمنطقة تلقائياً — أدخل الأرقام الأخيرة فقط.",
+    s3_hint:"سيظهر هذا الرقم محدداً مسبقاً في قسم السكرتيرة الافتراضية.",
+    btn_back:"رجوع", btn_next:"متابعة →", btn_finish:"إنهاء وتسجيل الدخول", btn_loading:"جارٍ إنشاء الحساب...",
+    footer:"لديك حساب بالفعل؟", footer_link:"تسجيل الدخول",
+    err_state:"اختر ولاية / مقاطعة", err_name:"أدخل اسم العيادة",
+    err_email:"أدخل البريد الإلكتروني", err_pass:"يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل",
+    err_phone:"أدخل رقم WhatsApp الخاص بـ Iris", err_create:"حدث خطأ أثناء إنشاء العيادة",
+  },
+} as const;
+type OBLang = keyof typeof OB_T;
+
 async function sha256(text: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -142,6 +340,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
 
+  const tx = OB_T[idioma as OBLang] ?? OB_T["pt-br"];
   const paisesFiltrados = PAIS_POR_IDIOMA[idioma] || [];
   const estadoOpts = ESTADOS_MAP[pais] || [];
   const currentPais = paisesFiltrados.find(c => c.v === pais);
@@ -199,10 +398,10 @@ export default function OnboardingPage() {
       try {
         const res = await fetch(`https://viacep.com.br/ws/${limpo}/json/`);
         const data = await res.json();
-        if (data.erro) { setCepErro("CEP não encontrado."); return; }
+        if (data.erro) { setCepErro(tx.s1_cep_err); return; }
         const estadoNome = UF_TO_ESTADO_BR[data.uf] || "";
         if (estadoNome && estadoOpts.includes(estadoNome)) { selectEstado(estadoNome); loadDdd(pais, estadoNome); }
-      } catch { setCepErro("Erro ao buscar CEP."); }
+      } catch { setCepErro(tx.s1_cep_err2); }
       finally { setCepLoading(false); }
       return;
     }
@@ -210,11 +409,11 @@ export default function OnboardingPage() {
     setCepLoading(true);
     try {
       const res = await fetch(`https://api.zippopotam.us/${pais}/${limpo}`);
-      if (!res.ok) { setCepErro("Código postal não encontrado."); return; }
+      if (!res.ok) { setCepErro(tx.s1_postal_err); return; }
       const data = await res.json();
       const estadoNome = data.places?.[0]?.state || "";
       if (estadoNome && estadoOpts.includes(estadoNome)) selectEstado(estadoNome);
-    } catch { setCepErro("Erro ao buscar código postal."); }
+    } catch { setCepErro(tx.s1_postal_err2); }
     finally { setCepLoading(false); }
   }
 
@@ -230,14 +429,14 @@ export default function OnboardingPage() {
       });
       const data = await res.json();
       if (!res.ok || data.sucesso === false || data.success === false)
-        throw new Error(data.erro || data.error || data.message || "Erro ao criar clínica");
+        throw new Error(data.erro || data.error || data.message || tx.err_create);
       localStorage.setItem("auth_token",   data.auth_token  || data.token || senhaHash);
       localStorage.setItem("clinica_id",   data.clinica_id  || data.id    || "");
       localStorage.setItem("user_id",      data.user_id     || "");
       localStorage.setItem("clinica_nome", nome);
       router.replace("/dashboard");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro ao criar clínica");
+      setError(e instanceof Error ? e.message : tx.err_create);
     } finally {
       setLoading(false);
     }
@@ -248,17 +447,17 @@ export default function OnboardingPage() {
     if (step === 0) { setStep(1); return; }
     if (step === 1) {
       const precisaEstado = estadoOpts.length > 0;
-      if (precisaEstado && !estado) { setError("Escolha um estado / província"); return; }
+      if (precisaEstado && !estado) { setError(tx.err_state); return; }
       setStep(2); return;
     }
     if (step === 2) {
-      if (!nome.trim())     { setError("Informe o nome da clínica"); return; }
-      if (!email.trim())    { setError("Informe o e-mail de acesso"); return; }
-      if (senha.length < 6) { setError("A senha deve ter pelo menos 6 caracteres"); return; }
+      if (!nome.trim())     { setError(tx.err_name); return; }
+      if (!email.trim())    { setError(tx.err_email); return; }
+      if (senha.length < 6) { setError(tx.err_pass); return; }
       setStep(3); return;
     }
     if (step === 3) {
-      if (!telefone.trim()) { setError("Informe o número do WhatsApp da Iris"); return; }
+      if (!telefone.trim()) { setError(tx.err_phone); return; }
       submit();
     }
   }
@@ -266,7 +465,7 @@ export default function OnboardingPage() {
   function back() { if (step > 0) { setStep(s => s - 1); setError(""); } }
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"linear-gradient(135deg,#DEF2F1 0%,#f0fafa 50%,#ffffff 100%)"}}>
+    <div dir={tx.dir} style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"linear-gradient(135deg,#DEF2F1 0%,#f0fafa 50%,#ffffff 100%)"}}>
 
       <motion.div initial={{opacity:0,y:24,scale:0.97}} animate={{opacity:1,y:0,scale:1}}
         transition={{duration:0.5,ease:[0.16,1,0.3,1]}}
@@ -283,13 +482,13 @@ export default function OnboardingPage() {
           </div>
           <div>
             <div style={{fontSize:15,fontWeight:700,color:"#1e293b",fontFamily:"'Sora',sans-serif"}}>IRIS</div>
-            <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>Configuração inicial</div>
+            <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{tx.setup}</div>
           </div>
         </div>
 
         {/* Progress */}
         <div style={{display:"flex",gap:6,marginBottom:28}}>
-          {STEPS.map((s, i) => (
+          {tx.steps.map((s, i) => (
             <div key={i} style={{flex:1}}>
               <div style={{height:3,borderRadius:4,background: i <= step ? "#2B7A78" : "#e2e8f0",transition:"background 0.3s",marginBottom:4}}/>
               <span style={{fontSize:10,color: i === step ? "#2B7A78" : "#94a3b8",fontWeight: i === step ? 700 : 400,fontFamily:"'Sora',sans-serif"}}>{s}</span>
@@ -302,8 +501,8 @@ export default function OnboardingPage() {
           {/* STEP 0 — Idioma */}
           {step === 0 && (
             <motion.div key="idioma" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.22}}>
-              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>Escolha o idioma</h2>
-              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>O painel e a Iris vão usar este idioma.</p>
+              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>{tx.s0_title}</h2>
+              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>{tx.s0_sub}</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
                 {LANGUAGES.map(l => (
                   <button key={l.code} onClick={() => selectIdioma(l.code)}
@@ -320,14 +519,14 @@ export default function OnboardingPage() {
           {/* STEP 1 — País + CEP + Estado + Fuso */}
           {step === 1 && (
             <motion.div key="pais" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.22}}>
-              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>País & Localização</h2>
-              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>Onde fica sua clínica?</p>
+              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>{tx.s1_title}</h2>
+              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>{tx.s1_sub}</p>
 
               <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:24}}>
 
                 {/* País accordion */}
                 <div>
-                  <label style={labelSt}>País</label>
+                  <label style={labelSt}>{tx.s1_country}</label>
                   <button onClick={() => setPaisOpen(p => !p)}
                     style={{width:"100%",padding:"11px 14px",border:`1px solid ${paisOpen?"#2B7A78":"rgba(43,122,120,0.35)"}`,borderRadius:10,background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Sora',sans-serif",transition:"all 0.2s",boxSizing:"border-box"}}>
                     <span style={{fontSize:18}}>{PAIS_FLAGS[pais] || "🌍"}</span>
@@ -358,25 +557,25 @@ export default function OnboardingPage() {
                 <div style={estadoOpts.length > 0 ? {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12} : undefined}>
                   <div>
                     <label style={labelSt}>
-                      {pais === "br" ? "CEP" : "Código Postal"}
-                      {cepLoading && <span style={{marginLeft:8,fontSize:11,color:"#2B7A78"}}>🔍 Buscando...</span>}
+                      {pais === "br" ? tx.s1_postal_br : tx.s1_postal}
+                      {cepLoading && <span style={{marginLeft:8,fontSize:11,color:"#2B7A78"}}>{tx.s1_searching}</span>}
                     </label>
                     <input value={cep} onChange={e => setCep(e.target.value)}
                       onBlur={e => { inputBlur(e); buscarCep(e.target.value); }}
-                      placeholder={pais === "br" ? "Ex: 01310-100" : "Código postal"}
+                      placeholder={pais === "br" ? "Ex: 01310-100" : tx.s1_postal}
                       style={inputSt} onFocus={inputFocus}/>
                     {cepErro && <span style={{fontSize:11,color:"#ef4444",marginTop:4,display:"block"}}>{cepErro}</span>}
                     {!cepErro && <span style={{fontSize:11,color:"#94a3b8",marginTop:4,display:"block"}}>
-                      {pais === "br" ? "Identifica estado automaticamente." : "Identifica cidade automaticamente."}
+                      {pais === "br" ? tx.s1_postal_hint_br : tx.s1_postal_hint}
                     </span>}
                   </div>
 
                   {estadoOpts.length > 0 && (
                     <div>
-                      <label style={labelSt}>Estado / Província</label>
+                      <label style={labelSt}>{tx.s1_state}</label>
                       <button onClick={() => setEstadoOpen(p => !p)}
                         style={{width:"100%",padding:"11px 14px",border:`1px solid ${estadoOpen?"#2B7A78":estado?"#2B7A78":"rgba(43,122,120,0.35)"}`,borderRadius:10,background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Sora',sans-serif",transition:"all 0.2s",boxSizing:"border-box"}}>
-                        <span style={{flex:1,fontSize:13,color:estado?"#1e293b":"#94a3b8",textAlign:"left"}}>{estado||"Selecione..."}</span>
+                        <span style={{flex:1,fontSize:13,color:estado?"#1e293b":"#94a3b8",textAlign:"left"}}>{estado||tx.s1_select}</span>
                         <motion.div animate={{rotate:estadoOpen?180:0}} transition={{duration:0.2}} style={{color:"#94a3b8",flexShrink:0}}>
                           <ChevronDown size={16}/>
                         </motion.div>
@@ -402,7 +601,7 @@ export default function OnboardingPage() {
 
                 {/* Fuso */}
                 <div>
-                  <label style={labelSt}>Fuso Horário</label>
+                  <label style={labelSt}>{tx.s1_timezone}</label>
                   <input value={fuso} readOnly style={{...inputSt,background:"#f8fafc",color:"#64748b",cursor:"default"}}/>
                 </div>
 
@@ -413,20 +612,20 @@ export default function OnboardingPage() {
           {/* STEP 2 — Dados da clínica */}
           {step === 2 && (
             <motion.div key="dados" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.22}}>
-              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>Dados da clínica</h2>
-              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>Informações para criar sua conta.</p>
+              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>{tx.s2_title}</h2>
+              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>{tx.s2_sub}</p>
               <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
                 <div>
-                  <label style={labelSt}>Nome da clínica</label>
-                  <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Clínica Odonto Prime" style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
+                  <label style={labelSt}>{tx.s2_name}</label>
+                  <input value={nome} onChange={e => setNome(e.target.value)} placeholder={tx.s2_name_ph} style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
                 </div>
                 <div>
-                  <label style={labelSt}>E-mail de acesso</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="clinica@exemplo.com" style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
+                  <label style={labelSt}>{tx.s2_email}</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={tx.s2_email_ph} style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
                 </div>
                 <div>
-                  <label style={labelSt}>Senha</label>
-                  <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="Mínimo 6 caracteres" style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
+                  <label style={labelSt}>{tx.s2_pass}</label>
+                  <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder={tx.s2_pass_ph} style={inputSt} onFocus={inputFocus} onBlur={inputBlur}/>
                 </div>
               </div>
             </motion.div>
@@ -435,24 +634,20 @@ export default function OnboardingPage() {
           {/* STEP 3 — Telefone da Iris */}
           {step === 3 && (
             <motion.div key="telefone" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.22}}>
-              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>Telefone da Iris</h2>
-              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>O número do WhatsApp que a Iris vai usar para atender seus pacientes.</p>
+              <h2 style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:4,fontFamily:"'Sora',sans-serif"}}>{tx.s3_title}</h2>
+              <p style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>{tx.s3_sub}</p>
               <div style={{marginBottom:24}}>
-                <label style={labelSt}>Número WhatsApp</label>
+                <label style={labelSt}>{tx.s3_label}</label>
                 <div style={{display:"flex",border:"1px solid rgba(43,122,120,0.35)",borderRadius:10,overflow:"hidden"}}>
                   <span style={{padding:"11px 14px",background:"#f1f5f9",borderRight:"1px solid rgba(43,122,120,0.35)",fontFamily:"monospace",fontSize:13,color:"#2B7A78",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.02em"}}>
                     {prefixo}
                   </span>
                   <input value={telefone} onChange={e => setTelefone(e.target.value)}
-                    placeholder={ddd ? "9 9999-9999" : "99 9 9999-9999"}
+                    placeholder={ddd ? tx.s3_ph_ddd : tx.s3_ph}
                     style={{flex:1,padding:"11px 14px",fontSize:13,border:"none",outline:"none",fontFamily:"'Sora',sans-serif"}}/>
                 </div>
-                {ddd && (
-                  <p style={{fontSize:11,color:"#2B7A78",marginTop:6,fontWeight:500}}>
-                    DDI e DDD preenchidos automaticamente — digite só os dígitos finais.
-                  </p>
-                )}
-                <p style={{fontSize:11,color:"#94a3b8",marginTop:4}}>Este número vai aparecer pré-preenchido na seção Secretária Virtual do painel.</p>
+                {ddd && <p style={{fontSize:11,color:"#2B7A78",marginTop:6,fontWeight:500}}>{tx.s3_auto}</p>}
+                <p style={{fontSize:11,color:"#94a3b8",marginTop:4}}>{tx.s3_hint}</p>
               </div>
             </motion.div>
           )}
@@ -476,18 +671,18 @@ export default function OnboardingPage() {
               style={{flex:1,padding:"13px 0",borderRadius:12,border:"1px solid #e2e8f0",background:"#fff",fontSize:13,fontWeight:600,color:"#64748b",cursor:"pointer",fontFamily:"'Sora',sans-serif"}}
               onMouseEnter={e=>(e.currentTarget.style.borderColor="#94a3b8")}
               onMouseLeave={e=>(e.currentTarget.style.borderColor="#e2e8f0")}>
-              Voltar
+              {tx.btn_back}
             </button>
           )}
           <button onClick={next} disabled={loading}
             style={{flex:2,padding:"13px 0",borderRadius:12,border:"none",background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",color:"#fff",fontSize:13,fontWeight:600,cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,fontFamily:"'Sora',sans-serif"}}>
-            {loading ? "Criando conta..." : step === 3 ? "Concluir e entrar" : "Continuar →"}
+            {loading ? tx.btn_loading : step === 3 ? tx.btn_finish : tx.btn_next}
           </button>
         </div>
 
         <p style={{textAlign:"center",fontSize:12,color:"#94a3b8",marginTop:20}}>
-          Já tem conta?{" "}
-          <a href="/login" style={{color:"#2B7A78",fontWeight:600,textDecoration:"none"}}>Entrar</a>
+          {tx.footer}{" "}
+          <a href="/login" style={{color:"#2B7A78",fontWeight:600,textDecoration:"none"}}>{tx.footer_link}</a>
         </p>
 
       </motion.div>
