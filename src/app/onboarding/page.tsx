@@ -80,10 +80,11 @@ export default function OnboardingPage() {
       const res = await fetch(CRIAR_CLINICA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": CRIAR_CLINICA_KEY },
-        body: JSON.stringify({ nome, email, senha_hash: senhaHash, idioma, pais_codigo: pais, telefone_agente: telefone }),
+        body: JSON.stringify({ nome, email, senha_hash: senhaHash, idioma, pais, telefone_agente: telefone }),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Erro ao criar clínica");
       const data = await res.json();
+      if (!res.ok || data.sucesso === false || data.success === false)
+        throw new Error(data.erro || data.error || data.message || "Erro ao criar clínica");
       localStorage.setItem("auth_token",   data.auth_token  || data.token || senhaHash);
       localStorage.setItem("clinica_id",   data.clinica_id  || data.id    || "");
       localStorage.setItem("user_id",      data.user_id     || "");
