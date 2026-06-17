@@ -705,6 +705,8 @@ function getPersonalidadesList(t:(key:TranslationKey,vars?:Record<string,string|
   ];
 }
 
+const EVOLUTION_CONNECT_URL='https://singingdugong-n8n.cloudfy.live/webhook/iris-connect-evolution';
+
 function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;prefixo:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const [nome,setNome]=useState(clinica.nome_agente||'');
   const [pers,setPers]=useState(clinica.personalidade||'');
@@ -714,6 +716,23 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
   const telDigits=tel.replace(/\D/g,'');
   const telSemDDI=telDigits.length>9?telDigits.slice(-9):telDigits;
   const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
+
+  type WStep='idle'|'loading'|'qr'|'conectado'|'erro';
+  const [wStep,setWStep]=useState<WStep>('idle');
+  const [qrData,setQrData]=useState('');
+  const [wErr,setWErr]=useState('');
+
+  async function conectarWhatsApp(){
+    setWStep('loading');setWErr('');setQrData('');
+    try{
+      const res=await fetch(EVOLUTION_CONNECT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clinica_id:clinica.id})});
+      const data=await res.json();
+      if(data.step==='qr'){setQrData(data.qr||'');setWStep('qr');}
+      else if(data.step==='conectado'){setWStep('conectado');}
+      else if(data.step==='erro'){setWErr(data.mensagem||data.error||'Erro ao conectar');setWStep('erro');}
+      else{setWErr('Resposta inesperada do servidor');setWStep('erro');}
+    }catch{setWErr('Não foi possível conectar ao servidor');setWStep('erro');}
+  }
 
   const labelTel=nome?t("field.agent_phone",{nome}):t("field.agent_phone_default");
 
@@ -779,6 +798,53 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
           style={{...saveBtnSt,opacity:falta?0.5:1,cursor:falta?'not-allowed':'pointer'}}>
           {saving?t("procs.saving"):t("secretaria.btn_save")}
         </button>
+      </div>
+
+      {/* WhatsApp QR */}
+      <div style={{borderTop:'1px solid #f1f5f9',paddingTop:16,display:'flex',flexDirection:'column',gap:12}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>WhatsApp</div>
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>Conecte o número da Iris ao WhatsApp</div>
+          </div>
+          {wStep==='conectado'?(
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8}}>
+              <span style={{fontSize:13}}>✅</span>
+              <span style={{fontSize:12,fontWeight:600,color:'#15803d'}}>Conectado</span>
+            </div>
+          ):(
+            <button onClick={conectarWhatsApp} disabled={wStep==='loading'}
+              style={{padding:'8px 16px',background:'#25D366',color:'#fff',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:wStep==='loading'?'not-allowed':'pointer',fontFamily:"'Sora',sans-serif",opacity:wStep==='loading'?0.7:1,display:'flex',alignItems:'center',gap:6,transition:'opacity 0.15s'}}>
+              <span style={{fontSize:15}}>📱</span>
+              {wStep==='loading'?'Aguardando...':'Conectar WhatsApp'}
+            </button>
+          )}
+        </div>
+
+        {wStep==='qr'&&qrData&&(
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'16px 12px',background:'#f8fafc',borderRadius:10,border:'1px solid rgba(43,122,120,0.2)'}}>
+            <div style={{fontSize:12,color:'#64748b',textAlign:'center'}}>Escaneie o QR Code com o WhatsApp do número da Iris</div>
+            <img src={qrData} alt="QR Code WhatsApp" style={{width:200,height:200,borderRadius:8,border:'2px solid #e2e8f0'}}/>
+            <button onClick={conectarWhatsApp}
+              style={{padding:'7px 16px',background:'rgba(43,122,120,0.1)',color:'#2B7A78',border:'1px solid rgba(43,122,120,0.3)',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif"}}>
+              Verificar se conectou
+            </button>
+          </div>
+        )}
+
+        {wStep==='erro'&&(
+          <div style={{padding:'10px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:16,flexShrink:0}}>❌</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:'#dc2626'}}>Erro ao conectar</div>
+              <div style={{fontSize:11,color:'#ef4444',marginTop:2}}>{wErr}</div>
+            </div>
+            <button onClick={conectarWhatsApp}
+              style={{padding:'6px 12px',background:'#dc2626',color:'#fff',border:'none',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",flexShrink:0}}>
+              Tentar novamente
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
