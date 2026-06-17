@@ -6,6 +6,8 @@ import { ChevronDown, Check } from "lucide-react";
 
 const CRIAR_CLINICA_URL = "https://udizowyfjnhuhgxkeayk.supabase.co/functions/v1/criar-clinica";
 const CRIAR_CLINICA_KEY = "Cappia@2026";
+const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws";
 
 // ── Dados idênticos ao dashboard/page.tsx ─────────────────────────────────────
 const PAIS_POR_IDIOMA: Record<string, {v:string;l:string}[]> = {
@@ -135,6 +137,7 @@ export default function OnboardingPage() {
 
   // Step 3
   const [telefone, setTelefone] = useState("");
+  const [ddd, setDdd] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -143,12 +146,24 @@ export default function OnboardingPage() {
   const estadoOpts = ESTADOS_MAP[pais] || [];
   const currentPais = paisesFiltrados.find(c => c.v === pais);
   const ddi = DDI_MAP[pais] || "";
+  const prefixo = ddd ? `${ddi} (${ddd})` : ddi;
 
   // Aplica fuso quando país muda
   useEffect(() => {
     const f = FUSO_MAP[pais] || "";
     if (f) setFuso(f);
   }, [pais]);
+
+  async function loadDdd(p: string, s: string) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/paises_config?codigo=eq.${p}&select=ddd_por_estado`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+      });
+      const rows = await res.json();
+      const mapa: Record<string,string> = rows[0]?.ddd_por_estado || {};
+      setDdd(mapa[s] || "");
+    } catch { setDdd(""); }
+  }
 
   function selectIdioma(code: string) {
     setIdioma(code);
@@ -160,6 +175,7 @@ export default function OnboardingPage() {
     setPais(p);
     setPaisOpen(false);
     setEstado("");
+    setDdd("");
     setCep("");
     setCepErro("");
     const f = FUSO_MAP[p] || "";
@@ -171,6 +187,7 @@ export default function OnboardingPage() {
     setEstadoOpen(false);
     const fusoEstado = FUSO_ESTADO_MAP[pais]?.[s];
     if (fusoEstado) setFuso(fusoEstado);
+    loadDdd(pais, s);
   }
 
   async function buscarCep(raw: string) {
@@ -184,7 +201,7 @@ export default function OnboardingPage() {
         const data = await res.json();
         if (data.erro) { setCepErro("CEP não encontrado."); return; }
         const estadoNome = UF_TO_ESTADO_BR[data.uf] || "";
-        if (estadoNome && estadoOpts.includes(estadoNome)) selectEstado(estadoNome);
+        if (estadoNome && estadoOpts.includes(estadoNome)) { selectEstado(estadoNome); loadDdd(pais, estadoNome); }
       } catch { setCepErro("Erro ao buscar CEP."); }
       finally { setCepLoading(false); }
       return;
@@ -209,7 +226,7 @@ export default function OnboardingPage() {
       const res = await fetch(CRIAR_CLINICA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": CRIAR_CLINICA_KEY },
-        body: JSON.stringify({ nome, email, senha_hash: senhaHash, idioma, pais, estado, cep, fuso_horario: fuso, telefone_agente: telefone }),
+        body: JSON.stringify({ nome, email, senha_hash: senhaHash, idioma, pais, estado, cep, fuso_horario: fuso, telefone_agente: ddd ? `${ddd}${telefone}` : telefone }),
       });
       const data = await res.json();
       if (!res.ok || data.sucesso === false || data.success === false)
@@ -423,11 +440,19 @@ export default function OnboardingPage() {
               <div style={{marginBottom:24}}>
                 <label style={labelSt}>Número WhatsApp</label>
                 <div style={{display:"flex",border:"1px solid rgba(43,122,120,0.35)",borderRadius:10,overflow:"hidden"}}>
-                  <span style={{padding:"11px 14px",background:"#f1f5f9",borderRight:"1px solid rgba(43,122,120,0.35)",fontFamily:"monospace",fontSize:13,color:"#2B7A78",whiteSpace:"nowrap",flexShrink:0}}>{ddi}</span>
-                  <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="999999999"
+                  <span style={{padding:"11px 14px",background:"#f1f5f9",borderRight:"1px solid rgba(43,122,120,0.35)",fontFamily:"monospace",fontSize:13,color:"#2B7A78",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.02em"}}>
+                    {prefixo}
+                  </span>
+                  <input value={telefone} onChange={e => setTelefone(e.target.value)}
+                    placeholder={ddd ? "9 9999-9999" : "99 9 9999-9999"}
                     style={{flex:1,padding:"11px 14px",fontSize:13,border:"none",outline:"none",fontFamily:"'Sora',sans-serif"}}/>
                 </div>
-                <p style={{fontSize:11,color:"#94a3b8",marginTop:8}}>Este número vai aparecer pré-preenchido na seção Secretária Virtual do painel.</p>
+                {ddd && (
+                  <p style={{fontSize:11,color:"#2B7A78",marginTop:6,fontWeight:500}}>
+                    DDI e DDD preenchidos automaticamente — digite só os dígitos finais.
+                  </p>
+                )}
+                <p style={{fontSize:11,color:"#94a3b8",marginTop:4}}>Este número vai aparecer pré-preenchido na seção Secretária Virtual do painel.</p>
               </div>
             </motion.div>
           )}
