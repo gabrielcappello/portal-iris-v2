@@ -1597,7 +1597,6 @@ function getAnamneseCampos(t:(key:TranslationKey,vars?:Record<string,string|numb
 function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const a=(clinica as unknown as Record<string,Record<string,unknown>>).automatizacoes||{};
   const [email,setEmail]=useState((a.solicitar_email as boolean)||false);
-  const [resp,setResp]=useState((a.solicitar_responsavel as boolean)||false);
   const anam=(a.anamnese as Record<string,boolean>)||{};
   const ANAMNESE_CAMPOS = getAnamneseCampos(t);
   const [anamCampos,setAnamCampos]=useState<Record<string,boolean>>(
@@ -1677,7 +1676,6 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
 
         {[
           {k:'email',v:email,set:setEmail,label:t("health.email_collect"), sub:t("health.email_sub")},
-          {k:'resp', v:resp, set:setResp, label:t("dados.responsible"),     sub:t("dados.responsible_hint")},
         ].map(f=>(
           <div key={f.k} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid #f1f5f9'}}>
             <div style={{flex:1}}>
@@ -1689,7 +1687,7 @@ function DadosAgenteSection({clinica,saving,onSave,t}:{clinica:Clinica;saving:bo
         ))}
       </div>
       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:true,solicitar_email:email,solicitar_responsavel:resp,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
+        <button onClick={()=>onSave({automatizacoes:{...a,solicitar_nascimento:true,solicitar_email:email,anamnese:anamCampos}})} disabled={saving} style={saveBtnSt}>
           {saving?t("procs.saving"):t("dados.btn_save")}
         </button>
       </div>
