@@ -1081,6 +1081,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   const [calValResult,setCalValResult]=useState<{valido:boolean;tipo?:string;calendar_name:string;timezone:string;motivo:string}|null>(null);
   const [btnErrMsg,setBtnErrMsg]=useState('');
   const [calValidated,setCalValidated]=useState(d.ativo);
+  const [showProcWarn,setShowProcWarn]=useState(false);
   const calInputRef=useRef<HTMLInputElement>(null);
   useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErrMsg('');setCalValResult(null);setCalValidated(false);}},[d.calendar_id]);
 
@@ -1286,13 +1287,19 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
               <div>
                 <label style={{...labelSt,textAlign:'center',display:'block'}}>{t("field.schedule_mode")}</label>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,padding:4,background:'#f1f5f9',borderRadius:8,width:'100%',boxSizing:'border-box'}}>
-                  {(['auto','manual','proc'] as const).map(m=>(
+                  {(['auto','manual'] as const).map(m=>(
                     <button key={m} onClick={()=>onUpdate({modo:m})}
                       style={{padding:'7px 6px',borderRadius:6,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
                         background:d.modo===m?'#2B7A78':'transparent',color:d.modo===m?'#fff':'#64748b',transition:'all 0.2s'}}>
-                      {m==='auto'?`⚡ ${t("dentist.mode_auto")}`:m==='manual'?`✏️ ${t("dentist.mode_manual")}`:`📋 ${t("dentist.mode_procedure")}`}
+                      {m==='auto'?`⚡ ${t("dentist.mode_auto")}`:`✏️ ${t("dentist.mode_manual")}`}
                     </button>
                   ))}
+                  <button
+                    onClick={()=>{setShowProcWarn(true);setTimeout(()=>setShowProcWarn(false),3500);}}
+                    style={{padding:'7px 6px',borderRadius:6,border:'1px dashed #cbd5e1',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+                      background:'transparent',color:'#94a3b8',transition:'all 0.2s',opacity:0.7}}>
+                    {`📋 ${t("dentist.mode_procedure")}`}
+                  </button>
                 </div>
                 {d.modo==='auto'&&(
                   <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
@@ -1304,9 +1311,10 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
                     {t("dentist.mode_manual_desc")}
                   </div>
                 )}
-                {d.modo==='proc'&&(
-                  <div style={{marginTop:8,padding:'8px 10px',background:'rgba(43,122,120,0.06)',borderRadius:6,fontSize:11,color:'#2B7A78',lineHeight:1.5}}>
-                    {t("dentist.mode_proc_desc")}
+                {showProcWarn&&(
+                  <div style={{marginTop:6,padding:'7px 10px',background:'#fef9c3',border:'1px solid #fde047',borderRadius:6,fontSize:11,color:'#854d0e',display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:13}}>🚧</span>
+                    <span><strong>Modo por procedimentos</strong> — Em desenvolvimento, disponível em breve.</span>
                   </div>
                 )}
               </div>
