@@ -218,8 +218,11 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
   open:boolean;onToggle:()=>void;children:React.ReactNode;badge?:string;
 }){
   return(
-    <motion.div layout style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 1px 3px rgba(0,0,0,0.06)',overflow:'hidden',marginBottom:12}}>
-      <button onClick={onToggle} style={{width:'100%',padding:'14px 16px',border:'none',background:open?'rgba(43,122,120,0.04)':'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left'}}>
+    <motion.div layout
+      whileTap={{y:3,boxShadow:'0 1px 0 rgba(0,0,0,0.12),0 2px 4px rgba(0,0,0,0.07)'}}
+      style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 4px 0 rgba(0,0,0,0.18),0 5px 10px rgba(0,0,0,0.09)',overflow:'hidden',marginBottom:12,cursor:'pointer'}}
+      onClick={onToggle}>
+      <div style={{width:'100%',padding:'14px 16px',border:'none',background:open?'rgba(43,122,120,0.04)':'transparent',display:'flex',alignItems:'center',gap:12,textAlign:'left'}}>
         <div style={{width:36,height:36,borderRadius:9,background:'linear-gradient(135deg,#DEF2F1,rgba(58,175,169,0.1))',color:'#2B7A78',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:14,fontWeight:600,color:'#1e293b'}}>{title}</div>
@@ -229,7 +232,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
           <ChevronDown size={16}/>
         </motion.div>
-      </button>
+      </div>
       <AnimatePresence initial={false}>
         {open&&(
           <motion.div key="body" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
