@@ -219,8 +219,8 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
 }){
   return(
     <motion.div layout
-      whileTap={{y:3,boxShadow:'0 1px 0 rgba(0,0,0,0.12),0 2px 4px rgba(0,0,0,0.07)'}}
-      style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 4px 0 rgba(0,0,0,0.18),0 5px 10px rgba(0,0,0,0.09)',overflow:'hidden',marginBottom:12,cursor:'pointer'}}
+      whileTap={{y:3,boxShadow:'0 2px 4px rgba(0,0,0,0.10)'}}
+      style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 6px 16px rgba(0,0,0,0.28)',overflow:'hidden',marginBottom:12,cursor:'pointer'}}
       onClick={onToggle}>
       <div style={{width:'100%',padding:'14px 16px',border:'none',background:open?'rgba(43,122,120,0.04)':'transparent',display:'flex',alignItems:'center',gap:12,textAlign:'left'}}>
         <div style={{width:36,height:36,borderRadius:9,background:'linear-gradient(135deg,#DEF2F1,rgba(58,175,169,0.1))',color:'#2B7A78',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</div>
