@@ -1221,10 +1221,16 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
         {d.nome?(
           <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
             <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>{t("dentist.label")}</span>
-            <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`${d.titulo||'Dr.'} ${d.nome}`}</span>
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{`${d.titulo||'Dr.'} ${d.nome}`}</span>
+              {allComplete&&<span style={{fontSize:13,color:'#10b981',fontWeight:700,lineHeight:1}}>✓</span>}
+            </div>
           </div>
         ):(
-          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{t("dentist.label_n",{n:i+1})}</span>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{t("dentist.label_n",{n:i+1})}</span>
+            {allComplete&&<span style={{fontSize:13,color:'#10b981',fontWeight:700,lineHeight:1}}>✓</span>}
+          </div>
         )}
         <div style={{flex:1}}/>
         <div onClick={e=>e.stopPropagation()}><Toggle on={d.ativo} onChange={v=>{
