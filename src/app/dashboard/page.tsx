@@ -218,7 +218,7 @@ function CardSection({id,icon,title,subtitle,open,onToggle,children,badge}:{
   open:boolean;onToggle:()=>void;children:React.ReactNode;badge?:string;
 }){
   return(
-    <motion.div layout
+    <motion.div
       whileTap={{y:3,boxShadow:'0 2px 4px rgba(0,0,0,0.10)'}}
       style={{background:'#fff',borderRadius:12,border:`1px solid ${open?'#2B7A78':'rgba(43,122,120,0.35)'}`,boxShadow:'0 6px 16px rgba(0,0,0,0.28)',overflow:'hidden',marginBottom:12,cursor:'pointer'}}
       onClick={onToggle}>
