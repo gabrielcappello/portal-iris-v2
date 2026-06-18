@@ -1196,9 +1196,13 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
     }catch(err){
       console.error('[IRIS] Erro ao validar calendar:', err);
       setCalValidating(false);
-      setCalValResult({valido:false,calendar_name:'',timezone:'',motivo:'Não foi possível verificar a agenda agora. Tente novamente em alguns segundos.'});
-      setBtnErrMsg('Erro: Não foi possível verificar a agenda');
-      setTimeout(()=>setBtnErrMsg(''),4000);
+      // Falha de rede (webhook inacessível) — salva dados mas marca validação pendente
+      setCalValResult(null);
+      setCalValidated(false);
+      setBtnErrMsg('');
+      await onSave({ativo:false});
+      setOpenSub(null);
+      return;
     }
     if(!calOk){
       onUpdate({ativo:false});
