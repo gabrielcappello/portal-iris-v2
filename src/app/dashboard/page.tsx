@@ -7,6 +7,7 @@ import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/procedimentos-i18n";
+import VideoModal from "@/components/VideoModal";
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 // Preencher após criar o workflow no n8n:
@@ -1148,6 +1149,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   const [btnErrMsg,setBtnErrMsg]=useState('');
   const [calValidated,setCalValidated]=useState(d.ativo);
   const [showProcWarn,setShowProcWarn]=useState(false);
+  const [showCalVideo,setShowCalVideo]=useState(false);
   const calInputRef=useRef<HTMLInputElement>(null);
   useEffect(()=>{if(d.calendar_id?.trim()){setCalToggleErrMsg('');setCalValResult(null);setCalValidated(false);}},[d.calendar_id]);
 
@@ -1406,8 +1408,15 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
               <SubBloco titulo={t("dentist.subbloco_calendario")} nomeDentista={nomeLabel} open={openSub==='calendario'} onToggle={()=>setOpenSub(p=>p==='calendario'?null:'calendario')}>
               {/* Campo ID */}
               <div>
-                <label style={labelSt}>{t("field.calendar_id")}</label>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+                  <label style={{...labelSt,marginBottom:0}}>{t("field.calendar_id")}</label>
+                  <button onClick={()=>setShowCalVideo(true)}
+                    style={{display:'flex',alignItems:'center',gap:4,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:"'Sora',sans-serif",fontSize:11,fontWeight:600,color:'#2B7A78',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:2}}>
+                    <span style={{fontSize:13}}>📹</span> Como obter este dado?
+                  </button>
+                </div>
                 <input ref={calInputRef} value={d.calendar_id||''} onChange={e=>onUpdate({calendar_id:e.target.value})} placeholder="xxx@group.calendar.google.com" style={inputSt}/>
+                {showCalVideo&&<VideoModal src="/videos/google-calendar.mp4" title="Como obter o Google Calendar ID" onClose={()=>setShowCalVideo(false)}/>}
               </div>
               {/* Bloco fixo — sempre visível */}
               <div style={{padding:'10px 12px',background:'#f0fdf9',border:'1px solid #99f6e4',borderRadius:8}}>
