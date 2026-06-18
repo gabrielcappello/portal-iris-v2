@@ -1550,17 +1550,28 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
   onToggle:()=>void;children:React.ReactNode;
 }){
   return(
-    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden'}}>
-      <button
+    <div style={{border:'1px solid rgba(43,122,120,0.25)',borderRadius:8,overflow:'hidden'}}>
+      <motion.button
         onClick={onToggle}
         onMouseDown={e=>e.preventDefault()}
-        style={{width:'100%',padding:'10px 12px',border:'none',background:'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
-        <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
+        whileTap={{y:2,boxShadow:'0 1px 2px rgba(43,122,120,0.18)'}}
+        style={{
+          width:'100%',padding:'10px 12px',border:'none',cursor:'pointer',
+          display:'flex',alignItems:'center',gap:8,textAlign:'left',
+          background: open
+            ? 'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)'
+            : 'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',
+          boxShadow: open
+            ? '0 1px 2px rgba(43,122,120,0.18),inset 0 1px 3px rgba(43,122,120,0.12)'
+            : '0 3px 0 rgba(43,122,120,0.28),0 4px 6px rgba(43,122,120,0.12)',
+          transition:'background 0.2s,box-shadow 0.2s',
+        }}>
+        <span style={{fontSize:13,fontWeight:600,color: open?'#2B7A78':'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
         <div style={{flex:1}}/>
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
           <ChevronDown size={14}/>
         </motion.div>
-      </button>
+      </motion.button>
       <AnimatePresence initial={false}>
         {open&&(
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
