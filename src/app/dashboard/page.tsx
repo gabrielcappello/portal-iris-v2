@@ -1215,7 +1215,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   }
 
   return(
-    <div style={{borderRadius:10,overflow:'hidden',marginBottom:8,boxShadow: open?'0 1px 0 rgba(43,122,120,0.4),inset 0 2px 4px rgba(43,122,120,0.15)':'0 5px 0 rgba(43,122,120,0.5),0 6px 12px rgba(43,122,120,0.18)',border:d.ativo?'1.5px solid rgba(43,122,120,0.5)':'1.5px solid rgba(43,122,120,0.25)',borderLeft:d.ativo?'4px solid #2B7A78':'4px solid rgba(43,122,120,0.2)',transition:'box-shadow 0.15s'}}>
+    <div style={{borderRadius:10,overflow:'hidden',marginBottom:8,boxShadow: open?'0 1px 0 rgba(0,0,0,0.35),inset 0 2px 4px rgba(0,0,0,0.1)':'0 5px 0 rgba(0,0,0,0.5),0 7px 14px rgba(0,0,0,0.22)',border:d.ativo?'1.5px solid rgba(43,122,120,0.5)':'1.5px solid rgba(43,122,120,0.25)',borderLeft:d.ativo?'4px solid #2B7A78':'4px solid rgba(43,122,120,0.2)',transition:'box-shadow 0.15s'}}>
       <motion.div onClick={onToggle} whileTap={{y:2}} style={{width:'100%',padding:'12px 14px',border:'none',background: open?'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)':'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left',transition:'background 0.2s'}}>
         <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
@@ -1562,8 +1562,8 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
             ? 'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)'
             : 'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',
           boxShadow: open
-            ? '0 1px 0 rgba(43,122,120,0.35),inset 0 2px 4px rgba(43,122,120,0.22)'
-            : '0 5px 0 rgba(43,122,120,0.55),0 6px 10px rgba(43,122,120,0.22)',
+            ? '0 1px 0 rgba(0,0,0,0.35),inset 0 2px 4px rgba(0,0,0,0.12)'
+            : '0 4px 0 rgba(0,0,0,0.55),0 5px 12px rgba(0,0,0,0.25)',
           transition:'background 0.2s,box-shadow 0.2s',
         }}>
         <span style={{fontSize:13,fontWeight:600,color: open?'#2B7A78':'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
