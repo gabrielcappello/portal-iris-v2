@@ -1215,8 +1215,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   }
 
   return(
-    <div style={{borderRadius:10,overflow:'hidden',marginBottom:8,boxShadow: open?'0 1px 0 rgba(0,0,0,0.35),inset 0 2px 4px rgba(0,0,0,0.1)':'0 5px 0 rgba(0,0,0,0.5),0 7px 14px rgba(0,0,0,0.22)',border:d.ativo?'1.5px solid rgba(43,122,120,0.5)':'1.5px solid rgba(43,122,120,0.25)',borderLeft:d.ativo?'4px solid #2B7A78':'4px solid rgba(43,122,120,0.2)',transition:'box-shadow 0.15s'}}>
-      <motion.div onClick={onToggle} whileTap={{y:2}} style={{width:'100%',padding:'12px 14px',border:'none',background: open?'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)':'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left',transition:'background 0.2s'}}>
+    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid rgba(43,122,120,0.2)'}}>
+      <div onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
         <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
           <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
@@ -1235,7 +1235,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
           <ChevronDown size={14}/>
         </motion.div>
-      </motion.div>
+      </div>
 
       {calToggleErrMsg&&(
         <div style={{margin:'0 14px 8px',padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,fontSize:11,color:'#dc2626',fontWeight:500}}>
@@ -1550,28 +1550,17 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
   onToggle:()=>void;children:React.ReactNode;
 }){
   return(
-    <div style={{border:'1px solid rgba(43,122,120,0.25)',borderRadius:8,overflow:'hidden'}}>
-      <motion.button
+    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden'}}>
+      <button
         onClick={onToggle}
         onMouseDown={e=>e.preventDefault()}
-        whileTap={{y:2,boxShadow:'0 1px 2px rgba(43,122,120,0.18)'}}
-        style={{
-          width:'100%',padding:'10px 12px',border:'none',cursor:'pointer',
-          display:'flex',alignItems:'center',gap:8,textAlign:'left',
-          background: open
-            ? 'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)'
-            : 'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',
-          boxShadow: open
-            ? '0 1px 0 rgba(0,0,0,0.35),inset 0 2px 4px rgba(0,0,0,0.12)'
-            : '0 4px 0 rgba(0,0,0,0.55),0 5px 12px rgba(0,0,0,0.25)',
-          transition:'background 0.2s,box-shadow 0.2s',
-        }}>
-        <span style={{fontSize:13,fontWeight:600,color: open?'#2B7A78':'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
+        style={{width:'100%',padding:'10px 12px',border:'none',background:'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',gap:8,textAlign:'left'}}>
+        <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
         <div style={{flex:1}}/>
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0}}>
           <ChevronDown size={14}/>
         </motion.div>
-      </motion.button>
+      </button>
       <AnimatePresence initial={false}>
         {open&&(
           <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
