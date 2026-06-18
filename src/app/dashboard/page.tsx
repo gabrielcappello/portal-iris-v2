@@ -1497,15 +1497,15 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
               {/* 4º bloco: Salvar */}
               <div style={{border:'1px solid rgba(43,122,120,0.25)',borderRadius:8,padding:'12px 14px',background:'#f8fafc',boxShadow:'0 6px 16px rgba(0,0,0,0.28)'}}>
                 <div style={{display:'flex',gap:8}}>
-                  <motion.button whileTap={{y:3}} onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
-                    style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <motion.button whileTap={{y:3,boxShadow:'0 2px 4px rgba(0,0,0,0.10)'}} onClick={()=>setShowQR(p=>!p)} onMouseDown={e=>e.preventDefault()}
+                    style={{flex:1,padding:'10px',border:'1px solid #cbd5e1',borderRadius:8,background:showQR?'#f1f5f9':'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:6,boxShadow:'0 6px 16px rgba(0,0,0,0.28)'}}>
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/></svg>
                     {t("dentist.qr_code")}
                   </motion.button>
-                  <motion.button whileTap={{y:3}} onClick={handleSave} disabled={saving||calValidating}
+                  <motion.button whileTap={{y:3,boxShadow:'0 2px 4px rgba(0,0,0,0.10)'}} onClick={handleSave} disabled={saving||calValidating}
                     style={{...saveBtnSt,flex:1,justifyContent:'center',display:'flex',alignItems:'center',gap:6,
                       background:btnErrMsg?'#dc2626':saveBtnSt.background,
-                      opacity:(saving||calValidating)?0.6:1,transition:'background 0.3s'}}>
+                      opacity:(saving||calValidating)?0.6:1,transition:'background 0.3s',boxShadow:'0 6px 16px rgba(0,0,0,0.28)'}}>
                     {calValidating?'Verificando agenda...':btnErrMsg||( saving?t("procs.saving"):t("dentist.btn_save_name",{nome:nomeLabel}))}
                   </motion.button>
                 </div>
@@ -1532,8 +1532,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <motion.button whileTap={{y:3}} onClick={onToggle} onMouseDown={e=>e.preventDefault()}
-                  style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif"}}>
+                <motion.button whileTap={{y:3,boxShadow:'0 2px 4px rgba(0,0,0,0.10)'}} onClick={onToggle} onMouseDown={e=>e.preventDefault()}
+                  style={{marginTop:8,width:'100%',padding:'9px',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:600,color:'#94a3b8',fontFamily:"'Sora',sans-serif",boxShadow:'0 6px 16px rgba(0,0,0,0.28)'}}>
                   {t("dentist.btn_close")}
                 </motion.button>
               </div>
