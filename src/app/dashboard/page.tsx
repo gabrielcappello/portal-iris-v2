@@ -1215,8 +1215,8 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
   }
 
   return(
-    <div style={{border:'1px solid rgba(43,122,120,0.35)',borderRadius:10,overflow:'hidden',marginBottom:8,borderLeft:d.ativo?'3px solid #2B7A78':'3px solid rgba(43,122,120,0.2)'}}>
-      <div onClick={onToggle} style={{width:'100%',padding:'12px 14px',border:'none',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
+    <div style={{borderRadius:10,overflow:'hidden',marginBottom:8,boxShadow: open?'0 1px 0 rgba(43,122,120,0.4),inset 0 2px 4px rgba(43,122,120,0.15)':'0 5px 0 rgba(43,122,120,0.5),0 6px 12px rgba(43,122,120,0.18)',border:d.ativo?'1.5px solid rgba(43,122,120,0.5)':'1.5px solid rgba(43,122,120,0.25)',borderLeft:d.ativo?'4px solid #2B7A78':'4px solid rgba(43,122,120,0.2)',transition:'box-shadow 0.15s'}}>
+      <motion.div onClick={onToggle} whileTap={{y:2}} style={{width:'100%',padding:'12px 14px',border:'none',background: open?'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)':'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left',transition:'background 0.2s'}}>
         <div style={{width:8,height:8,borderRadius:'50%',background:dotColor,flexShrink:0,transition:'background 0.3s'}}/>
         {d.nome?(
           <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
@@ -1235,7 +1235,7 @@ function DentistaCard({d,i,open,onToggle,onUpdate,ddi,onSave,saving,clinicaId,no
         <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
           <ChevronDown size={14}/>
         </motion.div>
-      </div>
+      </motion.div>
 
       {calToggleErrMsg&&(
         <div style={{margin:'0 14px 8px',padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,fontSize:11,color:'#dc2626',fontWeight:500}}>
@@ -1562,8 +1562,8 @@ function SubBloco({titulo,nomeDentista,open,onToggle,children}:{
             ? 'linear-gradient(180deg,#e8f5f5 0%,#d4eeee 100%)'
             : 'linear-gradient(180deg,#f8fafc 0%,#edf4f4 100%)',
           boxShadow: open
-            ? '0 1px 2px rgba(43,122,120,0.18),inset 0 1px 3px rgba(43,122,120,0.12)'
-            : '0 3px 0 rgba(43,122,120,0.28),0 4px 6px rgba(43,122,120,0.12)',
+            ? '0 1px 0 rgba(43,122,120,0.35),inset 0 2px 4px rgba(43,122,120,0.22)'
+            : '0 5px 0 rgba(43,122,120,0.55),0 6px 10px rgba(43,122,120,0.22)',
           transition:'background 0.2s,box-shadow 0.2s',
         }}>
         <span style={{fontSize:13,fontWeight:600,color: open?'#2B7A78':'#1e293b'}}>{titulo} <span style={{color:'#64748b',fontWeight:500}}>— {nomeDentista}</span></span>
