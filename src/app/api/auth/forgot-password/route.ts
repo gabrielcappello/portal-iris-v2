@@ -108,8 +108,8 @@ export async function POST(req: Request) {
     });
 
     return respostaGenerica;
-  } catch {
-    // Mesmo em erro interno, resposta genérica (não vaza informação)
+  } catch (err) {
+    console.error("[FORGOT-PASSWORD] ERRO:", err);
     return respostaGenerica;
   }
 }
