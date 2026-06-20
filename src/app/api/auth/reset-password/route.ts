@@ -12,6 +12,7 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
 const SB_HEADERS = {
   apikey: SERVICE_KEY,
+  Authorization: `Bearer ${SERVICE_KEY}`,
   "Content-Type": "application/json",
 };
 

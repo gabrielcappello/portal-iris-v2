@@ -12,6 +12,7 @@ const FROM_EMAIL = "iris@cappia.app";
 
 const SB_HEADERS = {
   apikey: SERVICE_KEY,
+  Authorization: `Bearer ${SERVICE_KEY}`,
   "Content-Type": "application/json",
 };
 
