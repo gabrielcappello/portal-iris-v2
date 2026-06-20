@@ -194,7 +194,12 @@ function calcSlots(ini:string,fim:string,dur:number,almIni:string,almFim:string)
   const toStr=(m:number)=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
   const s=toMin(ini),e=toMin(fim),ai=toMin(almIni),af=toMin(almFim);
   const slots:string[]=[];
-  for(let t=s;t+dur<=e;t+=dur){if(t>=ai&&t<af)continue;slots.push(toStr(t));}
+  if(ai!==af){
+    for(let t=s;t+dur<=ai;t+=dur)slots.push(toStr(t));
+    for(let t=af;t+dur<=e;t+=dur)slots.push(toStr(t));
+  }else{
+    for(let t=s;t+dur<=e;t+=dur)slots.push(toStr(t));
+  }
   return slots;
 }
 
@@ -707,6 +712,7 @@ function getPersonalidadesList(t:(key:TranslationKey,vars?:Record<string,string|
 }
 
 const EVOLUTION_CONNECT_URL='https://singingdugong-n8n.cloudfy.live/webhook/iris-connect-evolution';
+const EVOLUTION_DISCONNECT_URL='https://singingdugong-n8n.cloudfy.live/webhook/iris-disconnect-evolution';
 
 function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;prefixo:string;saving:boolean;onSave:(d:Record<string,unknown>)=>void;t:(key:TranslationKey,vars?:Record<string,string|number>)=>string;}){
   const [nome,setNome]=useState(clinica.nome_agente||'');
@@ -719,7 +725,7 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
   const instancia=telSemDDI?`CAPPIA-IRIS-${telSemDDI}`:'';
 
   type WStep='idle'|'loading'|'qr'|'conectado'|'erro';
-  const [wStep,setWStep]=useState<WStep>('idle');
+  const [wStep,setWStep]=useState<WStep>(clinica.whatsapp_status==='conectado'?'conectado':'idle');
   const [qrData,setQrData]=useState('');
   const [wErr,setWErr]=useState('');
 
@@ -732,6 +738,16 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
       else if(data.step==='conectado'){setWStep('conectado');}
       else if(data.step==='erro'){setWErr(data.mensagem||data.error||'Erro ao conectar');setWStep('erro');}
       else{setWErr('Resposta inesperada do servidor');setWStep('erro');}
+    }catch{setWErr('Não foi possível conectar ao servidor');setWStep('erro');}
+  }
+
+  async function desconectarWhatsApp(){
+    setWStep('loading');setWErr('');
+    try{
+      const res=await fetch(EVOLUTION_DISCONNECT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clinica_id:clinica.id})});
+      const data=await res.json();
+      if(data.step==='desconectado'){setWStep('idle');}
+      else{setWErr(data.erro||'Erro ao desconectar');setWStep('erro');}
     }catch{setWErr('Não foi possível conectar ao servidor');setWStep('erro');}
   }
 
@@ -809,9 +825,15 @@ function SecretariaSection({clinica,prefixo,saving,onSave,t}:{clinica:Clinica;pr
             <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>Conecte o número da Iris ao WhatsApp</div>
           </div>
           {wStep==='conectado'?(
-            <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8}}>
-              <span style={{fontSize:13}}>✅</span>
-              <span style={{fontSize:12,fontWeight:600,color:'#15803d'}}>Conectado</span>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8}}>
+                <span style={{fontSize:13}}>✅</span>
+                <span style={{fontSize:12,fontWeight:600,color:'#15803d'}}>Conectado</span>
+              </div>
+              <button onClick={desconectarWhatsApp}
+                style={{padding:'6px 12px',background:'#fff',color:'#dc2626',border:'1px solid #fecaca',borderRadius:8,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif",transition:'opacity 0.15s'}}>
+                Desconectar
+              </button>
             </div>
           ):(
             <button onClick={conectarWhatsApp} disabled={wStep==='loading'}
