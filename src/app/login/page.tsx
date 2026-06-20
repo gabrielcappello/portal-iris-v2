@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation, detectBrowserLang, Lang } from "@/lib/i18n/useTranslation";
 
@@ -132,6 +133,11 @@ export default function LoginPage() {
                   style={{background:"linear-gradient(135deg,#2B7A78,#3AAFA9)"}}>
                   {loading ? t("login.btn_loading") : t("login.btn_enter")}
                 </button>
+                <div className="text-center pt-1">
+                  <Link href="/recuperar" className="text-sm font-medium" style={{color:"#2B7A78"}}>
+                    Esqueci minha senha
+                  </Link>
+                </div>
               </form>
             </motion.div>
           ) : (
