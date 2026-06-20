@@ -32,8 +32,10 @@ export type Clinica = {
   endereco: string; sala: string; bairro: string; cidade: string; cep: string;
   referencia: string; email_clinica: string; google_maps: string;
   whatsapp_instancia: string; nome_agente: string; personalidade: string;
-  telefone_agente: string; idioma: string; pais_codigo: string;
+  telefone_agente: string; whatsapp_admin?: string; idioma: string; pais_codigo: string;
   fuso_horario: string; estado: string; dentistas: Dentista[];
+  automatizacoes?: Record<string,unknown>; horario_funcionamento?: Record<string,unknown>;
+  whatsapp_status?: string; maps_link?: string; plano?: string;
   precios?: {esp:string;nome:string;valor:number;tempo:number;mostrar_valor?:boolean}[];
 };
 
