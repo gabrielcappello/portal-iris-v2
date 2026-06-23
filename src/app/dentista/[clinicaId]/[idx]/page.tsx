@@ -353,11 +353,11 @@ export default function DentistaApp() {
                                               </div>
                                             </div>
                                             {/* Dados */}
-                                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+                                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                                               {[["Documento",pac.documento||"—"],["Nascimento",pac.data_nascimento||"—"],["Idade",calcularIdade(pac.data_nascimento)],["Email",pac.email||"—"]].map(([l,v])=>(
-                                                <div key={l}>
+                                                <div key={l} style={{minWidth:0}}>
                                                   <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{l}</div>
-                                                  <div style={{fontSize:13,color:"#334155",fontWeight:500}}>{v}</div>
+                                                  <div style={{fontSize:13,color:"#334155",fontWeight:500,overflowWrap:"break-word",wordBreak:"break-word"}}>{v}</div>
                                                 </div>
                                               ))}
                                             </div>
@@ -475,11 +475,11 @@ export default function DentistaApp() {
                     {isOpen&&(
                       <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.22,ease:[0.4,0,0.2,1]}} style={{overflow:"hidden"}}>
                         <div style={{padding:"12px 14px 14px",borderTop:"1px solid #f1f5f9",display:"flex",flexDirection:"column",gap:10}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                             {[["Documento",p.documento||"—"],["Nascimento",p.data_nascimento||"—"],["Idade",calcularIdade(p.data_nascimento)],["Email",p.email||"—"]].map(([l,v])=>(
-                              <div key={l}>
+                              <div key={l} style={{minWidth:0}}>
                                 <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{l}</div>
-                                <div style={{fontSize:13,color:"#334155"}}>{v}</div>
+                                <div style={{fontSize:13,color:"#334155",overflowWrap:"break-word",wordBreak:"break-word"}}>{v}</div>
                               </div>
                             ))}
                           </div>
