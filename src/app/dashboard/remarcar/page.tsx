@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,12 +6,11 @@ import { Calendar, Clock, AlertTriangle, Check, ArrowLeft } from "lucide-react";
 import { sb, type Clinica, type Dentista } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 
-// URL de producao do webhook de remarcacao em massa (n8n)
-const N8N_REMARCACAO_URL = "https://singingdugong-n8n.cloudfy.live/webhook/iris-remarcacao-massa";
+const N8N_REMARCACAO_URL = "/api/remarcacao-massa";
 
 const MOTIVO_PADRAO = "Imprevisto na agenda do profissional";
 
-// ── Estilos (mesmo padrao do painel) ──
+// â”€â”€ Estilos (mesmo padrao do painel) â”€â”€
 const inputSt: React.CSSProperties = { width: "100%", padding: "10px 12px", fontSize: 13, border: "1px solid rgba(43,122,120,0.35)", borderRadius: 8, outline: "none", background: "#fff", fontFamily: "'Sora',sans-serif", boxSizing: "border-box" };
 const labelSt: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 };
 
@@ -89,8 +88,8 @@ export default function RemarcarPage() {
     setErroValidacao("");
     if (!dataAlvo) { setErroValidacao("Escolha a data afetada."); return; }
     if (escopoTipo === "intervalo") {
-      if (!horaInicio || !horaFim) { setErroValidacao("Preencha o horário de início e fim."); return; }
-      if (horaFim < horaInicio) { setErroValidacao("O horário de fim deve ser após o início."); return; }
+      if (!horaInicio || !horaFim) { setErroValidacao("Preencha o horÃ¡rio de inÃ­cio e fim."); return; }
+      if (horaFim < horaInicio) { setErroValidacao("O horÃ¡rio de fim deve ser apÃ³s o inÃ­cio."); return; }
     }
     setEtapa("confirmacao");
   }
@@ -130,7 +129,7 @@ export default function RemarcarPage() {
       setResultado(data);
       setEtapa("resultado");
     } catch {
-      setResultado({ ok: false, erro: "Não foi possível conectar ao servidor. Tente novamente." });
+      setResultado({ ok: false, erro: "NÃ£o foi possÃ­vel conectar ao servidor. Tente novamente." });
       setEtapa("resultado");
     }
   }
@@ -146,7 +145,7 @@ export default function RemarcarPage() {
     return `${d.titulo || "Dr."} ${d.nome}`.trim();
   }
 
-  // Suprime warning de t não utilizado (layout usa i18n, página usa strings fixas em pt)
+  // Suprime warning de t nÃ£o utilizado (layout usa i18n, pÃ¡gina usa strings fixas em pt)
   void t;
 
   if (carregando) {
@@ -161,13 +160,13 @@ export default function RemarcarPage() {
       </p>
 
       <AnimatePresence mode="wait">
-        {/* ── ETAPA: LISTA DE DENTISTAS ── */}
+        {/* â”€â”€ ETAPA: LISTA DE DENTISTAS â”€â”€ */}
         {etapa === "lista" && (
           <motion.div key="lista" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
             {dentistasValidos.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 16px", color: "#94a3b8", fontSize: 13, background: "#fff", borderRadius: 12, border: "1px solid rgba(43,122,120,0.2)" }}>
-                Nenhum profissional ativo disponível para remarcação.
-                <div style={{ fontSize: 12, marginTop: 6 }}>Ative um dentista completo em Configurações.</div>
+                Nenhum profissional ativo disponÃ­vel para remarcaÃ§Ã£o.
+                <div style={{ fontSize: 12, marginTop: 6 }}>Ative um dentista completo em ConfiguraÃ§Ãµes.</div>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -188,7 +187,7 @@ export default function RemarcarPage() {
           </motion.div>
         )}
 
-        {/* ── ETAPA: CONFIGURACAO ── */}
+        {/* â”€â”€ ETAPA: CONFIGURACAO â”€â”€ */}
         {etapa === "config" && dentistaSel && (
           <motion.div key="config" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}
             style={{ background: "#fff", borderRadius: 12, border: "1px solid rgba(43,122,120,0.35)", boxShadow: "0 6px 16px rgba(0,0,0,0.1)", padding: 16 }}>
@@ -202,7 +201,7 @@ export default function RemarcarPage() {
             {/* Tipo de escopo */}
             <label style={labelSt}>O que remarcar?</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-              {([["dia_inteiro", "Dia inteiro", <Calendar size={16} key="c" />], ["intervalo", "Período de horas", <Clock size={16} key="r" />]] as const).map(([val, label, icon]) => (
+              {([["dia_inteiro", "Dia inteiro", <Calendar size={16} key="c" />], ["intervalo", "PerÃ­odo de horas", <Clock size={16} key="r" />]] as const).map(([val, label, icon]) => (
                 <button key={val} onClick={() => setEscopoTipo(val as EscopoTipo)}
                   style={{ padding: "12px 8px", border: `1px solid ${escopoTipo === val ? "#2B7A78" : "rgba(43,122,120,0.35)"}`, borderRadius: 10, background: escopoTipo === val ? "rgba(43,122,120,0.08)" : "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, fontFamily: "'Sora',sans-serif", color: escopoTipo === val ? "#2B7A78" : "#64748b", transition: "all 0.15s" }}>
                   {icon}
@@ -222,7 +221,7 @@ export default function RemarcarPage() {
             {escopoTipo === "intervalo" && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                 <div>
-                  <label style={labelSt}>Início</label>
+                  <label style={labelSt}>InÃ­cio</label>
                   <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} style={inputSt} />
                 </div>
                 <div>
@@ -237,7 +236,7 @@ export default function RemarcarPage() {
               <label style={labelSt}>Motivo (interno)</label>
               <input value={motivo} onChange={e => setMotivo(e.target.value)} placeholder={MOTIVO_PADRAO} style={inputSt} />
               <span style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "block" }}>
-                Uso interno. A mensagem ao paciente é enviada pela Iris no idioma dele.
+                Uso interno. A mensagem ao paciente Ã© enviada pela Iris no idioma dele.
               </span>
             </div>
 
@@ -254,25 +253,25 @@ export default function RemarcarPage() {
           </motion.div>
         )}
 
-        {/* ── ETAPA: CONFIRMACAO ── */}
+        {/* â”€â”€ ETAPA: CONFIRMACAO â”€â”€ */}
         {etapa === "confirmacao" && dentistaSel && (
           <motion.div key="confirmacao" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}
             style={{ background: "#fff", borderRadius: 12, border: "1px solid #fecaca", boxShadow: "0 6px 16px rgba(0,0,0,0.1)", padding: 16 }}>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <AlertTriangle size={18} color="#dc2626" />
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626" }}>Confirmar remarcação</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626" }}>Confirmar remarcaÃ§Ã£o</div>
             </div>
 
             <div style={{ background: "#f8fafc", borderRadius: 10, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
               <LinhaResumo label="Profissional" valor={nomeDentista(dentistaSel)} />
               <LinhaResumo label="Data" valor={formatarData(dataAlvo)} />
-              <LinhaResumo label="Escopo" valor={escopoTipo === "dia_inteiro" ? "Dia inteiro" : `Das ${horaInicio} às ${horaFim}`} />
+              <LinhaResumo label="Escopo" valor={escopoTipo === "dia_inteiro" ? "Dia inteiro" : `Das ${horaInicio} Ã s ${horaFim}`} />
               <LinhaResumo label="Motivo" valor={motivo?.trim() || MOTIVO_PADRAO} />
             </div>
 
             <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, marginBottom: 16, padding: "10px 12px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid rgba(245,158,11,0.2)" }}>
-              A Iris vai avisar por WhatsApp todos os pacientes confirmados desse profissional na data informada, e conduzir a remarcação de cada um. Esta ação não pode ser desfeita.
+              A Iris vai avisar por WhatsApp todos os pacientes confirmados desse profissional na data informada, e conduzir a remarcaÃ§Ã£o de cada um. Esta aÃ§Ã£o nÃ£o pode ser desfeita.
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>
@@ -282,50 +281,50 @@ export default function RemarcarPage() {
               </button>
               <button onClick={() => enviarComando()}
                 style={{ flex: 2, padding: "12px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}>
-                Confirmar remarcação
+                Confirmar remarcaÃ§Ã£o
               </button>
             </div>
           </motion.div>
         )}
 
-        {/* ── ETAPA: ENVIANDO ── */}
+        {/* â”€â”€ ETAPA: ENVIANDO â”€â”€ */}
         {etapa === "enviando" && (
           <motion.div key="enviando" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ textAlign: "center", padding: "48px 16px", background: "#fff", borderRadius: 12, border: "1px solid rgba(43,122,120,0.2)" }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>📨</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>Enviando avisos de remarcação...</div>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>ðŸ“¨</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>Enviando avisos de remarcaÃ§Ã£o...</div>
             <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>Isso pode levar alguns segundos.</div>
           </motion.div>
         )}
 
-        {/* ── ETAPA: RESULTADO ── */}
+        {/* â”€â”€ ETAPA: RESULTADO â”€â”€ */}
         {etapa === "resultado" && resultado && (
           <motion.div key="resultado" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             style={{ background: "#fff", borderRadius: 12, border: `1px solid ${resultado.ok ? "#bbf7d0" : "#fecaca"}`, boxShadow: "0 6px 16px rgba(0,0,0,0.1)", padding: 20, textAlign: "center" }}>
 
             {resultado.ok ? (
               <>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>✅</div>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>âœ…</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#16a34a", marginBottom: 8 }}>
-                  {resultado.idempotente ? "Comando já recebido" : "Remarcação iniciada"}
+                  {resultado.idempotente ? "Comando jÃ¡ recebido" : "RemarcaÃ§Ã£o iniciada"}
                 </div>
                 <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
                   {resultado.idempotente
-                    ? "Este comando já tinha sido enviado. Nenhuma nova mensagem foi disparada."
+                    ? "Este comando jÃ¡ tinha sido enviado. Nenhuma nova mensagem foi disparada."
                     : typeof resultado.total_pacientes === "number"
-                      ? `${resultado.total_pacientes} paciente${resultado.total_pacientes !== 1 ? "s" : ""} ${resultado.total_pacientes !== 1 ? "serão avisados" : "será avisado"} pela Iris.`
-                      : (resultado.mensagem || "Os pacientes serão avisados pela Iris.")}
+                      ? `${resultado.total_pacientes} paciente${resultado.total_pacientes !== 1 ? "s" : ""} ${resultado.total_pacientes !== 1 ? "serÃ£o avisados" : "serÃ¡ avisado"} pela Iris.`
+                      : (resultado.mensagem || "Os pacientes serÃ£o avisados pela Iris.")}
                 </div>
                 {resultado.total_pacientes === 0 && (
                   <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
-                    Não havia agendamentos confirmados para esse profissional na data.
+                    NÃ£o havia agendamentos confirmados para esse profissional na data.
                   </div>
                 )}
               </>
             ) : (
               <>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>❌</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626", marginBottom: 8 }}>Não foi possível enviar</div>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>âŒ</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#dc2626", marginBottom: 8 }}>NÃ£o foi possÃ­vel enviar</div>
                 <div style={{ fontSize: 13, color: "#ef4444", lineHeight: 1.5 }}>{resultado.erro || "Ocorreu um erro. Tente novamente."}</div>
                 <button onClick={() => enviarComando(comandoId)}
                   style={{ marginTop: 16, padding: "10px 20px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}>
@@ -362,3 +361,4 @@ function formatarData(iso: string): string {
   if (!a || !m || !d) return iso;
   return `${d}/${m}/${a}`;
 }
+

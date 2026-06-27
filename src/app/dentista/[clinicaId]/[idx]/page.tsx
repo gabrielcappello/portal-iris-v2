@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft } from "lucide-react";
@@ -6,7 +6,7 @@ import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type 
 import { useParams, useSearchParams } from "next/navigation";
 
 const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
-const N8N_REMARCACAO_URL = "https://singingdugong-n8n.cloudfy.live/webhook/iris-remarcacao-massa";
+const N8N_REMARCACAO_URL = "/api/remarcacao-massa";
 const MOTIVO_PADRAO = "Imprevisto na agenda do profissional";
 
 function anamneseAlertas(a?: AnamnesePaciente): string[] {
@@ -792,3 +792,4 @@ declare global {
     prompt(): Promise<void>;
   }
 }
+
