@@ -5,6 +5,8 @@ import { ChevronDown, Search, Settings } from "lucide-react";
 import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
 
+const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
+
 function anamneseAlertas(a?: AnamnesePaciente): string[] {
   if (!a) return [];
   const al: string[] = [];
@@ -48,6 +50,9 @@ export default function DentistaApp() {
   const [editWhatsapp, setEditWhatsapp]   = useState("");
   const [editCalendar, setEditCalendar]   = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
+  const [calValidating, setCalValidating] = useState(false);
+  const [calValResult, setCalValResult] = useState<{valido:boolean;calendar_name:string;motivo:string}|null>(null);
+  const [calSaveErr, setCalSaveErr] = useState("");
   const installedRef = useRef(false);
 
   // Sync edit states when dentista loads
@@ -57,6 +62,8 @@ export default function DentistaApp() {
       setEditCalendar(dentista.calendar_id||"");
     }
   },[dentista]);
+
+  useEffect(()=>{setCalValResult(null);setCalSaveErr("");},[editCalendar]);
 
   // PWA install prompt
   useEffect(()=>{
@@ -102,6 +109,34 @@ export default function DentistaApp() {
 
   async function saveSettings(){
     if(!clinica||!dentista) return;
+    if(!calendarValid) return;
+    const calendarChanged=editCalendar.trim()!==(dentista.calendar_id||"").trim();
+    if(calendarChanged&&editCalendar.trim()){
+      setCalValidating(true);
+      setCalValResult(null);
+      setCalSaveErr("");
+      try{
+        const ctrl=new AbortController();
+        const timer=setTimeout(()=>ctrl.abort(),10000);
+        const res=await fetch(N8N_VALIDATE_CALENDAR_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({calendar_id:editCalendar.trim()}),
+          signal:ctrl.signal,
+        });
+        clearTimeout(timer);
+        const data=await res.json();
+        setCalValResult(data);
+        setCalValidating(false);
+        if(!data.valido){
+          setCalSaveErr((data.motivo||"Calendar inválido").slice(0,80));
+          return;
+        }
+      }catch{
+        // Erro de rede: não bloqueia o save
+        setCalValidating(false);
+      }
+    }
     setSavingSettings(true);
     try{
       const idxNum=parseInt(params.idx);
@@ -142,7 +177,7 @@ export default function DentistaApp() {
 
   const nomeLabel=`${dentista.titulo||"Dr."} ${dentista.nome}`;
   const settingsComplete=!!(dentista.whatsapp?.trim())&&!!(dentista.calendar_id?.trim()?.endsWith("@group.calendar.google.com"));
-  const gearColor=settingsComplete?"#10b981":"#ef4444";
+  const gearColor=settingsComplete?"rgba(255,255,255,0.80)":"#fca5a5";
   const DDI_MAP:Record<string,string>={BR:"+55",AR:"+54",CL:"+56",UY:"+598",MX:"+52",CO:"+57",PE:"+51"};
   const ddiHint=DDI_MAP[clinica?.pais_codigo||""]||"+55";
   const calendarValid=!editCalendar||editCalendar.trim().endsWith("@group.calendar.google.com");
@@ -211,17 +246,23 @@ export default function DentistaApp() {
                   <input value={editCalendar} onChange={e=>setEditCalendar(e.target.value)}
                     placeholder="ex: abc123@group.calendar.google.com"
                     style={{width:"100%",padding:"10px 12px",fontSize:13,outline:"none",background:"#f8fafc",fontFamily:"'Sora',sans-serif",boxSizing:"border-box",borderRadius:9,
-                      border:`1px solid ${!calendarValid?"#ef4444":"#e2e8f0"}`}}/>
+                      border:`1px solid ${!calendarValid?"#ef4444":calValResult?.valido?"#10b981":"#e2e8f0"}`}}/>
                   {!calendarValid&&(
                     <div style={{fontSize:11,color:"#ef4444",marginTop:4}}>Deve terminar com @group.calendar.google.com</div>
                   )}
+                  {calValResult?.valido&&(
+                    <div style={{fontSize:11,color:"#10b981",marginTop:4}}>✓ Agenda encontrada: &quot;{calValResult.calendar_name}&quot;</div>
+                  )}
+                  {calSaveErr&&(
+                    <div style={{fontSize:11,color:"#ef4444",marginTop:4}}>✗ {calSaveErr}</div>
+                  )}
                 </div>
 
-                <button onClick={saveSettings} disabled={savingSettings||!calendarValid}
-                  style={{padding:"10px 0",borderRadius:9,border:"none",cursor:savingSettings?"wait":"pointer",fontSize:13,fontWeight:700,
+                <button onClick={saveSettings} disabled={savingSettings||calValidating||!calendarValid}
+                  style={{padding:"10px 0",borderRadius:9,border:"none",cursor:(savingSettings||calValidating)?"wait":"pointer",fontSize:13,fontWeight:700,
                     fontFamily:"'Sora',sans-serif",color:"#fff",background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",
-                    opacity:savingSettings?0.7:1,transition:"opacity 0.15s"}}>
-                  {savingSettings?"Salvando…":"Salvar configurações"}
+                    opacity:(savingSettings||calValidating)?0.7:1,transition:"opacity 0.15s"}}>
+                  {calValidating?"Verificando calendário…":savingSettings?"Salvando…":"Salvar configurações"}
                 </button>
               </div>
             </motion.div>
