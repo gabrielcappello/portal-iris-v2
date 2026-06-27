@@ -21,10 +21,36 @@ export const sb = {
 };
 
 export type Dentista = {
-  nome: string; titulo: string; calendar_id: string; senha: string; ativo: boolean;
+  nome: string; titulo: string; calendar_id: string; token_acesso?: string; senha: string; ativo: boolean;
   inicio: string; fim: string; dur: number; alm_ini: string; alm_fim: string;
   sabado: boolean; sab_ini: string; sab_fim: string; horarios: string; modo: string;
   whatsapp: string; procedimentos: {nome:string;ativo:boolean;tempo:number}[];
+};
+
+export type Assistente = {
+  token_acesso: string;
+  nome: string;
+  telefone: string;
+  ativo: boolean;
+  permissoes: {
+    ver_todas_agendas: boolean;
+    editar_agendas: boolean;
+    criar_agendamentos: boolean;
+    remarcar_agendamentos: boolean;
+    cancelar_agendamentos: boolean;
+    ver_pacientes: boolean;
+    enviar_mensagens_pacientes: boolean;
+    editar_pacientes: boolean;
+    editar_anamnese: boolean;
+    ver_financeiro: boolean;
+    editar_financeiro: boolean;
+    ver_relatorios: boolean;
+    gerenciar_dentistas: boolean;
+    gerenciar_procedimentos: boolean;
+    gerenciar_horarios: boolean;
+    gerenciar_assistentes: boolean;
+    editar_configuracoes_clinica: boolean;
+  };
 };
 
 export type Clinica = {
@@ -33,7 +59,7 @@ export type Clinica = {
   referencia: string; email_clinica: string; google_maps: string;
   whatsapp_instancia: string; nome_agente: string; personalidade: string;
   telefone_agente: string; whatsapp_admin?: string; idioma: string; pais_codigo: string;
-  fuso_horario: string; estado: string; dentistas: Dentista[];
+  fuso_horario: string; estado: string; dentistas: Dentista[]; assistentes?: Assistente[];
   automatizacoes?: Record<string,unknown>; horario_funcionamento?: Record<string,unknown>;
   whatsapp_status?: string; maps_link?: string; plano?: string;
   precios?: {esp:string;nome:string;valor:number;tempo:number;mostrar_valor?:boolean}[];

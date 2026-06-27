@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, Zap, ClipboardList, Eye, EyeOff, DollarSign } from "lucide-react";
+import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, UserCheck, Zap, ClipboardList, Eye, EyeOff, DollarSign } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { sb, type Clinica, type Dentista } from "@/lib/supabase";
+import { sb, type Clinica, type Dentista, type Assistente } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { translateEspecialidade, translateProcedimento } from "@/lib/i18n/procedimentos-i18n";
@@ -308,7 +308,7 @@ export default function ConfigPage(){
       }
       if(data.idioma)refreshLang();
       showToast('Salvo com sucesso ✓');
-      if(section!=='dentistas_save') setOpen(null);
+      if(section!=='dentistas_save'&&section!=='assistentes_save') setOpen(null);
     }catch{showToast('Erro ao salvar',false);}
     finally{setSaving(null);}
   }
@@ -334,6 +334,7 @@ export default function ConfigPage(){
   const prefixo=ddd?`${ddi} (${ddd})`:`${ddi}`;
   const paisOpts=PAIS_OPTIONS[idioma]||[];
   const ativos=(Array.isArray(clinica.dentistas)?clinica.dentistas:[] as Dentista[]).filter((d:Dentista)=>d?.ativo).length;
+  const ativosAssist=(Array.isArray(clinica.assistentes)?clinica.assistentes:[] as Assistente[]).filter((a:Assistente)=>a?.ativo).length;
 
   const idiomaConfigurado=!!(clinica.idioma&&clinica.pais_codigo&&(clinica as unknown as Record<string,string>).estado||(clinica.idioma&&clinica.pais_codigo&&!(ESTADOS_MAP[clinica.pais_codigo]?.length>0)));
 
@@ -355,6 +356,11 @@ export default function ConfigPage(){
       {/* DENTISTAS */}
       <CardSection id="dentistas" icon={<Users size={18}/>} title={t("config.card_dentists")} subtitle={t("config.card_dentists_sub")} open={open==='dentistas'} onToggle={()=>toggle('dentistas')} badge={`${ativos}/10`}>
         <DentistasSection clinica={clinica} ddi={prefixo} onSaveOne={async(i,dents)=>{await save('dentistas_save',{dentistas:dents});}} onSaveAll={async(dents)=>{await save('dentistas',{dentistas:dents});}} saving={saving==='dentistas'||saving==='dentistas_save'} onClose={()=>toggle('dentistas')} t={t}/>
+      </CardSection>
+
+      {/* ASSISTENTES */}
+      <CardSection id="assistentes" icon={<UserCheck size={18}/>} title="Assistentes" subtitle="Equipe operacional da clínica" open={open==='assistentes'} onToggle={()=>toggle('assistentes')} badge={ativosAssist>0?String(ativosAssist):undefined}>
+        <AssistentesSection clinica={clinica} ddi={prefixo} onSave={async(assists)=>{await save('assistentes_save',{assistentes:assists});}} onClose={()=>toggle('assistentes')}/>
       </CardSection>
 
       {/* PROCEDIMENTOS */}
@@ -1145,6 +1151,157 @@ function DentistasSection({clinica,ddi,onSaveOne,onSaveAll,saving,onClose,t}:{
         style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
         {t("dentist.btn_close_all")}
       </button>
+    </div>
+  );
+}
+
+// ── ASSISTENTES SECTION ──────────────────────────────────────────────────────────
+const PERMISSOES_DEFAULT = {
+  ver_todas_agendas: true,
+  editar_agendas: true,
+  criar_agendamentos: true,
+  remarcar_agendamentos: true,
+  cancelar_agendamentos: true,
+  ver_pacientes: true,
+  enviar_mensagens_pacientes: true,
+  editar_pacientes: false,
+  editar_anamnese: false,
+  ver_financeiro: false,
+  editar_financeiro: false,
+  ver_relatorios: false,
+  gerenciar_dentistas: false,
+  gerenciar_procedimentos: false,
+  gerenciar_horarios: false,
+  gerenciar_assistentes: false,
+  editar_configuracoes_clinica: false,
+};
+
+function AssistentesSection({clinica,ddi,onSave,onClose}:{
+  clinica:Clinica;ddi:string;
+  onSave:(assists:Assistente[])=>Promise<void>;
+  onClose:()=>void;
+}){
+  const base=Array.isArray(clinica.assistentes)?clinica.assistentes:[];
+  const [assists,setAssists]=useState<Assistente[]>(base);
+  const [openIdx,setOpenIdx]=useState<number|null>(null);
+  const [savingIdx,setSavingIdx]=useState<number|null>(null);
+
+  function upd(i:number,data:Partial<Assistente>){
+    setAssists(prev=>prev.map((a,j)=>j===i?{...a,...data}:a));
+  }
+
+  function addNew(){
+    const nova:Assistente={
+      token_acesso:crypto.randomUUID(),
+      nome:'',telefone:'',ativo:true,
+      permissoes:{...PERMISSOES_DEFAULT},
+    };
+    setOpenIdx(assists.length);
+    setAssists(prev=>[...prev,nova]);
+  }
+
+  const ativos=assists.filter(a=>a?.ativo).length;
+
+  return(
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <span style={{fontSize:12,color:'#94a3b8'}}>{ativos} ativa{ativos!==1?'s':''}</span>
+        <button onClick={addNew} style={{...saveBtnSt,padding:'7px 14px',fontSize:12}}>+ Adicionar</button>
+      </div>
+      {assists.length===0&&(
+        <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:13}}>Nenhuma assistente cadastrada</div>
+      )}
+      {assists.map((a,i)=>(
+        <AssisteCard key={a.token_acesso||i} a={a} i={i}
+          open={openIdx===i} onToggle={()=>setOpenIdx(p=>p===i?null:i)}
+          onUpdate={data=>upd(i,data)}
+          ddi={ddi}
+          onSave={async()=>{setSavingIdx(i);await onSave(assists);setSavingIdx(null);}}
+          onToggleAtivo={async(v)=>{
+            const newArr=assists.map((x,j)=>j===i?{...x,ativo:v}:x);
+            setAssists(newArr);
+            setSavingIdx(i);
+            await onSave(newArr);
+            setSavingIdx(null);
+          }}
+          saving={savingIdx===i}
+        />
+      ))}
+      <button onClick={onClose} onMouseDown={e=>e.preventDefault()}
+        style={{marginTop:16,width:'100%',padding:'11px',border:'1px solid #cbd5e1',borderRadius:10,background:'#f1f5f9',cursor:'pointer',fontSize:13,fontWeight:700,color:'#475569',fontFamily:"'Sora',sans-serif",letterSpacing:'0.2px'}}>
+        Fechar
+      </button>
+    </div>
+  );
+}
+
+function AssisteCard({a,i,open,onToggle,onUpdate,ddi,onSave,onToggleAtivo,saving}:{
+  a:Assistente;i:number;open:boolean;onToggle:()=>void;
+  onUpdate:(data:Partial<Assistente>)=>void;ddi:string;
+  onSave:()=>Promise<void>;onToggleAtivo:(v:boolean)=>Promise<void>;saving:boolean;
+}){
+  const nomeLabel=a.nome||`Assistente ${i+1}`;
+  const [btnErrMsg,setBtnErrMsg]=useState('');
+
+  async function handleSave(){
+    const faltam:string[]=[];
+    if(!a.nome?.trim())faltam.push('Nome');
+    if(!a.telefone?.trim())faltam.push('WhatsApp');
+    if(faltam.length>0){
+      setBtnErrMsg('Falta: '+faltam.join(' · '));
+      setTimeout(()=>setBtnErrMsg(''),3500);
+      return;
+    }
+    setBtnErrMsg('');
+    await onSave();
+  }
+
+  return(
+    <div style={{borderRadius:10,overflow:'hidden',marginBottom:8,border:`1px solid ${a.ativo?'rgba(43,122,120,0.5)':'rgba(43,122,120,0.25)'}`,borderLeft:a.ativo?'4px solid #2B7A78':'4px solid rgba(43,122,120,0.2)',boxShadow:'0 6px 16px rgba(0,0,0,0.22)'}}>
+      <motion.div whileTap={{y:3}} onClick={onToggle} style={{width:'100%',padding:'12px 14px',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left'}}>
+        <div style={{width:8,height:8,borderRadius:'50%',background:a.ativo?'#10b981':'#e2e8f0',flexShrink:0,transition:'background 0.3s'}}/>
+        <div style={{display:'flex',flexDirection:'column',lineHeight:1.25}}>
+          <span style={{fontSize:9,fontWeight:600,color:'#64748b',opacity:0.5,letterSpacing:'2px',textTransform:'uppercase'}}>ASSISTENTE</span>
+          <span style={{fontSize:13,fontWeight:600,color:'#1e293b'}}>{nomeLabel}</span>
+        </div>
+        <div style={{flex:1}}/>
+        <div onClick={e=>e.stopPropagation()}>
+          <Toggle on={a.ativo} onChange={v=>onToggleAtivo(v)}/>
+        </div>
+        <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} style={{color:'#94a3b8',flexShrink:0,marginLeft:4}}>
+          <ChevronDown size={14}/>
+        </motion.div>
+      </motion.div>
+      <AnimatePresence initial={false}>
+        {open&&(
+          <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}
+            exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}} style={{overflow:'hidden'}}>
+            <div style={{padding:'14px',borderTop:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:12}}>
+              <div>
+                <label style={labelSt}>Nome</label>
+                <input value={a.nome||''} onChange={e=>onUpdate({nome:e.target.value})} placeholder="Nome completo" style={inputSt}/>
+              </div>
+              <div>
+                <label style={labelSt}>WhatsApp</label>
+                <div style={{display:'flex',border:'1px solid rgba(43,122,120,0.35)',borderRadius:8,overflow:'hidden',background:'#fff',width:'100%'}}>
+                  <span style={{padding:'10px 8px',background:'#f1f5f9',borderRight:'1px solid rgba(43,122,120,0.35)',fontFamily:'monospace',fontSize:12,color:'#2B7A78',whiteSpace:'nowrap',flexShrink:0}}>{ddi}</span>
+                  <input value={a.telefone||''} onChange={e=>onUpdate({telefone:e.target.value.replace(/\D/g,'')})}
+                    placeholder="99999999999" inputMode="numeric" style={{...inputSt,border:'none',borderRadius:0}}/>
+                </div>
+              </div>
+              {btnErrMsg&&(
+                <div style={{padding:'8px 12px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,fontSize:11,color:'#dc2626',fontWeight:500}}>
+                  {btnErrMsg}
+                </div>
+              )}
+              <button onClick={handleSave} disabled={saving}
+                style={{...saveBtnSt,width:'100%',opacity:saving?0.6:1,cursor:saving?'wait':'pointer'}}>
+                {saving?'Salvando...':'Salvar'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
