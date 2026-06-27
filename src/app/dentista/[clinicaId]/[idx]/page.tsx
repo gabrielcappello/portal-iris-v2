@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, Settings } from "lucide-react";
+import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft } from "lucide-react";
 import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
 
 const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
+const N8N_REMARCACAO_URL = "https://singingdugong-n8n.cloudfy.live/webhook/iris-remarcacao-massa";
+const MOTIVO_PADRAO = "Imprevisto na agenda do profissional";
 
 function anamneseAlertas(a?: AnamnesePaciente): string[] {
   if (!a) return [];
@@ -19,6 +21,15 @@ function anamneseAlertas(a?: AnamnesePaciente): string[] {
   if (a.observacoes_saude?.trim())         al.push(`Obs.: ${a.observacoes_saude.trim()}`);
   return al;
 }
+
+function formatarData(iso:string):string{
+  if(!iso) return "";
+  const [a,m,d]=iso.split("-");
+  if(!a||!m||!d) return iso;
+  return `${d}/${m}/${a}`;
+}
+const rInputSt:React.CSSProperties={width:"100%",padding:"10px 12px",fontSize:13,border:"1px solid rgba(43,122,120,0.35)",borderRadius:8,outline:"none",background:"#f8fafc",fontFamily:"'Sora',sans-serif",boxSizing:"border-box"};
+const rLabelSt:React.CSSProperties={display:"block",fontSize:11,fontWeight:600,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6};
 
 const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
   confirmado: {bg:"rgba(59,130,246,0.12)",  color:"#2563eb", label:"Confirmado"},
@@ -45,7 +56,7 @@ export default function DentistaApp() {
   const [expandedPac, setExpPac]  = useState<string|null>(null);
   const [fichaOpen, setFichaOpen] = useState<string|null>(null);
   const [updating, setUpdating]   = useState<string|null>(null);
-  const [activeTab, setActiveTab] = useState<"agenda"|"pacientes">("agenda");
+  const [activeTab, setActiveTab] = useState<"agenda"|"pacientes"|"remarcar">("agenda");
   const [showSettings, setShowSettings]   = useState(false);
   const [editWhatsapp, setEditWhatsapp]   = useState("");
   const [editCalendar, setEditCalendar]   = useState("");
@@ -53,6 +64,16 @@ export default function DentistaApp() {
   const [calValidating, setCalValidating] = useState(false);
   const [calValResult, setCalValResult] = useState<{valido:boolean;calendar_name:string;motivo:string}|null>(null);
   const [calSaveErr, setCalSaveErr] = useState("");
+  // Aba Remarcar
+  const [etapaRemarcar, setEtapaRemarcar] = useState<"config"|"confirmacao"|"enviando"|"resultado">("config");
+  const [escopoTipo, setEscopoTipo] = useState<"dia_inteiro"|"intervalo">("dia_inteiro");
+  const [dataAlvo, setDataAlvo] = useState("");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFim, setHoraFim] = useState("");
+  const [motivoRemarcar, setMotivoRemarcar] = useState(MOTIVO_PADRAO);
+  const [comandoIdRemarcar, setComandoIdRemarcar] = useState("");
+  const [resultadoRemarcar, setResultadoRemarcar] = useState<{ok:boolean;total_pacientes?:number;mensagem?:string;idempotente?:boolean;erro?:string}|null>(null);
+  const [erroValidacaoRemarcar, setErroValidacaoRemarcar] = useState("");
   const installedRef = useRef(false);
 
   // Sync edit states when dentista loads
@@ -148,6 +169,58 @@ export default function DentistaApp() {
       setShowSettings(false);
     }catch{}
     finally{setSavingSettings(false);}
+  }
+
+  function irParaConfirmacaoRemarcar(){
+    setErroValidacaoRemarcar("");
+    if(!dataAlvo){setErroValidacaoRemarcar("Escolha a data afetada.");return;}
+    if(escopoTipo==="intervalo"){
+      if(!horaInicio||!horaFim){setErroValidacaoRemarcar("Preencha o horário de início e fim.");return;}
+      if(horaFim<horaInicio){setErroValidacaoRemarcar("O horário de fim deve ser após o início.");return;}
+    }
+    setEtapaRemarcar("confirmacao");
+  }
+
+  async function enviarComandoRemarcar(idReuso?:string){
+    if(!clinica||!dentista) return;
+    const idComando=idReuso||comandoIdRemarcar||crypto.randomUUID();
+    if(!comandoIdRemarcar) setComandoIdRemarcar(idComando);
+    const payload={
+      versao:"1.0",
+      comando_id:idComando,
+      clinica_id:params.clinicaId,
+      dentista_token:dentista.token_acesso||"",
+      solicitante:{perfil:"dentista",id:null},
+      escopo:{
+        tipo:escopoTipo,
+        data_alvo:dataAlvo,
+        hora_inicio:escopoTipo==="intervalo"?horaInicio:null,
+        hora_fim:escopoTipo==="intervalo"?horaFim:null,
+      },
+      motivo:motivoRemarcar?.trim()||MOTIVO_PADRAO,
+    };
+    setEtapaRemarcar("enviando");
+    try{
+      const res=await fetch(N8N_REMARCACAO_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      const data=await res.json().catch(()=>({ok:res.ok}));
+      setResultadoRemarcar(data);
+      setEtapaRemarcar("resultado");
+    }catch{
+      setResultadoRemarcar({ok:false,erro:"Não foi possível conectar ao servidor. Tente novamente."});
+      setEtapaRemarcar("resultado");
+    }
+  }
+
+  function reiniciarRemarcar(){
+    setEtapaRemarcar("config");
+    setEscopoTipo("dia_inteiro");
+    setDataAlvo("");
+    setHoraInicio("");
+    setHoraFim("");
+    setMotivoRemarcar(MOTIVO_PADRAO);
+    setComandoIdRemarcar("");
+    setResultadoRemarcar(null);
+    setErroValidacaoRemarcar("");
   }
 
   async function changeStatus(a:Agendamento, newStatus:string){
@@ -271,7 +344,7 @@ export default function DentistaApp() {
 
         {/* Tabs */}
         <div style={{display:"flex",gap:6,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
-          {([["agenda","📅 Agenda"],["pacientes","👥 Pacientes"]] as const).map(([tab,label])=>(
+          {([["agenda","📅 Agenda"],["pacientes","👥 Pacientes"],["remarcar","🔄 Remarcar"]] as const).map(([tab,label])=>(
             <button key={tab} onClick={()=>setActiveTab(tab)}
               style={{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Sora',sans-serif",transition:"all 0.15s",
                 background:activeTab===tab?"linear-gradient(135deg,#2B7A78,#3AAFA9)":"transparent",
@@ -551,6 +624,162 @@ export default function DentistaApp() {
               );
             })}
           </>
+        )}
+
+        {activeTab==="remarcar"&&(
+          <div>
+            {!dentista.token_acesso?.trim()?(
+              <div style={{textAlign:"center",padding:"40px 16px",background:"#fff",borderRadius:12,border:"1px solid rgba(43,122,120,0.2)"}}>
+                <div style={{fontSize:28,marginBottom:10}}>⚙️</div>
+                <div style={{fontSize:14,fontWeight:600,color:"#475569",marginBottom:6}}>Token não configurado</div>
+                <div style={{fontSize:13,color:"#94a3b8"}}>Fale com o administrador da clínica para ativar a remarcação em massa.</div>
+              </div>
+            ):(
+              <AnimatePresence mode="wait">
+
+                {/* ── CONFIG ── */}
+                {etapaRemarcar==="config"&&(
+                  <motion.div key="rconfig" initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}} transition={{duration:0.2}}
+                    style={{background:"#fff",borderRadius:12,border:"1px solid rgba(43,122,120,0.35)",boxShadow:"0 6px 16px rgba(0,0,0,0.1)",padding:16}}>
+                    <div style={{fontSize:15,fontWeight:700,color:"#1e293b",marginBottom:4}}>Remarcar minha agenda</div>
+                    <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>Avise seus pacientes quando houver um imprevisto.</div>
+
+                    <label style={rLabelSt}>O que remarcar?</label>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+                      {([["dia_inteiro","Dia inteiro",<Calendar size={16} key="c"/>],["intervalo","Período de horas",<Clock size={16} key="r"/>]] as const).map(([val,label,icon])=>(
+                        <button key={val} onClick={()=>setEscopoTipo(val as "dia_inteiro"|"intervalo")}
+                          style={{padding:"12px 8px",border:`1px solid ${escopoTipo===val?"#2B7A78":"rgba(43,122,120,0.35)"}`,borderRadius:10,background:escopoTipo===val?"rgba(43,122,120,0.08)":"#fff",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,fontFamily:"'Sora',sans-serif",color:escopoTipo===val?"#2B7A78":"#64748b",transition:"all 0.15s"}}>
+                          {icon}
+                          <span style={{fontSize:12,fontWeight:600}}>{label}</span>
+                          {escopoTipo===val&&<Check size={12} color="#2B7A78"/>}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{marginBottom:16}}>
+                      <label style={rLabelSt}>Data afetada</label>
+                      <input type="date" value={dataAlvo} onChange={e=>setDataAlvo(e.target.value)} style={rInputSt}/>
+                    </div>
+
+                    {escopoTipo==="intervalo"&&(
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+                        <div>
+                          <label style={rLabelSt}>Início</label>
+                          <input type="time" value={horaInicio} onChange={e=>setHoraInicio(e.target.value)} style={rInputSt}/>
+                        </div>
+                        <div>
+                          <label style={rLabelSt}>Fim</label>
+                          <input type="time" value={horaFim} onChange={e=>setHoraFim(e.target.value)} style={rInputSt}/>
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{marginBottom:16}}>
+                      <label style={rLabelSt}>Motivo (interno)</label>
+                      <input value={motivoRemarcar} onChange={e=>setMotivoRemarcar(e.target.value)} placeholder={MOTIVO_PADRAO} style={rInputSt}/>
+                      <span style={{fontSize:11,color:"#94a3b8",marginTop:4,display:"block"}}>Uso interno. A mensagem ao paciente é enviada pela Iris no idioma dele.</span>
+                    </div>
+
+                    {erroValidacaoRemarcar&&(
+                      <div style={{fontSize:12,color:"#f59e0b",display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"rgba(245,158,11,0.08)",borderRadius:8,border:"1px solid rgba(245,158,11,0.2)",marginBottom:12}}>
+                        <AlertTriangle size={14}/> {erroValidacaoRemarcar}
+                      </div>
+                    )}
+
+                    <button onClick={irParaConfirmacaoRemarcar}
+                      style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
+                      Revisar antes de enviar
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* ── CONFIRMACAO ── */}
+                {etapaRemarcar==="confirmacao"&&(
+                  <motion.div key="rconfirmacao" initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}} transition={{duration:0.2}}
+                    style={{background:"#fff",borderRadius:12,border:"1px solid #fecaca",boxShadow:"0 6px 16px rgba(0,0,0,0.1)",padding:16}}>
+                    <button onClick={()=>setEtapaRemarcar("config")} style={{display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",cursor:"pointer",color:"#94a3b8",fontSize:12,fontFamily:"'Sora',sans-serif",padding:0,marginBottom:14}}>
+                      <ArrowLeft size={14}/> Voltar
+                    </button>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                      <AlertTriangle size={18} color="#dc2626"/>
+                      <div style={{fontSize:15,fontWeight:700,color:"#dc2626"}}>Confirmar remarcação</div>
+                    </div>
+                    <div style={{background:"#f8fafc",borderRadius:10,padding:14,marginBottom:16,display:"flex",flexDirection:"column",gap:8}}>
+                      {[["Data",formatarData(dataAlvo)],["Escopo",escopoTipo==="dia_inteiro"?"Dia inteiro":`Das ${horaInicio} às ${horaFim}`],["Motivo",motivoRemarcar?.trim()||MOTIVO_PADRAO]].map(([l,v])=>(
+                        <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
+                          <span style={{fontSize:12,color:"#94a3b8",flexShrink:0}}>{l}</span>
+                          <span style={{fontSize:13,fontWeight:600,color:"#1e293b",textAlign:"right"}}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{fontSize:12,color:"#64748b",lineHeight:1.5,marginBottom:16,padding:"10px 12px",background:"rgba(245,158,11,0.06)",borderRadius:8,border:"1px solid rgba(245,158,11,0.2)"}}>
+                      A Iris vai avisar por WhatsApp todos os seus pacientes confirmados na data informada, e conduzir a remarcação de cada um. Esta ação não pode ser desfeita.
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>setEtapaRemarcar("config")}
+                        style={{flex:1,padding:"12px",background:"#fff",color:"#475569",border:"1px solid #cbd5e1",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
+                        Cancelar
+                      </button>
+                      <button onClick={()=>enviarComandoRemarcar()}
+                        style={{flex:2,padding:"12px",background:"#dc2626",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
+                        Confirmar remarcação
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── ENVIANDO ── */}
+                {etapaRemarcar==="enviando"&&(
+                  <motion.div key="renviando" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                    style={{textAlign:"center",padding:"48px 16px",background:"#fff",borderRadius:12,border:"1px solid rgba(43,122,120,0.2)"}}>
+                    <div style={{fontSize:28,marginBottom:12}}>📨</div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>Enviando avisos de remarcação...</div>
+                    <div style={{fontSize:12,color:"#94a3b8",marginTop:6}}>Isso pode levar alguns segundos.</div>
+                  </motion.div>
+                )}
+
+                {/* ── RESULTADO ── */}
+                {etapaRemarcar==="resultado"&&resultadoRemarcar&&(
+                  <motion.div key="rresultado" initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+                    style={{background:"#fff",borderRadius:12,border:`1px solid ${resultadoRemarcar.ok?"#bbf7d0":"#fecaca"}`,boxShadow:"0 6px 16px rgba(0,0,0,0.1)",padding:20,textAlign:"center"}}>
+                    {resultadoRemarcar.ok?(
+                      <>
+                        <div style={{fontSize:32,marginBottom:10}}>✅</div>
+                        <div style={{fontSize:15,fontWeight:700,color:"#16a34a",marginBottom:8}}>
+                          {resultadoRemarcar.idempotente?"Comando já recebido":"Remarcação iniciada"}
+                        </div>
+                        <div style={{fontSize:13,color:"#475569",lineHeight:1.5}}>
+                          {resultadoRemarcar.idempotente
+                            ?"Este comando já tinha sido enviado. Nenhuma nova mensagem foi disparada."
+                            :typeof resultadoRemarcar.total_pacientes==="number"
+                              ?`${resultadoRemarcar.total_pacientes} paciente${resultadoRemarcar.total_pacientes!==1?"s":""} ${resultadoRemarcar.total_pacientes!==1?"serão avisados":"será avisado"} pela Iris.`
+                              :(resultadoRemarcar.mensagem||"Os pacientes serão avisados pela Iris.")}
+                        </div>
+                        {resultadoRemarcar.total_pacientes===0&&(
+                          <div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Não havia agendamentos confirmados para a data.</div>
+                        )}
+                        <button onClick={reiniciarRemarcar}
+                          style={{marginTop:18,padding:"10px 20px",background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
+                          Concluir
+                        </button>
+                      </>
+                    ):(
+                      <>
+                        <div style={{fontSize:32,marginBottom:10}}>❌</div>
+                        <div style={{fontSize:15,fontWeight:700,color:"#dc2626",marginBottom:8}}>Não foi possível enviar</div>
+                        <div style={{fontSize:13,color:"#ef4444",lineHeight:1.5}}>{resultadoRemarcar.erro||"Ocorreu um erro. Tente novamente."}</div>
+                        <button onClick={()=>enviarComandoRemarcar(comandoIdRemarcar)}
+                          style={{marginTop:16,padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
+                          Tentar novamente
+                        </button>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            )}
+          </div>
         )}
       </div>
     </div>
