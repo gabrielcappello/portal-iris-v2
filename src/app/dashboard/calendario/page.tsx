@@ -6,11 +6,13 @@ import {
   format, parse, startOfWeek, getDay,
   startOfMonth, endOfMonth, startOfWeek as startOfWeekFn, endOfWeek,
   addMonths, subMonths, addWeeks, subWeeks, addDays, subDays,
-  isToday, isSameDay, isSameMonth, parseISO, eachDayOfInterval, getDaysInMonth,
+  isToday, isSameDay, isSameMonth, parseISO, eachDayOfInterval,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, X } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+// @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
+import Week from "react-big-calendar/lib/Week";
 import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
@@ -144,7 +146,7 @@ function minutosDoHorario(hhmm?: string): number | null {
 }
 
 // Slots/dia de UM dentista: ((fim-inicio) - almoço) ÷ 45min.
-// Sem almoço configurado, não desconta nada.
+// Almoço ignorado se ambos forem "00:00"/vazios (slotsDoDentista trata via af>ai).
 function slotsDoDentista(d: Dentista): number {
   const ini = minutosDoHorario(d.inicio);
   const fim = minutosDoHorario(d.fim);
@@ -152,10 +154,35 @@ function slotsDoDentista(d: Dentista): number {
   let span = fim - ini;
   const ai = minutosDoHorario(d.alm_ini);
   const af = minutosDoHorario(d.alm_fim);
-  if (ai != null && af != null && af > ai) span -= (af - ai);
+  if (ai != null && af != null && af > ai) span -= (af - ai); // "00:00"-"00:00" => af==ai => não desconta
   if (span <= 0) return 0;
   return Math.floor(span / 45);
 }
+
+// hex (#RRGGBB) -> rgba com alpha (fundo quase transparente dos eventos)
+function hexToRgba(hex: string, alpha: number): string {
+  const h = (hex || "").replace("#", "").trim();
+  if (h.length !== 6) return hex;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  if ([r, g, b].some(n => isNaN(n))) return hex;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// ── Vista Semana: oculta domingo (sempre) e sábado (se nenhum dentista trabalha) ──
+// O render interno do RBC chama Week.range diretamente, então embrulhamos a função.
+let MOSTRAR_SABADO = false; // atualizado pelo componente a cada render
+const _weekRangeOrig = Week.range;
+Week.range = (date: Date, opts: { localizer: unknown }) => {
+  const dias: Date[] = _weekRangeOrig(date, opts);
+  return dias.filter((d: Date) => {
+    const dow = d.getDay();
+    if (dow === 0) return false;             // domingo nunca
+    if (dow === 6 && !MOSTRAR_SABADO) return false; // sábado só se algum trabalha
+    return true;
+  });
+};
 
 // status que ocupam um slot (contam para contador/ocupação)
 const STATUS_OCUPA = ["confirmado", "ok", "faltou"];
@@ -412,17 +439,35 @@ export default function CalendarioPage() {
     // dentistas considerados: a seleção do filtro, ou todos se nenhum selecionado
     const tokens = filtroTokens.size > 0 ? Array.from(filtroTokens) : dentistas.map(d => d.token);
     if (tokens.length === 0) return null;
-    const dias = view === "day" ? 1 : view === "week" ? 7 : getDaysInMonth(date);
-    // total de slots = soma dos slots de cada dentista (individual, com almoço
-    // descontado) × dias do período. NÃO multiplica pelo nº de dentistas.
+
+    // dias do período visível
+    let periodo: Date[];
+    if (view === "day") periodo = [date];
+    else if (view === "week") periodo = eachDayOfInterval({ start: startOfWeekFn(date, { weekStartsOn: 0 }), end: endOfWeek(date, { weekStartsOn: 0 }) });
+    else periodo = eachDayOfInterval({ start: startOfMonth(date), end: endOfMonth(date) });
+
+    // total = Σ por dentista de (slots_dia × dias úteis dele no período)
+    // domingo nunca conta; sábado só se sabado==="true"; seg–sex sempre
     let total = 0;
     for (const tk of tokens) {
       const d = byToken.get(tk);
-      if (d) total += slotsDoDentista(d) * dias;
+      if (!d) continue;
+      const sd = slotsDoDentista(d);
+      if (sd <= 0) continue;
+      const trabSab = String(d.sabado) === "true";
+      let diasUteis = 0;
+      for (const day of periodo) {
+        const dow = getDay(day);
+        if (dow === 0) continue;             // domingo
+        if (dow === 6 && !trabSab) continue; // sábado
+        diasUteis++;
+      }
+      total += sd * diasUteis;
     }
     if (total <= 0) return null;
-    // ocupados = eventos exibidos (backend já filtra pelos dentistas selecionados)
-    // com status confirmado/ok/faltou
+
+    // ocupados = blocos exibidos (backend já filtra pelos dentistas selecionados)
+    // com status confirmado / ok / faltou
     const ocupados = eventos.filter(e => e.status && STATUS_OCUPA.includes(e.status)).length;
     const pct = Math.round((ocupados / total) * 100);
     return { ocupados, total, pct };
@@ -437,12 +482,12 @@ export default function CalendarioPage() {
     else if (ev.status === "faltou") { opacity = 0.5; filter = "grayscale(55%)"; }
     return {
       style: {
-        backgroundColor: ev.cor,
+        backgroundColor: hexToRgba(ev.cor, 0.08),
         borderLeft: `3px solid ${ev.cor}`,
         borderRadius: 5,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
-        color: "#fff",
+        color: ev.cor,
         padding: "1px 4px",
         opacity,
         filter,
@@ -530,7 +575,7 @@ export default function CalendarioPage() {
 
   async function marcarStatus(novo: "ok" | "faltou") {
     if (!drawerAg) return;
-    if (novo === drawerStatus) return; // idempotente: clicar no já-ativo não faz nada
+    // sempre dispara o update (permite reverter clicando no outro botão)
     setUpdatingStatus(true);
     try {
       await sb.update("agendamentos", drawerAg.id, { status: novo });
@@ -603,6 +648,9 @@ export default function CalendarioPage() {
 
   const drawerAlertas = anamneseAlertas(drawerPaciente?.anamnese, t);
   const drawerTotal = drawerHist.filter(a => ["confirmado", "ok"].includes(a.status)).length;
+
+  // mostra a coluna de sábado na vista Semana se algum dentista ativo trabalha sábado
+  MOSTRAR_SABADO = (clinica?.dentistas || []).some(d => d.ativo && String(d.sabado) === "true");
 
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
@@ -956,6 +1004,8 @@ export default function CalendarioPage() {
         .rbc-calendar { font-family: 'Sora', sans-serif !important; font-size: 12px; }
         .rbc-header { font-size: 11px; font-weight: 600; color: #64748b; padding: 6px 2px; border-bottom: 1px solid #f1f5f9; }
         .rbc-month-view, .rbc-time-view { border: none !important; }
+        /* cabeçalho dos dias (Semana/Dia) fixo ao rolar, acima dos eventos */
+        .rbc-time-header { position: sticky; top: 0; z-index: 6; background: #fff; }
         .rbc-day-bg + .rbc-day-bg { border-left: 1px solid #f1f5f9 !important; }
         .rbc-month-row + .rbc-month-row { border-top: 1px solid #f1f5f9 !important; }
         .rbc-off-range-bg { background: #fafafa; }
