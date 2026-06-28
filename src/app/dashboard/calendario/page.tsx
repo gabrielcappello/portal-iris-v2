@@ -392,14 +392,17 @@ export default function CalendarioPage() {
     const slotsDia = Math.floor(span / 45);
     if (slotsDia <= 0) return null;
     const dias = view === "day" ? 1 : view === "week" ? 7 : getDaysInMonth(date);
-    const nDent = dentistas.length;
+    // nº de dentistas considerados = seleção do filtro, ou todos se nenhum selecionado
+    const nDent = filtroTokens.size > 0 ? filtroTokens.size : dentistas.length;
     if (nDent <= 0) return null;
     const total = slotsDia * dias * nDent;
     if (total <= 0) return null;
-    const ocupados = agendamentos.filter(a => STATUS_OCUPA.includes(a.status)).length;
+    // ocupados = blocos efetivamente exibidos na grade (o backend já filtra por
+    // dentista selecionado e exclui cancelado/remarcado) → acompanha a seleção
+    const ocupados = eventos.length;
     const pct = Math.round((ocupados / total) * 100);
     return { ocupados, total, pct };
-  }, [agendamentos, view, date, minTime, maxTime, dentistas]);
+  }, [eventos, view, date, minTime, maxTime, dentistas, filtroTokens]);
 
   // ── estilo dos eventos (cor + status) ───────────────────────────────────────
   function eventPropGetter(event: object) {
@@ -444,7 +447,8 @@ export default function CalendarioPage() {
       const dStr = format(d, "yyyy-MM-dd");
       const n = agendamentos.filter(a => a.data === dStr && STATUS_OCUPA.includes(a.status)).length;
       return (
-        <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+        <div onClick={() => { setDate(d); setView("day"); }} title="Ver dia"
+          style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, cursor: "pointer" }}>
           <span>{label}</span>
           {n > 0 && <span style={{ fontSize: 10, color: "#2B7A78", fontWeight: 600 }}>{t("calendar.appointments_count", { n })}</span>}
         </div>
@@ -502,6 +506,7 @@ export default function CalendarioPage() {
 
   async function marcarStatus(novo: "ok" | "faltou") {
     if (!drawerAg) return;
+    if (novo === drawerStatus) return; // idempotente: clicar no já-ativo não faz nada
     setUpdatingStatus(true);
     try {
       await sb.update("agendamentos", drawerAg.id, { status: novo });
@@ -718,6 +723,7 @@ export default function CalendarioPage() {
             eventPropGetter={eventPropGetter}
             components={calComponents}
             onSelectEvent={(ev) => abrirDrawer(ev as CalEvent)}
+            onDrillDown={(d) => { setDate(d); setView("day"); }}
             min={minTime}
             max={maxTime}
             style={{ height: view === "month" ? 620 : 700, padding: 8 }}
@@ -733,7 +739,8 @@ export default function CalendarioPage() {
           />
         </div>
 
-        {/* mini calendário lateral */}
+        {/* mini calendário lateral (só Semana e Dia) */}
+        {view !== "month" && (
         <aside style={{ flex: "0 0 230px", maxWidth: "100%", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <button onClick={() => setMiniMonth(m => subMonths(m, 1))} style={{ ...btnBase, padding: "4px 7px" }}><ChevronLeft size={13} /></button>
@@ -763,6 +770,7 @@ export default function CalendarioPage() {
             })}
           </div>
         </aside>
+        )}
       </div>
 
       {/* ── Drawer: ficha completa do paciente ── */}
@@ -794,14 +802,26 @@ export default function CalendarioPage() {
                   {/* status + ações */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 99, background: drawerStat.bg, color: drawerStat.color }}>{drawerStat.label}</span>
-                    {drawerAg && drawerStatus === "confirmado" && (
+                    {drawerAg && (
                       <>
                         <button onClick={() => marcarStatus("ok")} disabled={updatingStatus}
-                          style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif", opacity: updatingStatus ? 0.6 : 1 }}>
+                          style={{
+                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
+                            background: drawerStatus === "ok" ? "#DCFCE7" : "#fff",
+                            color: drawerStatus === "ok" ? "#16A34A" : "#475569",
+                            border: drawerStatus === "ok" ? "1px solid #16A34A" : "1px solid #e2e8f0",
+                            opacity: updatingStatus ? 0.6 : 1,
+                          }}>
                           {t("calendar.btn_came")}
                         </button>
                         <button onClick={() => marcarStatus("faltou")} disabled={updatingStatus}
-                          style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif", opacity: updatingStatus ? 0.6 : 1 }}>
+                          style={{
+                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
+                            background: drawerStatus === "faltou" ? "#FEE2E2" : "#fff",
+                            color: drawerStatus === "faltou" ? "#DC2626" : "#475569",
+                            border: drawerStatus === "faltou" ? "1px solid #DC2626" : "1px solid #e2e8f0",
+                            opacity: updatingStatus ? 0.6 : 1,
+                          }}>
                           {t("calendar.btn_missed")}
                         </button>
                       </>
