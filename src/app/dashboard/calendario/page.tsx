@@ -159,17 +159,6 @@ function slotsDoDentista(d: Dentista): number {
   return Math.floor(span / 45);
 }
 
-// hex (#RRGGBB) -> rgba com alpha (fundo quase transparente dos eventos)
-function hexToRgba(hex: string, alpha: number): string {
-  const h = (hex || "").replace("#", "").trim();
-  if (h.length !== 6) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  if ([r, g, b].some(n => isNaN(n))) return hex;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 // ── Vista Semana: oculta domingo (sempre) e sábado (se nenhum dentista trabalha) ──
 // O render interno do RBC chama Week.range diretamente, então embrulhamos a função.
 let MOSTRAR_SABADO = false; // atualizado pelo componente a cada render
@@ -482,12 +471,12 @@ export default function CalendarioPage() {
     else if (ev.status === "faltou") { opacity = 0.5; filter = "grayscale(55%)"; }
     return {
       style: {
-        backgroundColor: hexToRgba(ev.cor, 0.08),
+        backgroundColor: ev.cor,
         borderLeft: `3px solid ${ev.cor}`,
         borderRadius: 5,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
-        color: ev.cor,
+        color: "#fff",
         padding: "1px 4px",
         opacity,
         filter,
@@ -573,7 +562,7 @@ export default function CalendarioPage() {
     setDrawerHist([]);
   }
 
-  async function marcarStatus(novo: "ok" | "faltou") {
+  async function marcarStatus(novo: "confirmado" | "ok" | "faltou") {
     if (!drawerAg) return;
     // sempre dispara o update (permite reverter clicando no outro botão)
     setUpdatingStatus(true);
@@ -874,6 +863,16 @@ export default function CalendarioPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     {drawerAg && (
                       <>
+                        <button onClick={() => marcarStatus("confirmado")} disabled={updatingStatus}
+                          style={{
+                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
+                            background: drawerStatus === "confirmado" ? "#DBEAFE" : "#fff",
+                            color: drawerStatus === "confirmado" ? "#2563EB" : "#475569",
+                            border: drawerStatus === "confirmado" ? "1px solid #2563EB" : "1px solid #e2e8f0",
+                            opacity: updatingStatus ? 0.6 : 1,
+                          }}>
+                          ✓ {t("status.confirmed")}
+                        </button>
                         <button onClick={() => marcarStatus("ok")} disabled={updatingStatus}
                           style={{
                             padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
