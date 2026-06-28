@@ -695,7 +695,7 @@ export default function CalendarioPage() {
                     display: "flex", alignItems: "center", gap: 5,
                     padding: "4px 12px", borderRadius: 20,
                     border: `1px solid ${cor}`,
-                    background: ativo ? cor : cor + "28",
+                    background: ativo ? cor : cor + "05", // não selecionado: ~2% da cor (bem suave)
                     color: ativo ? "#fff" : cor,
                     fontSize: 11, fontWeight: 600, cursor: "pointer",
                     fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
