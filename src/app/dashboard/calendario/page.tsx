@@ -14,6 +14,19 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { sb, type Clinica } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 
+// ── paleta de cores dos dentistas ────────────────────────────────────────────
+const DENTIST_COLORS = [
+  "#2563EB","#16A34A","#DC2626","#9333EA","#EA580C","#0891B2",
+  "#DB2777","#65A30D","#7C3AED","#CA8A04","#0F766E","#BE123C",
+];
+
+function corParaDentista(token: string, corAPI?: string): string {
+  if (corAPI?.trim()) return corAPI;
+  let hash = 0;
+  for (let i = 0; i < token.length; i++) hash = ((hash * 31) + token.charCodeAt(i)) >>> 0;
+  return DENTIST_COLORS[hash % DENTIST_COLORS.length];
+}
+
 // ── date-fns localizer ────────────────────────────────────────────────────────
 const locales = { "pt-BR": ptBR };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -151,7 +164,9 @@ export default function CalendarioPage() {
       const dentistasData = data.dentistas ?? [];
       setDentistas(dentistasData);
 
-      const corMap = new Map<string, string>(dentistasData.map(d => [d.token, d.cor]));
+      const corMap = new Map<string, string>(
+        dentistasData.map(d => [d.token, corParaDentista(d.token, d.cor)])
+      );
 
       const evs: CalEvent[] = (data.eventos ?? []).map(ev => ({
         id: ev.event_id,
@@ -280,19 +295,20 @@ export default function CalendarioPage() {
       {dentistas.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
           {dentistas.map(d => {
+            const cor = corParaDentista(d.token, d.cor);
             const ativo = filtroTokens.size === 0 || filtroTokens.has(d.token);
             return (
               <button key={d.token} onClick={() => toggleFiltro(d.token)}
                 style={{
                   display: "flex", alignItems: "center", gap: 5,
-                  padding: "4px 10px", borderRadius: 20, border: `1px solid ${d.cor}`,
-                  background: ativo ? d.cor : "#fff",
-                  color: ativo ? "#fff" : d.cor,
+                  padding: "4px 10px", borderRadius: 20,
+                  border: `1px solid ${ativo ? cor : cor + "60"}`,
+                  background: ativo ? cor : cor + "28",
+                  color: ativo ? "#fff" : cor,
                   fontSize: 11, fontWeight: 600, cursor: "pointer",
                   fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
-                  opacity: ativo ? 1 : 0.55,
                 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : d.cor, display: "inline-block" }} />
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.7, display: "inline-block" }} />
                 {d.nome}
               </button>
             );
@@ -330,6 +346,8 @@ export default function CalendarioPage() {
           onNavigate={() => {/* controlado externamente */}}
           eventPropGetter={eventPropGetter}
           onSelectEvent={(ev) => setEventoSel(ev as CalEvent)}
+          min={new Date(1970, 0, 1, 7, 0, 0)}
+          max={new Date(1970, 0, 1, 19, 0, 0)}
           style={{ height: view === "month" ? 620 : 700, padding: 8 }}
           messages={{
             today: "Hoje", previous: "Anterior", next: "Próximo",
