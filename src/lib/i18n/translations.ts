@@ -1,4 +1,4 @@
-// Gerado automaticamente pelo workflow Cappia i18n
+﻿// Gerado automaticamente pelo workflow Cappia i18n
 // 2026-06-14T02:36:44.057Z
 
 export const translations = {
@@ -9,6 +9,7 @@ export const translations = {
     'nav.tab_config': 'Configuração',
     'nav.tab_patients': 'Pacientes',
     'nav.tab_appointments': 'Agendamentos',
+    'nav.tab_calendar': 'Calendário',
     'nav.tab_reschedule': 'Remarcar',
     'nav.tab_financial': 'Financeiro',
     'nav.loading_settings': 'Carregando configurações...',
@@ -395,6 +396,7 @@ export const translations = {
     'nav.tab_config': 'Configuración',
     'nav.tab_patients': 'Pacientes',
     'nav.tab_appointments': 'Citas',
+    'nav.tab_calendar': 'Calendario',
     'nav.tab_reschedule': 'Reprogramar',
     'nav.tab_financial': 'Finanzas',
     'nav.loading_settings': 'Cargando configuraciones...',
@@ -781,6 +783,7 @@ export const translations = {
     'nav.tab_config': 'Settings',
     'nav.tab_patients': 'Patients',
     'nav.tab_appointments': 'Appointments',
+    'nav.tab_calendar': 'Calendar',
     'nav.tab_reschedule': 'Reschedule',
     'nav.tab_financial': 'Financial',
     'nav.loading_settings': 'Loading settings...',
@@ -1167,6 +1170,7 @@ export const translations = {
     'nav.tab_config': 'Paramètres',
     'nav.tab_patients': 'Patients',
     'nav.tab_appointments': 'Rendez-vous',
+    'nav.tab_calendar': 'Calendrier',
     'nav.tab_reschedule': 'Reprogrammer',
     'nav.tab_financial': 'Financier',
     'nav.loading_settings': 'Chargement des paramètres...',
@@ -1553,6 +1557,7 @@ export const translations = {
     'nav.tab_config': 'Einstellungen',
     'nav.tab_patients': 'Patienten',
     'nav.tab_appointments': 'Termine',
+    'nav.tab_calendar': 'Kalender',
     'nav.tab_reschedule': 'Umbuchen',
     'nav.tab_financial': 'Finanzen',
     'nav.loading_settings': 'Einstellungen werden geladen...',
@@ -1939,6 +1944,7 @@ export const translations = {
     'nav.tab_config': 'Impostazioni',
     'nav.tab_patients': 'Pazienti',
     'nav.tab_appointments': 'Appuntamenti',
+    'nav.tab_calendar': 'Calendario',
     'nav.tab_reschedule': 'Riprogrammare',
     'nav.tab_financial': 'Finanziario',
     'nav.loading_settings': 'Caricamento impostazioni...',
@@ -2325,6 +2331,7 @@ export const translations = {
     'nav.tab_config': 'Настройки',
     'nav.tab_patients': 'Пациенты',
     'nav.tab_appointments': 'Записи',
+    'nav.tab_calendar': 'Календарь',
     'nav.tab_reschedule': 'Перенести',
     'nav.tab_financial': 'Финансовый',
     'nav.loading_settings': 'Загрузка настроек...',
@@ -2711,6 +2718,7 @@ export const translations = {
     'nav.tab_config': 'الإعدادات',
     'nav.tab_patients': 'المرضى',
     'nav.tab_appointments': 'المواعيد',
+    'nav.tab_calendar': 'التقويم',
     'nav.tab_reschedule': 'إعادة الجدولة',
     'nav.tab_financial': 'المالية',
     'nav.loading_settings': 'جارٍ تحميل الإعدادات...',
@@ -3094,3 +3102,4 @@ export const translations = {
 
 export type Lang = keyof typeof translations;
 export type TranslationKey = keyof typeof translations.pt;
+

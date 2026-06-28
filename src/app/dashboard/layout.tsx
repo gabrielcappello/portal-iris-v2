@@ -16,6 +16,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard",                   label: t("nav.tab_config"),       icon: "⚙️" },
     { href: "/dashboard/pacientes",         label: t("nav.tab_patients"),     icon: "👥" },
     { href: "/dashboard/agendamentos",      label: t("nav.tab_appointments"), icon: "📅" },
+    { href: "/dashboard/calendario",        label: t("nav.tab_calendar"),     icon: "📆" },
     { href: "/dashboard/remarcar",          label: t("nav.tab_reschedule"),   icon: "🔄" },
     { href: "/dashboard/financeiro",        label: t("nav.tab_financial"),    icon: "💰" },
   ];
