@@ -637,6 +637,9 @@ export default function CalendarioPage() {
 
   const drawerAlertas = anamneseAlertas(drawerPaciente?.anamnese, t);
   const drawerTotal = drawerHist.filter(a => ["confirmado", "ok"].includes(a.status)).length;
+  // histórico mostra só o que é acionável aqui: confirmado / veio (ok) / faltou
+  // (cancelado e remarcado não aparecem)
+  const drawerHistVisivel = drawerHist.filter(a => !["cancelado", "remarcado"].includes(a.status));
 
   // mostra a coluna de sábado na vista Semana se algum dentista ativo trabalha sábado
   MOSTRAR_SABADO = (clinica?.dentistas || []).some(d => d.ativo && String(d.sabado) === "true");
@@ -956,12 +959,12 @@ export default function CalendarioPage() {
                         );
                       })()}
 
-                      {/* histórico */}
-                      {drawerHist.length > 0 && (
+                      {/* histórico (sem cancelado/remarcado) */}
+                      {drawerHistVisivel.length > 0 && (
                         <div>
                           <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>{t("patients.history")}</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                            {drawerHist.slice(0, 6).map((x, xi) => {
+                            {drawerHistVisivel.slice(0, 6).map((x, xi) => {
                               const xs = STATUS_STYLE[x.status] || { bg: "#f1f5f9", color: "#64748b", label: x.status };
                               return (
                                 <div key={xi} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#fff", borderRadius: 8, border: "1px solid #f1f5f9" }}>
