@@ -58,14 +58,14 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       {/* ── Barra superior fixa: header + abas (sempre presente) ── */}
       <div ref={topbarRef} style={{position:"sticky",top:0,zIndex:50,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
 
-      {/* ── Header ── */}
+      {/* ── Header + abas (linha única) ── */}
       <header style={{
         background:"#fff",borderBottom:"1px solid #e2e8f0",
-        padding:"12px 16px",display:"flex",alignItems:"center",gap:"12px"
+        padding:"8px 16px",display:"flex",alignItems:"stretch",gap:"12px"
       }}>
         {/* Logo */}
         <div style={{
-          width:36,height:36,borderRadius:10,flexShrink:0,
+          width:36,height:36,borderRadius:10,flexShrink:0,alignSelf:"center",
           background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",
           display:"flex",alignItems:"center",justifyContent:"center",
           boxShadow:"0 4px 12px rgba(43,122,120,0.25)"
@@ -78,15 +78,47 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Título */}
-        <div style={{flex:1,minWidth:0}}>
+        <div style={{flexShrink:0,minWidth:0,alignSelf:"center"}}>
           <div style={{fontSize:15,fontWeight:700,color:"#1e293b",lineHeight:1.2}}>{t("nav.app_name")}</div>
-          <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+          <div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>
             {clinicaNome}
           </div>
         </div>
 
+        {/* ── Abas (à direita; roláveis se faltar espaço) ── */}
+        <nav style={{
+          marginLeft:"auto",display:"flex",alignItems:"stretch",
+          overflowX:"auto",minWidth:0,flexShrink:1,
+          scrollbarWidth:"none",WebkitOverflowScrolling:"touch" as React.CSSProperties["WebkitOverflowScrolling"],
+        }}>
+          {TABS.map(tab => {
+            const isActive = pathname === tab.href ||
+              (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
+            return (
+              <Link key={tab.href} href={tab.href} style={{textDecoration:"none",flexShrink:0,position:"relative",display:"flex",alignItems:"stretch"}}>
+                <button style={{
+                  padding:"10px 12px",border:"none",background:"transparent",
+                  fontSize:13,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap",
+                  color: isActive ? "#2B7A78" : "#94a3b8",
+                  display:"flex",alignItems:"center",gap:6,
+                  fontFamily:"'Sora',sans-serif",
+                }}>
+                  <span style={{fontSize:15}}>{tab.icon}</span>
+                  <span style={{fontSize:12}}>{tab.label}</span>
+                </button>
+                {isActive && (
+                  <motion.div layoutId="tab-indicator"
+                    style={{position:"absolute",bottom:-8,left:0,right:0,height:2,background:"#2B7A78",borderRadius:2}}
+                    transition={{type:"spring",stiffness:500,damping:30}}/>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
         {/* Sair — discreto */}
         <button onClick={logout} title={t("nav.logout")} style={{
+          flexShrink:0,alignSelf:"center",
           background:"transparent",border:"none",cursor:"pointer",
           color:"#cbd5e1",padding:"6px",borderRadius:8,
           display:"flex",alignItems:"center",justifyContent:"center",
@@ -97,38 +129,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           <LogOut size={16}/>
         </button>
       </header>
-
-      {/* ── Tab Nav ── */}
-      <nav style={{
-        background:"#fff",borderBottom:"1px solid #e2e8f0",
-        display:"flex",overflowX:"auto",
-        scrollbarWidth:"none",WebkitOverflowScrolling:"touch" as React.CSSProperties["WebkitOverflowScrolling"],
-        padding:"0 4px"
-      }}>
-        {TABS.map(tab => {
-          const isActive = pathname === tab.href ||
-            (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
-          return (
-            <Link key={tab.href} href={tab.href} style={{textDecoration:"none",flexShrink:0,position:"relative"}}>
-              <button style={{
-                padding:"12px 14px",border:"none",background:"transparent",
-                fontSize:13,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap",
-                color: isActive ? "#2B7A78" : "#94a3b8",
-                display:"flex",alignItems:"center",gap:6,
-                fontFamily:"'Sora',sans-serif",
-              }}>
-                <span style={{fontSize:15}}>{tab.icon}</span>
-                <span style={{fontSize:12}}>{tab.label}</span>
-              </button>
-              {isActive && (
-                <motion.div layoutId="tab-indicator"
-                  style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"#2B7A78",borderRadius:2}}
-                  transition={{type:"spring",stiffness:500,damping:30}}/>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
 
       </div>{/* ── fim barra superior fixa ── */}
 
