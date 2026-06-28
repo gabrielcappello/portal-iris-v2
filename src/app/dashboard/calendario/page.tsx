@@ -9,15 +9,25 @@ import {
   isToday, parseISO,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, RefreshCw, Pencil, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { sb, SUPABASE_URL, SUPABASE_KEY, type Clinica } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 
-// ── paleta fixa de 12 cores ───────────────────────────────────────────────────
+// ── paleta de cores ────────────────────────────────────────────────────────────
+// 12 cores vivas: usadas tanto na grade do seletor quanto na atribuição
+// automática por hash (texto dos eventos é branco, então precisam ter contraste).
 const DENTIST_COLORS = [
   "#2563EB","#16A34A","#DC2626","#9333EA","#EA580C","#0891B2",
   "#DB2777","#65A30D","#7C3AED","#CA8A04","#0F766E","#BE123C",
+];
+
+// Grade do seletor: 24 cores (as 12 vivas + 12 suaves), 6 colunas x 4 linhas.
+// As suaves só ficam disponíveis para escolha manual, não para o hash automático.
+const PALETTE_COLORS = [
+  ...DENTIST_COLORS,
+  "#93C5FD","#86EFAC","#FCA5A5","#D8B4FE","#FDBA74","#67E8F9",
+  "#F9A8D4","#BEF264","#C4B5FD","#FDE68A","#99F6E4","#FDA4AF",
 ];
 
 function corParaDentista(token: string, corAPI?: string): string {
@@ -376,37 +386,26 @@ export default function CalendarioPage() {
               <div key={d.token} style={{ position: "relative" }}
                 ref={pickerAberto ? colorPickerRef : undefined}>
 
-                {/* ── pílula + lápis ── */}
-                <div style={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <button onClick={() => toggleFiltro(d.token)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      padding: "4px 8px 4px 10px", borderRadius: "20px 0 0 20px",
-                      border: `1px solid ${cor}`, borderRight: "none",
-                      background: ativo ? cor : cor + "28",
-                      color: ativo ? "#fff" : cor,
-                      fontSize: 11, fontWeight: 600, cursor: "pointer",
-                      fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
-                    }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.65, display: "inline-block", flexShrink: 0 }} />
-                    {d.nome}
-                  </button>
-
-                  {/* lápis: abre/fecha o color picker */}
-                  <button
-                    onClick={() => abrirColorPicker(d.token, cor)}
-                    title="Editar cor"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: "4px 6px", borderRadius: "0 20px 20px 0",
-                      border: `1px solid ${cor}`,
-                      background: pickerAberto ? cor : ativo ? cor + "cc" : cor + "28",
-                      color: pickerAberto ? "#fff" : ativo ? "#fff" : cor,
-                      cursor: "pointer", transition: "all 0.15s",
-                    }}>
-                    <Pencil size={9} />
-                  </button>
-                </div>
+                {/* ── pílula: clique = filtra, duplo clique = editar cor ── */}
+                <button
+                  onClick={() => toggleFiltro(d.token)}
+                  onDoubleClick={() => abrirColorPicker(d.token, cor)}
+                  title="Clique para filtrar · duplo clique para editar a cor"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    padding: "4px 12px", borderRadius: 20,
+                    border: `1px solid ${cor}`,
+                    background: ativo ? cor : cor + "28",
+                    color: ativo ? "#fff" : cor,
+                    fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
+                    outline: pickerAberto ? `2px solid ${cor}` : "none",
+                    outlineOffset: 1,
+                    userSelect: "none",
+                  }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.65, display: "inline-block", flexShrink: 0 }} />
+                  {d.nome}
+                </button>
 
                 {/* ── color picker popover ── */}
                 {pickerAberto && (
@@ -420,9 +419,9 @@ export default function CalendarioPage() {
                       {d.nome}
                     </div>
 
-                    {/* grade de 12 cores */}
+                    {/* grade de 24 cores (6 x 4) */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 5, marginBottom: 12 }}>
-                      {DENTIST_COLORS.map(c => (
+                      {PALETTE_COLORS.map(c => (
                         <button key={c} onClick={() => salvarCor(d.token, c)} disabled={savingCor}
                           title={c}
                           style={{
