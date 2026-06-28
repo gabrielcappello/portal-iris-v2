@@ -11,7 +11,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, X } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -135,6 +135,28 @@ function hexValido(s: string): boolean {
   return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
 }
 
+// "HH:MM" -> minutos desde 00:00 (null se inválido/vazio)
+function minutosDoHorario(hhmm?: string): number | null {
+  if (!hhmm) return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+// Slots/dia de UM dentista: ((fim-inicio) - almoço) ÷ 45min.
+// Sem almoço configurado, não desconta nada.
+function slotsDoDentista(d: Dentista): number {
+  const ini = minutosDoHorario(d.inicio);
+  const fim = minutosDoHorario(d.fim);
+  if (ini == null || fim == null || fim <= ini) return 0;
+  let span = fim - ini;
+  const ai = minutosDoHorario(d.alm_ini);
+  const af = minutosDoHorario(d.alm_fim);
+  if (ai != null && af != null && af > ai) span -= (af - ai);
+  if (span <= 0) return 0;
+  return Math.floor(span / 45);
+}
+
 // status que ocupam um slot (contam para contador/ocupação)
 const STATUS_OCUPA = ["confirmado", "ok", "faltou"];
 
@@ -252,7 +274,7 @@ export default function CalendarioPage() {
     if (!token) { router.replace("/login"); return; }
     const id = localStorage.getItem("clinica_id");
     if (!id) { setCarregandoClinica(false); return; }
-    sb.query<Clinica>("clinicas", `?id=eq.${id}&select=id`)
+    sb.query<Clinica>("clinicas", `?id=eq.${id}&select=id,dentistas`)
       .then(r => { if (r[0]) setClinica(r[0]); })
       .catch(() => {})
       .finally(() => setCarregandoClinica(false));
@@ -385,24 +407,26 @@ export default function CalendarioPage() {
 
   // ── ocupação % do período visível ───────────────────────────────────────────
   const ocupacao = useMemo(() => {
-    const abreMin = minTime.getHours() * 60 + minTime.getMinutes();
-    const fechaMin = maxTime.getHours() * 60 + maxTime.getMinutes();
-    const span = fechaMin - abreMin;
-    if (span <= 0) return null;
-    const slotsDia = Math.floor(span / 45);
-    if (slotsDia <= 0) return null;
+    const dentFull = clinica?.dentistas || [];
+    const byToken = new Map(dentFull.map(d => [d.token_acesso, d]));
+    // dentistas considerados: a seleção do filtro, ou todos se nenhum selecionado
+    const tokens = filtroTokens.size > 0 ? Array.from(filtroTokens) : dentistas.map(d => d.token);
+    if (tokens.length === 0) return null;
     const dias = view === "day" ? 1 : view === "week" ? 7 : getDaysInMonth(date);
-    // nº de dentistas considerados = seleção do filtro, ou todos se nenhum selecionado
-    const nDent = filtroTokens.size > 0 ? filtroTokens.size : dentistas.length;
-    if (nDent <= 0) return null;
-    const total = slotsDia * dias * nDent;
+    // total de slots = soma dos slots de cada dentista (individual, com almoço
+    // descontado) × dias do período. NÃO multiplica pelo nº de dentistas.
+    let total = 0;
+    for (const tk of tokens) {
+      const d = byToken.get(tk);
+      if (d) total += slotsDoDentista(d) * dias;
+    }
     if (total <= 0) return null;
-    // ocupados = blocos efetivamente exibidos na grade (o backend já filtra por
-    // dentista selecionado e exclui cancelado/remarcado) → acompanha a seleção
-    const ocupados = eventos.length;
+    // ocupados = eventos exibidos (backend já filtra pelos dentistas selecionados)
+    // com status confirmado/ok/faltou
+    const ocupados = eventos.filter(e => e.status && STATUS_OCUPA.includes(e.status)).length;
     const pct = Math.round((ocupados / total) * 100);
     return { ocupados, total, pct };
-  }, [eventos, view, date, minTime, maxTime, dentistas, filtroTokens]);
+  }, [clinica, dentistas, filtroTokens, eventos, view, date]);
 
   // ── estilo dos eventos (cor + status) ───────────────────────────────────────
   function eventPropGetter(event: object) {
@@ -577,7 +601,6 @@ export default function CalendarioPage() {
     return <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 13 }}>Carregando...</div>;
   }
 
-  const drawerStat = STATUS_STYLE[drawerStatus] || { bg: "#f1f5f9", color: "#64748b", label: drawerStatus || "—" };
   const drawerAlertas = anamneseAlertas(drawerPaciente?.anamnese, t);
   const drawerTotal = drawerHist.filter(a => ["confirmado", "ok"].includes(a.status)).length;
 
@@ -801,7 +824,6 @@ export default function CalendarioPage() {
                 <>
                   {/* status + ações */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 99, background: drawerStat.bg, color: drawerStat.color }}>{drawerStat.label}</span>
                     {drawerAg && (
                       <>
                         <button onClick={() => marcarStatus("ok")} disabled={updatingStatus}
