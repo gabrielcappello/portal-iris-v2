@@ -640,6 +640,8 @@ export default function CalendarioPage() {
   // histórico mostra só o que é acionável aqui: confirmado / veio (ok) / faltou
   // (cancelado e remarcado não aparecem)
   const drawerHistVisivel = drawerHist.filter(a => !["cancelado", "remarcado"].includes(a.status));
+  // Veio/Faltou só liberam após o horário do agendamento; antes, só Confirmado
+  const horarioPassou = !!drawerAg && new Date() > new Date(`${drawerAg.data}T${drawerAg.horario}`);
 
   // mostra a coluna de sábado na vista Semana se algum dentista ativo trabalha sábado
   MOSTRAR_SABADO = (clinica?.dentistas || []).some(d => d.ativo && String(d.sabado) === "true");
@@ -876,22 +878,26 @@ export default function CalendarioPage() {
                           }}>
                           ✓ {t("status.confirmed")}
                         </button>
-                        <button onClick={() => marcarStatus("ok")} disabled={updatingStatus}
+                        <button onClick={() => marcarStatus("ok")} disabled={updatingStatus || !horarioPassou}
+                          title={!horarioPassou ? t("calendar.tip_needs_update") : undefined}
                           style={{
-                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
-                            background: drawerStatus === "ok" ? "#DCFCE7" : "#fff",
-                            color: drawerStatus === "ok" ? "#16A34A" : "#475569",
-                            border: drawerStatus === "ok" ? "1px solid #16A34A" : "1px solid #e2e8f0",
+                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: "'Sora',sans-serif",
+                            cursor: (updatingStatus || !horarioPassou) ? "not-allowed" : "pointer",
+                            background: !horarioPassou ? "#f1f5f9" : drawerStatus === "ok" ? "#DCFCE7" : "#fff",
+                            color: !horarioPassou ? "#cbd5e1" : drawerStatus === "ok" ? "#16A34A" : "#475569",
+                            border: !horarioPassou ? "1px solid #e2e8f0" : drawerStatus === "ok" ? "1px solid #16A34A" : "1px solid #e2e8f0",
                             opacity: updatingStatus ? 0.6 : 1,
                           }}>
                           {t("calendar.btn_came")}
                         </button>
-                        <button onClick={() => marcarStatus("faltou")} disabled={updatingStatus}
+                        <button onClick={() => marcarStatus("faltou")} disabled={updatingStatus || !horarioPassou}
+                          title={!horarioPassou ? t("calendar.tip_needs_update") : undefined}
                           style={{
-                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Sora',sans-serif",
-                            background: drawerStatus === "faltou" ? "#FEE2E2" : "#fff",
-                            color: drawerStatus === "faltou" ? "#DC2626" : "#475569",
-                            border: drawerStatus === "faltou" ? "1px solid #DC2626" : "1px solid #e2e8f0",
+                            padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: "'Sora',sans-serif",
+                            cursor: (updatingStatus || !horarioPassou) ? "not-allowed" : "pointer",
+                            background: !horarioPassou ? "#f1f5f9" : drawerStatus === "faltou" ? "#FEE2E2" : "#fff",
+                            color: !horarioPassou ? "#cbd5e1" : drawerStatus === "faltou" ? "#DC2626" : "#475569",
+                            border: !horarioPassou ? "1px solid #e2e8f0" : drawerStatus === "faltou" ? "1px solid #DC2626" : "1px solid #e2e8f0",
                             opacity: updatingStatus ? 0.6 : 1,
                           }}>
                           {t("calendar.btn_missed")}
