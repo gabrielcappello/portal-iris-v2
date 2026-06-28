@@ -649,11 +649,9 @@ export default function CalendarioPage() {
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
 
-      {/* ── Barra superior fixa da aba: controles + pílulas ── */}
-      <div style={{
-        position: "sticky", top: "var(--dash-topbar-h, 101px)", zIndex: 40,
-        background: "#f8fafc", paddingTop: 10, marginTop: -10,
-      }}>
+      {/* ── Controles + pílulas: fluem no container padrão, como as outras abas
+           (sem barra sticky própria — o cabeçalho fixo é o do layout) ── */}
+      <div>
 
       {/* ── Controles ── */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -746,7 +744,7 @@ export default function CalendarioPage() {
         </div>
       )}
 
-      </div>{/* ── fim barra superior fixa ── */}
+      </div>{/* ── fim controles + pílulas ── */}
 
       {/* ── Ocupação do período ── */}
       {ocupacao && (
