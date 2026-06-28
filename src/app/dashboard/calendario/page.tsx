@@ -351,6 +351,18 @@ export default function CalendarioPage() {
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
 
+      {/* ── Barra superior fixa da aba: controles + pílulas ──
+           Pina logo abaixo das abas do painel (var medida no layout).
+           Fundo opaco cobre a grade que rola por baixo. */}
+      <div style={{
+        position: "sticky",
+        top: "var(--dash-topbar-h, 101px)",
+        zIndex: 40,
+        background: "#f8fafc",
+        paddingTop: 10,
+        marginTop: -10,
+      }}>
+
       {/* ── Controles ── */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -493,6 +505,8 @@ export default function CalendarioPage() {
           })}
         </div>
       )}
+
+      </div>{/* ── fim barra superior fixa da aba ── */}
 
       {/* ── Erro de calendário ── */}
       {erro && (

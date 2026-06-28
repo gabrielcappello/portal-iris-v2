@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -28,6 +28,20 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     if (nome) setClinicaNome(nome);
   }, [router]);
 
+  // Mede a altura da barra superior fixa (header + abas) e expõe como
+  // CSS var, para que páginas com barras próprias possam alinhar seu
+  // position:sticky logo abaixo das abas (ex.: aba Calendário).
+  const topbarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = topbarRef.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty("--dash-topbar-h", `${el.offsetHeight}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [loading]);
+
   function logout() { localStorage.clear(); router.replace("/login"); }
 
   if (loading) {
@@ -41,11 +55,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   return (
     <div dir={dir} className="min-h-screen" style={{background:"#f8fafc"}}>
 
+      {/* ── Barra superior fixa: header + abas (sempre presente) ── */}
+      <div ref={topbarRef} style={{position:"sticky",top:0,zIndex:50,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+
       {/* ── Header ── */}
       <header style={{
         background:"#fff",borderBottom:"1px solid #e2e8f0",
-        padding:"12px 16px",display:"flex",alignItems:"center",gap:"12px",
-        position:"sticky",top:0,zIndex:50,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"
+        padding:"12px 16px",display:"flex",alignItems:"center",gap:"12px"
       }}>
         {/* Logo */}
         <div style={{
@@ -113,6 +129,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
+
+      </div>{/* ── fim barra superior fixa ── */}
 
       {/* ── Content ── */}
       <main style={{maxWidth:960,margin:"0 auto",padding:"16px 12px"}}>
