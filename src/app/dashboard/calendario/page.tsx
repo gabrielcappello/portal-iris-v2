@@ -9,12 +9,12 @@ import {
   isToday, parseISO,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, Pencil, RotateCcw } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { sb, type Clinica } from "@/lib/supabase";
+import { sb, SUPABASE_URL, SUPABASE_KEY, type Clinica } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 
-// ── paleta de cores dos dentistas ────────────────────────────────────────────
+// ── paleta fixa de 12 cores ───────────────────────────────────────────────────
 const DENTIST_COLORS = [
   "#2563EB","#16A34A","#DC2626","#9333EA","#EA580C","#0891B2",
   "#DB2777","#65A30D","#7C3AED","#CA8A04","#0F766E","#BE123C",
@@ -55,7 +55,6 @@ type CalendarioResponse = {
   erro?: string;
 };
 
-// Evento tipado para o react-big-calendar
 type CalEvent = RBCEvent & {
   id: string;
   dentistaNome: string;
@@ -73,7 +72,6 @@ function parseEventDate(raw: string, diaInteiro: boolean): Date {
   return parseISO(raw);
 }
 
-// Converte "HH:MM" da API em objeto Date que o RBC usa para min/max
 function parseHoraRBC(hhmm: string | null | undefined, fallbackHour: number): Date {
   if (hhmm) {
     const [h, m] = hhmm.split(":").map(Number);
@@ -85,11 +83,9 @@ function parseHoraRBC(hhmm: string | null | undefined, fallbackHour: number): Da
 function getRangeForView(view: View, date: Date): { inicio: string; fim: string } {
   const fmt = (d: Date) => format(d, "yyyy-MM-dd");
   if (view === "month") {
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
     return {
-      inicio: fmt(startOfWeekFn(monthStart, { weekStartsOn: 0 })),
-      fim: fmt(endOfWeek(monthEnd, { weekStartsOn: 0 })),
+      inicio: fmt(startOfWeekFn(startOfMonth(date), { weekStartsOn: 0 })),
+      fim: fmt(endOfWeek(endOfMonth(date), { weekStartsOn: 0 })),
     };
   }
   if (view === "week") {
@@ -99,6 +95,10 @@ function getRangeForView(view: View, date: Date): { inicio: string; fim: string 
     };
   }
   return { inicio: fmt(date), fim: fmt(date) };
+}
+
+function hexValido(s: string): boolean {
+  return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
 }
 
 // ── estilos base ──────────────────────────────────────────────────────────────
@@ -124,7 +124,6 @@ export default function CalendarioPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [eventos, setEventos] = useState<CalEvent[]>([]);
 
-  // dentistas: acumula via union — nunca encolhe (garante barra sempre completa)
   const [dentistas, setDentistas] = useState<DentistaInfo[]>([]);
   const dentistasRef = useRef<DentistaInfo[]>([]);
 
@@ -132,11 +131,79 @@ export default function CalendarioPage() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
-  // faixa horária (Semana/Dia) — atualizada pela API, fallback 05:00/19:00
   const [minTime, setMinTime] = useState<Date>(new Date(1970, 0, 1, 5, 0, 0));
   const [maxTime, setMaxTime] = useState<Date>(new Date(1970, 0, 1, 19, 0, 0));
 
   const [eventoSel, setEventoSel] = useState<CalEvent | null>(null);
+
+  // ── color picker ─────────────────────────────────────────────────────────────
+  const [colorPickerToken, setColorPickerToken] = useState<string | null>(null);
+  const [hexInput, setHexInput] = useState("");
+  const [savingCor, setSavingCor] = useState(false);
+  const [corErro, setCorErro] = useState("");
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
+  // fecha o picker ao clicar fora
+  useEffect(() => {
+    if (!colorPickerToken) return;
+    function handleClick(e: MouseEvent) {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerToken(null);
+        setCorErro("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [colorPickerToken]);
+
+  function abrirColorPicker(token: string, corAtual: string) {
+    setColorPickerToken(prev => prev === token ? null : token);
+    setHexInput(hexValido(corAtual) ? corAtual : "");
+    setCorErro("");
+  }
+
+  async function salvarCor(token: string, cor: string) {
+    if (!clinica?.id) return;
+    // valida hex se não for string vazia (vazio = automático)
+    if (cor !== "" && !hexValido(cor)) {
+      setCorErro("Formato inválido. Use #RRGGBB (ex: #2563EB)");
+      return;
+    }
+    setSavingCor(true);
+    setCorErro("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/atualizar_cor_dentista`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          p_clinica_id: clinica.id,
+          p_token_acesso: token,
+          p_cor: cor,
+        }),
+      });
+      const data = await res.json().catch(() => ({ sucesso: false, erro: "parse_error" }));
+      if (!data.sucesso) {
+        setCorErro(data.erro || "Erro ao salvar a cor. Tente novamente.");
+        return;
+      }
+      // atualiza local imediatamente com a cor retornada pela RPC
+      const novaCor = data.cor?.trim() ? data.cor : corParaDentista(token, undefined);
+      const updater = (d: DentistaInfo) => d.token === token ? { ...d, cor: novaCor } : d;
+      dentistasRef.current = dentistasRef.current.map(updater);
+      setDentistas(prev => prev.map(updater));
+      setColorPickerToken(null);
+      // recarrega o calendário para refletir a cor nova nos eventos
+      buscarEventos(view, date, filtroTokens);
+    } catch {
+      setCorErro("Falha de conexão. Tente novamente.");
+    } finally {
+      setSavingCor(false);
+    }
+  }
 
   // ── carregar clínica ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -175,11 +242,10 @@ export default function CalendarioPage() {
         return;
       }
 
-      // ── faixa horária dinâmica da API ──
       setMinTime(parseHoraRBC(data.hora_abertura, 5));
       setMaxTime(parseHoraRBC(data.hora_fechamento, 19));
 
-      // ── dentistas: acumula (union) para nunca remover da barra ──
+      // dentistas: union (nunca encolhe)
       const dentistasData = data.dentistas ?? [];
       if (dentistasData.length > 0) {
         const map = new Map(dentistasRef.current.map(d => [d.token, d]));
@@ -189,12 +255,10 @@ export default function CalendarioPage() {
         setDentistas(merged);
       }
 
-      // ── corMap: token → cor resolvida pela paleta ──
       const corMap = new Map<string, string>(
         dentistasRef.current.map(d => [d.token, corParaDentista(d.token, d.cor)])
       );
 
-      // ── eventos: cor do evento vem do corMap pelo dentista_token ──
       const evs: CalEvent[] = (data.eventos ?? []).map(ev => ({
         id: ev.event_id,
         title: ev.titulo,
@@ -202,7 +266,6 @@ export default function CalendarioPage() {
         end: parseEventDate(ev.fim, ev.dia_inteiro),
         allDay: ev.dia_inteiro,
         dentistaNome: ev.dentista_nome,
-        // fallback via paleta se token não estiver no map (nunca cinza)
         cor: corParaDentista(ev.dentista_token, corMap.get(ev.dentista_token)),
         descricao: ev.descricao,
         diaInteiro: ev.dia_inteiro,
@@ -219,15 +282,6 @@ export default function CalendarioPage() {
     if (clinica?.id) buscarEventos(view, date, filtroTokens);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinica?.id, view, date]);
-
-  // ── filtro ──────────────────────────────────────────────────────────────────
-  function toggleFiltro(token: string) {
-    setFiltroTokens(prev => {
-      const next = new Set(prev);
-      if (next.has(token)) next.delete(token); else next.add(token);
-      return next;
-    });
-  }
 
   useEffect(() => {
     if (clinica?.id) buscarEventos(view, date, filtroTokens);
@@ -247,7 +301,14 @@ export default function CalendarioPage() {
   }
   function navHoje() { setDate(new Date()); }
 
-  // ── label período ───────────────────────────────────────────────────────────
+  function toggleFiltro(token: string) {
+    setFiltroTokens(prev => {
+      const next = new Set(prev);
+      if (next.has(token)) next.delete(token); else next.add(token);
+      return next;
+    });
+  }
+
   const labelPeriodo = useMemo(() => {
     if (view === "month") return format(date, "MMMM yyyy", { locale: ptBR });
     if (view === "week") {
@@ -258,7 +319,6 @@ export default function CalendarioPage() {
     return format(date, "EEEE, d 'de' MMMM yyyy", { locale: ptBR });
   }, [view, date]);
 
-  // ── eventPropGetter: cor inline (inline style > CSS class sempre) ──────────
   function eventPropGetter(event: object) {
     const ev = event as CalEvent;
     return {
@@ -274,29 +334,23 @@ export default function CalendarioPage() {
     };
   }
 
-  // ── render ──────────────────────────────────────────────────────────────────
   if (carregandoClinica) {
     return <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 13 }}>Carregando...</div>;
   }
 
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
+
       {/* ── Controles ── */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <button onClick={navAnterior} style={{ ...btnBase, padding: "6px 10px" }}>
-            <ChevronLeft size={14} />
-          </button>
+          <button onClick={navAnterior} style={{ ...btnBase, padding: "6px 10px" }}><ChevronLeft size={14} /></button>
           <button onClick={navHoje} style={btnBase}>Hoje</button>
-          <button onClick={navProximo} style={{ ...btnBase, padding: "6px 10px" }}>
-            <ChevronRight size={14} />
-          </button>
+          <button onClick={navProximo} style={{ ...btnBase, padding: "6px 10px" }}><ChevronRight size={14} /></button>
         </div>
-
         <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#1e293b", textTransform: "capitalize", minWidth: 160 }}>
           {labelPeriodo}
         </div>
-
         <div style={{ display: "flex", gap: 4 }}>
           {(["month", "week", "day"] as View[]).map(v => (
             <button key={v} onClick={() => setView(v)} style={view === v ? btnActive : btnBase}>
@@ -304,49 +358,144 @@ export default function CalendarioPage() {
             </button>
           ))}
         </div>
-
-        <button onClick={() => buscarEventos(view, date, filtroTokens)}
-          disabled={carregando}
+        <button onClick={() => buscarEventos(view, date, filtroTokens)} disabled={carregando}
           style={{ ...btnBase, padding: "6px 10px", opacity: carregando ? 0.5 : 1 }}>
           <RefreshCw size={13} style={{ animation: carregando ? "spin 1s linear infinite" : "none" }} />
         </button>
       </div>
 
-      {/* ── Barra de dentistas (sempre visível enquanto dentistas carregados) ── */}
+      {/* ── Barra de dentistas com editor de cor ── */}
       {dentistas.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
           {dentistas.map(d => {
             const cor = corParaDentista(d.token, d.cor);
-            // nenhum selecionado = todos ativos; ou apenas os selecionados
             const ativo = filtroTokens.size === 0 || filtroTokens.has(d.token);
+            const pickerAberto = colorPickerToken === d.token;
+
             return (
-              <button
-                key={d.token}
-                onClick={() => toggleFiltro(d.token)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "4px 10px", borderRadius: 20,
-                  // selecionado: fundo sólido; não selecionado: ~16% opacidade
-                  border: `1px solid ${cor}`,
-                  background: ativo ? cor : cor + "28",
-                  color: ativo ? "#fff" : cor,
-                  fontSize: 11, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
-                }}>
-                <span style={{
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: ativo ? "#fff" : cor,
-                  opacity: ativo ? 1 : 0.65,
-                  display: "inline-block",
-                }} />
-                {d.nome}
-              </button>
+              <div key={d.token} style={{ position: "relative" }}
+                ref={pickerAberto ? colorPickerRef : undefined}>
+
+                {/* ── pílula + lápis ── */}
+                <div style={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <button onClick={() => toggleFiltro(d.token)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "4px 8px 4px 10px", borderRadius: "20px 0 0 20px",
+                      border: `1px solid ${cor}`, borderRight: "none",
+                      background: ativo ? cor : cor + "28",
+                      color: ativo ? "#fff" : cor,
+                      fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
+                    }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.65, display: "inline-block", flexShrink: 0 }} />
+                    {d.nome}
+                  </button>
+
+                  {/* lápis: abre/fecha o color picker */}
+                  <button
+                    onClick={() => abrirColorPicker(d.token, cor)}
+                    title="Editar cor"
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "4px 6px", borderRadius: "0 20px 20px 0",
+                      border: `1px solid ${cor}`,
+                      background: pickerAberto ? cor : ativo ? cor + "cc" : cor + "28",
+                      color: pickerAberto ? "#fff" : ativo ? "#fff" : cor,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}>
+                    <Pencil size={9} />
+                  </button>
+                </div>
+
+                {/* ── color picker popover ── */}
+                {pickerAberto && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 200,
+                    background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                    border: "1px solid #e2e8f0", padding: 14, minWidth: 220,
+                  }}>
+                    {/* nome do dentista */}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>
+                      {d.nome}
+                    </div>
+
+                    {/* grade de 12 cores */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 5, marginBottom: 12 }}>
+                      {DENTIST_COLORS.map(c => (
+                        <button key={c} onClick={() => salvarCor(d.token, c)} disabled={savingCor}
+                          title={c}
+                          style={{
+                            width: 26, height: 26, borderRadius: 6, background: c, border: "none",
+                            cursor: "pointer", outline: cor === c ? `2px solid ${c}` : "2px solid transparent",
+                            outlineOffset: 2, transition: "outline 0.1s",
+                          }} />
+                      ))}
+                    </div>
+
+                    {/* input hex livre */}
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 10 }}>
+                      <div style={{
+                        width: 24, height: 24, borderRadius: 5, flexShrink: 0,
+                        background: hexValido(hexInput) ? hexInput : "#e2e8f0",
+                        border: "1px solid #e2e8f0",
+                      }} />
+                      <input
+                        value={hexInput}
+                        onChange={e => setHexInput(e.target.value)}
+                        placeholder="#RRGGBB"
+                        maxLength={7}
+                        style={{
+                          flex: 1, padding: "5px 8px", fontSize: 12, border: "1px solid #e2e8f0",
+                          borderRadius: 7, fontFamily: "monospace", outline: "none",
+                          background: "#f8fafc", color: "#1e293b",
+                        }}
+                        onKeyDown={e => { if (e.key === "Enter") salvarCor(d.token, hexInput.trim()); }}
+                      />
+                      <button onClick={() => salvarCor(d.token, hexInput.trim())} disabled={savingCor || !hexValido(hexInput)}
+                        style={{
+                          padding: "5px 10px", background: hexValido(hexInput) ? "#2B7A78" : "#e2e8f0",
+                          color: hexValido(hexInput) ? "#fff" : "#94a3b8",
+                          border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600,
+                          cursor: hexValido(hexInput) ? "pointer" : "default",
+                          fontFamily: "'Sora',sans-serif",
+                        }}>
+                        OK
+                      </button>
+                    </div>
+
+                    {/* erro */}
+                    {corErro && (
+                      <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 8, lineHeight: 1.4 }}>
+                        {corErro}
+                      </div>
+                    )}
+
+                    {/* voltar ao automático */}
+                    <button onClick={() => salvarCor(d.token, "")} disabled={savingCor}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                        padding: "6px", background: "#f8fafc", border: "1px solid #e2e8f0",
+                        borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                        color: "#64748b", fontFamily: "'Sora',sans-serif",
+                      }}>
+                      <RotateCcw size={11} /> Voltar ao automático
+                    </button>
+
+                    {savingCor && (
+                      <div style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", marginTop: 8 }}>
+                        Salvando...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
       )}
 
-      {/* ── Erro ── */}
+      {/* ── Erro de calendário ── */}
       {erro && (
         <div style={{ padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626", marginBottom: 12 }}>
           {erro}
@@ -395,11 +544,9 @@ export default function CalendarioPage() {
 
       {/* ── Popover de evento ── */}
       {eventoSel && (
-        <div
-          onClick={() => setEventoSel(null)}
+        <div onClick={() => setEventoSel(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div
-            onClick={e => e.stopPropagation()}
+          <div onClick={e => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
             <div style={{ height: 4, borderRadius: 4, background: eventoSel.cor, marginBottom: 14 }} />
             <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 12, lineHeight: 1.4 }}>
@@ -437,7 +584,6 @@ export default function CalendarioPage() {
           background: #2B7A78; color: #fff; border-radius: 50%;
           width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
         }
-        /* Remove a cor azul padrão do RBC — a cor vem do eventPropGetter (inline style) */
         .rbc-event, .rbc-event.rbc-selected { background-color: transparent; border: none; }
         .rbc-event:focus { outline: none; }
         .rbc-show-more { font-size: 11px; color: #2B7A78; font-weight: 600; }
