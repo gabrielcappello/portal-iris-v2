@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, dateFnsLocalizer, View, Event as RBCEvent } from "react-big-calendar";
 import {
@@ -48,6 +48,8 @@ type EventoAPI = {
 type CalendarioResponse = {
   sucesso: boolean;
   fuso_horario?: string;
+  hora_abertura?: string | null;
+  hora_fechamento?: string | null;
   dentistas?: DentistaInfo[];
   eventos?: EventoAPI[];
   erro?: string;
@@ -65,12 +67,19 @@ type CalEvent = RBCEvent & {
 // ── helpers ───────────────────────────────────────────────────────────────────
 function parseEventDate(raw: string, diaInteiro: boolean): Date {
   if (diaInteiro) {
-    // "2026-07-01" — interpretar como meia-noite local, sem conversão
     const [y, m, d] = raw.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
-  // ISO com offset — usar parseISO do date-fns (preserva o offset sem reconverter)
   return parseISO(raw);
+}
+
+// Converte "HH:MM" da API em objeto Date que o RBC usa para min/max
+function parseHoraRBC(hhmm: string | null | undefined, fallbackHour: number): Date {
+  if (hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    if (!isNaN(h) && !isNaN(m)) return new Date(1970, 0, 1, h, m, 0);
+  }
+  return new Date(1970, 0, 1, fallbackHour, 0, 0);
 }
 
 function getRangeForView(view: View, date: Date): { inicio: string; fim: string } {
@@ -89,7 +98,6 @@ function getRangeForView(view: View, date: Date): { inicio: string; fim: string 
       fim: fmt(endOfWeek(date, { weekStartsOn: 0 })),
     };
   }
-  // day
   return { inicio: fmt(date), fim: fmt(date) };
 }
 
@@ -107,21 +115,27 @@ const btnActive: React.CSSProperties = {
 export default function CalendarioPage() {
   const router = useRouter();
   const { t } = useLang();
-  void t; // painel usa i18n no layout; textos da aba são strings fixas (todas as chaves estão no translations.ts)
+  void t;
 
   const [clinica, setClinica] = useState<Clinica | null>(null);
   const [carregandoClinica, setCarregandoClinica] = useState(true);
 
-  // Estado do calendário
   const [view, setView] = useState<View>("month");
   const [date, setDate] = useState<Date>(new Date());
   const [eventos, setEventos] = useState<CalEvent[]>([]);
+
+  // dentistas: acumula via union — nunca encolhe (garante barra sempre completa)
   const [dentistas, setDentistas] = useState<DentistaInfo[]>([]);
+  const dentistasRef = useRef<DentistaInfo[]>([]);
+
   const [filtroTokens, setFiltroTokens] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
-  // popover
+  // faixa horária (Semana/Dia) — atualizada pela API, fallback 05:00/19:00
+  const [minTime, setMinTime] = useState<Date>(new Date(1970, 0, 1, 5, 0, 0));
+  const [maxTime, setMaxTime] = useState<Date>(new Date(1970, 0, 1, 19, 0, 0));
+
   const [eventoSel, setEventoSel] = useState<CalEvent | null>(null);
 
   // ── carregar clínica ────────────────────────────────────────────────────────
@@ -161,13 +175,26 @@ export default function CalendarioPage() {
         return;
       }
 
-      const dentistasData = data.dentistas ?? [];
-      setDentistas(dentistasData);
+      // ── faixa horária dinâmica da API ──
+      setMinTime(parseHoraRBC(data.hora_abertura, 5));
+      setMaxTime(parseHoraRBC(data.hora_fechamento, 19));
 
+      // ── dentistas: acumula (union) para nunca remover da barra ──
+      const dentistasData = data.dentistas ?? [];
+      if (dentistasData.length > 0) {
+        const map = new Map(dentistasRef.current.map(d => [d.token, d]));
+        dentistasData.forEach(d => map.set(d.token, d));
+        const merged = Array.from(map.values());
+        dentistasRef.current = merged;
+        setDentistas(merged);
+      }
+
+      // ── corMap: token → cor resolvida pela paleta ──
       const corMap = new Map<string, string>(
-        dentistasData.map(d => [d.token, corParaDentista(d.token, d.cor)])
+        dentistasRef.current.map(d => [d.token, corParaDentista(d.token, d.cor)])
       );
 
+      // ── eventos: cor do evento vem do corMap pelo dentista_token ──
       const evs: CalEvent[] = (data.eventos ?? []).map(ev => ({
         id: ev.event_id,
         title: ev.titulo,
@@ -175,7 +202,8 @@ export default function CalendarioPage() {
         end: parseEventDate(ev.fim, ev.dia_inteiro),
         allDay: ev.dia_inteiro,
         dentistaNome: ev.dentista_nome,
-        cor: corMap.get(ev.dentista_token) ?? "#94a3b8",
+        // fallback via paleta se token não estiver no map (nunca cinza)
+        cor: corParaDentista(ev.dentista_token, corMap.get(ev.dentista_token)),
         descricao: ev.descricao,
         diaInteiro: ev.dia_inteiro,
       }));
@@ -187,13 +215,12 @@ export default function CalendarioPage() {
     }
   }, [clinica?.id]);
 
-  // dispara busca quando clínica carrega ou view/date mudam
   useEffect(() => {
     if (clinica?.id) buscarEventos(view, date, filtroTokens);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinica?.id, view, date]);
 
-  // ── filtro por dentista ─────────────────────────────────────────────────────
+  // ── filtro ──────────────────────────────────────────────────────────────────
   function toggleFiltro(token: string) {
     setFiltroTokens(prev => {
       const next = new Set(prev);
@@ -202,7 +229,6 @@ export default function CalendarioPage() {
     });
   }
 
-  // rebusca quando filtro muda (após clinica carregada)
   useEffect(() => {
     if (clinica?.id) buscarEventos(view, date, filtroTokens);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,7 +247,7 @@ export default function CalendarioPage() {
   }
   function navHoje() { setDate(new Date()); }
 
-  // ── label do período ────────────────────────────────────────────────────────
+  // ── label período ───────────────────────────────────────────────────────────
   const labelPeriodo = useMemo(() => {
     if (view === "month") return format(date, "MMMM yyyy", { locale: ptBR });
     if (view === "week") {
@@ -232,18 +258,17 @@ export default function CalendarioPage() {
     return format(date, "EEEE, d 'de' MMMM yyyy", { locale: ptBR });
   }, [view, date]);
 
-  // ── estilo dos eventos (cor por dentista) ───────────────────────────────────
+  // ── eventPropGetter: cor inline (inline style > CSS class sempre) ──────────
   function eventPropGetter(event: object) {
     const ev = event as CalEvent;
     return {
       style: {
         backgroundColor: ev.cor,
-        borderColor: ev.cor,
+        borderLeft: `3px solid ${ev.cor}`,
         borderRadius: 5,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
         color: "#fff",
-        border: "none",
         padding: "1px 4px",
       },
     };
@@ -256,9 +281,8 @@ export default function CalendarioPage() {
 
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
-      {/* ── Cabeçalho de controles ── */}
+      {/* ── Controles ── */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        {/* Navegação */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <button onClick={navAnterior} style={{ ...btnBase, padding: "6px 10px" }}>
             <ChevronLeft size={14} />
@@ -269,12 +293,10 @@ export default function CalendarioPage() {
           </button>
         </div>
 
-        {/* Label do período */}
         <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#1e293b", textTransform: "capitalize", minWidth: 160 }}>
           {labelPeriodo}
         </div>
 
-        {/* Toggle de modo */}
         <div style={{ display: "flex", gap: 4 }}>
           {(["month", "week", "day"] as View[]).map(v => (
             <button key={v} onClick={() => setView(v)} style={view === v ? btnActive : btnBase}>
@@ -283,7 +305,6 @@ export default function CalendarioPage() {
           ))}
         </div>
 
-        {/* Refresh */}
         <button onClick={() => buscarEventos(view, date, filtroTokens)}
           disabled={carregando}
           style={{ ...btnBase, padding: "6px 10px", opacity: carregando ? 0.5 : 1 }}>
@@ -291,24 +312,33 @@ export default function CalendarioPage() {
         </button>
       </div>
 
-      {/* ── Legenda + filtro por dentista ── */}
+      {/* ── Barra de dentistas (sempre visível enquanto dentistas carregados) ── */}
       {dentistas.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
           {dentistas.map(d => {
             const cor = corParaDentista(d.token, d.cor);
+            // nenhum selecionado = todos ativos; ou apenas os selecionados
             const ativo = filtroTokens.size === 0 || filtroTokens.has(d.token);
             return (
-              <button key={d.token} onClick={() => toggleFiltro(d.token)}
+              <button
+                key={d.token}
+                onClick={() => toggleFiltro(d.token)}
                 style={{
                   display: "flex", alignItems: "center", gap: 5,
                   padding: "4px 10px", borderRadius: 20,
-                  border: `1px solid ${ativo ? cor : cor + "60"}`,
+                  // selecionado: fundo sólido; não selecionado: ~16% opacidade
+                  border: `1px solid ${cor}`,
                   background: ativo ? cor : cor + "28",
                   color: ativo ? "#fff" : cor,
                   fontSize: 11, fontWeight: 600, cursor: "pointer",
                   fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
                 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.7, display: "inline-block" }} />
+                <span style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: ativo ? "#fff" : cor,
+                  opacity: ativo ? 1 : 0.65,
+                  display: "inline-block",
+                }} />
                 {d.nome}
               </button>
             );
@@ -342,12 +372,12 @@ export default function CalendarioPage() {
           events={eventos}
           view={view}
           date={date}
-          onView={() => {/* controlado externamente */}}
-          onNavigate={() => {/* controlado externamente */}}
+          onView={() => {}}
+          onNavigate={() => {}}
           eventPropGetter={eventPropGetter}
           onSelectEvent={(ev) => setEventoSel(ev as CalEvent)}
-          min={new Date(1970, 0, 1, 7, 0, 0)}
-          max={new Date(1970, 0, 1, 19, 0, 0)}
+          min={minTime}
+          max={maxTime}
           style={{ height: view === "month" ? 620 : 700, padding: 8 }}
           messages={{
             today: "Hoje", previous: "Anterior", next: "Próximo",
@@ -357,9 +387,7 @@ export default function CalendarioPage() {
           }}
           culture="pt-BR"
           dayPropGetter={(d) => ({
-            style: isToday(d)
-              ? { background: "rgba(43,122,120,0.04)" }
-              : {},
+            style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {},
           })}
           toolbar={false}
         />
@@ -373,14 +401,10 @@ export default function CalendarioPage() {
           <div
             onClick={e => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
-
-            {/* barra de cor do dentista */}
             <div style={{ height: 4, borderRadius: 4, background: eventoSel.cor, marginBottom: 14 }} />
-
             <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 12, lineHeight: 1.4 }}>
               {eventoSel.title as string}
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <LinhaDetalhe label="Profissional" valor={eventoSel.dentistaNome} cor={eventoSel.cor} />
               {eventoSel.diaInteiro ? (
@@ -389,11 +413,8 @@ export default function CalendarioPage() {
                 <LinhaDetalhe label="Horário"
                   valor={`${format(eventoSel.start as Date, "dd/MM/yyyy HH:mm")} – ${format(eventoSel.end as Date, "HH:mm")}`} />
               )}
-              {eventoSel.descricao && (
-                <LinhaDetalhe label="Descrição" valor={eventoSel.descricao} />
-              )}
+              {eventoSel.descricao && <LinhaDetalhe label="Descrição" valor={eventoSel.descricao} />}
             </div>
-
             <button onClick={() => setEventoSel(null)}
               style={{ marginTop: 16, width: "100%", padding: "10px", background: "#f1f5f9", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#475569", fontFamily: "'Sora',sans-serif" }}>
               Fechar
@@ -402,7 +423,7 @@ export default function CalendarioPage() {
         </div>
       )}
 
-      {/* ── CSS global para o RBC ── */}
+      {/* ── CSS overrides para react-big-calendar ── */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .rbc-calendar { font-family: 'Sora', sans-serif !important; font-size: 12px; }
@@ -416,7 +437,8 @@ export default function CalendarioPage() {
           background: #2B7A78; color: #fff; border-radius: 50%;
           width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
         }
-        .rbc-event { cursor: pointer; }
+        /* Remove a cor azul padrão do RBC — a cor vem do eventPropGetter (inline style) */
+        .rbc-event, .rbc-event.rbc-selected { background-color: transparent; border: none; }
         .rbc-event:focus { outline: none; }
         .rbc-show-more { font-size: 11px; color: #2B7A78; font-weight: 600; }
         .rbc-time-slot { font-size: 10px; color: #94a3b8; }
