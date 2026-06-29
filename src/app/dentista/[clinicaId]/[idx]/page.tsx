@@ -175,7 +175,7 @@ export default function DentistaApp() {
     setInstalling(true);
     try{
       const result=await saved.prompt();
-      if((result as {outcome?:string})?.outcome==="accepted"){
+      if(result?.outcome==="accepted"){
         setTimeout(()=>{ setShowInstallModal(false); setInstalling(false); },2500);
       } else {
         setShowInstallModal(false);
@@ -949,7 +949,7 @@ export default function DentistaApp() {
 // Type for PWA install prompt
 declare global {
   interface BeforeInstallPromptEvent extends Event {
-    prompt(): Promise<void>;
+    prompt(): Promise<{ outcome: "accepted" | "dismissed" }>;
   }
 }
 
