@@ -483,7 +483,9 @@ export default function CalendarioPage() {
     return {
       style: {
         backgroundColor: hexToRgba(ev.cor, 0.12),
+        border: "none",
         borderLeft: `3px solid ${ev.cor}`,
+        boxShadow: "none",
         borderRadius: 7,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
@@ -1078,6 +1080,11 @@ export default function CalendarioPage() {
         .rbc-month-view, .rbc-time-view { border: none !important; }
         /* cabeçalho dos dias (Semana/Dia) fixo ao rolar, acima dos eventos */
         .rbc-time-header { position: sticky; top: 0; z-index: 6; background: #fff; }
+        /* não cortar o número grande do dia no cabeçalho */
+        .rbc-time-header .rbc-header { overflow: visible; padding: 4px 2px; border-bottom: none; }
+        .rbc-time-header-content { border-bottom: 1px solid #E8EDEB; }
+        /* remove a faixa vazia de "dia inteiro" (a agenda não usa eventos all-day no grid de tempo) */
+        .rbc-time-view .rbc-allday-cell { display: none; }
         .rbc-day-bg + .rbc-day-bg { border-left: 1px solid #f1f5f9 !important; }
         .rbc-month-row + .rbc-month-row { border-top: 1px solid #f1f5f9 !important; }
         .rbc-off-range-bg { background: #fafafa; }
@@ -1086,7 +1093,7 @@ export default function CalendarioPage() {
           background: #2B7A78; color: #fff; border-radius: 50%;
           width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
         }
-        .rbc-event, .rbc-event.rbc-selected { background-color: transparent; border: none; }
+        .rbc-event, .rbc-day-slot .rbc-event, .rbc-month-view .rbc-event, .rbc-event.rbc-selected { background-color: transparent; border: none; box-shadow: none; }
         .rbc-event-content { font-weight: 600; }
         .rbc-event-label { font-size: 10px; opacity: 0.7; font-weight: 600; }
         .rbc-event:focus { outline: none; }
