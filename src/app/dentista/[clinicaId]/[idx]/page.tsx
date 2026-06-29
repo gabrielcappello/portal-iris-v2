@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft } from "lucide-react";
 import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
+import CalendarioDentista from "@/components/CalendarioDentista";
 
 const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
 const N8N_REMARCACAO_URL = "/api/remarcacao-massa";
@@ -56,7 +57,7 @@ export default function DentistaApp() {
   const [expandedPac, setExpPac]  = useState<string|null>(null);
   const [fichaOpen, setFichaOpen] = useState<string|null>(null);
   const [updating, setUpdating]   = useState<string|null>(null);
-  const [activeTab, setActiveTab] = useState<"agenda"|"pacientes"|"remarcar">("agenda");
+  const [activeTab, setActiveTab] = useState<"calendario"|"agenda"|"pacientes"|"remarcar">("calendario");
   const [showSettings, setShowSettings]   = useState(false);
   const [editWhatsapp, setEditWhatsapp]   = useState("");
   const [editCalendar, setEditCalendar]   = useState("");
@@ -343,17 +344,25 @@ export default function DentistaApp() {
         </AnimatePresence>
 
         {/* Tabs */}
-        <div style={{display:"flex",gap:6,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
-          {([["agenda","📅 Agenda"],["pacientes","👥 Pacientes"],["remarcar","🔄 Remarcar"]] as const).map(([tab,label])=>(
-            <button key={tab} onClick={()=>setActiveTab(tab)}
-              style={{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Sora',sans-serif",transition:"all 0.15s",
-                background:activeTab===tab?"linear-gradient(135deg,#2B7A78,#3AAFA9)":"transparent",
-                color:activeTab===tab?"#fff":"#64748b"}}>
-              {label}
-            </button>
-          ))}
+        <div style={{display:"flex",gap:4,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
+          {([["calendario","Calendário"],["pacientes","Pacientes"],["remarcar","Remarcar"]] as const).map(([tab,label])=>{
+            const on=activeTab===tab;
+            return (
+              <button key={tab} onClick={()=>setActiveTab(tab)}
+                style={{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,fontFamily:"'Sora',sans-serif",transition:"all 0.15s",
+                  background:on?"rgba(43,122,120,0.10)":"transparent",
+                  color:on?"#2B7A78":"#94a3b8"}}>
+                {label}
+              </button>
+            );
+          })}
         </div>
 
+        {activeTab==="calendario"&&(
+          <CalendarioDentista clinicaId={String(params.clinicaId)} dentista={dentista} />
+        )}
+
+        {/* Agenda antiga (lista) — mantida no código, sem aba que a acesse */}
         {activeTab==="agenda"&&(
           <>
             {/* Filtros */}
