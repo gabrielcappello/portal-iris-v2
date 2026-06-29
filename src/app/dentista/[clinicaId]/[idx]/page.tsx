@@ -81,6 +81,7 @@ export default function DentistaApp() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   // Salva token no localStorage ao autenticar; recupera quando o app abre pelo ícone (sem ?t= na URL)
   useEffect(()=>{
@@ -169,9 +170,21 @@ export default function DentistaApp() {
 
   async function instalarApp(){
     if(!deferredPrompt) return;
-    deferredPrompt.prompt();
+    const saved=deferredPrompt;
     setDeferredPrompt(null);
-    setShowInstallModal(false);
+    setInstalling(true);
+    try{
+      const result=await saved.prompt();
+      if((result as {outcome?:string})?.outcome==="accepted"){
+        setTimeout(()=>{ setShowInstallModal(false); setInstalling(false); },2500);
+      } else {
+        setShowInstallModal(false);
+        setInstalling(false);
+      }
+    }catch{
+      setShowInstallModal(false);
+      setInstalling(false);
+    }
   }
 
   function dismissInstall(){
@@ -889,27 +902,42 @@ export default function DentistaApp() {
                 boxShadow:"0 8px 24px rgba(43,122,120,0.35)"}}>
                 <img src="/icon-192.png" alt="Iris" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               </div>
-              <div style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:8,textAlign:"center"}}>
-                Instale o app da Iris
-              </div>
-              <div style={{fontSize:13.5,color:"#64748b",marginBottom:28,textAlign:"center",lineHeight:1.6,maxWidth:300}}>
-                Acesse sua agenda direto da tela inicial, sem precisar abrir o navegador.
-              </div>
-              {!isIos&&(
-                <button onClick={instalarApp} disabled={!deferredPrompt}
-                  style={{width:"100%",padding:"14px",background:deferredPrompt?"linear-gradient(135deg,#2B7A78,#3AAFA9)":"#e2e8f0",color:deferredPrompt?"#fff":"#94a3b8",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:deferredPrompt?"pointer":"default",fontFamily:"'Sora',sans-serif",marginBottom:12,transition:"all 0.2s"}}>
-                  {deferredPrompt?"Instalar agora":"Preparando instalação…"}
-                </button>
+              {installing?(
+                <>
+                  <div style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:8,textAlign:"center"}}>
+                    Instalando…
+                  </div>
+                  <div style={{fontSize:13.5,color:"#64748b",marginBottom:20,textAlign:"center",lineHeight:1.6,maxWidth:300}}>
+                    Se o Android perguntar sobre adicionar o ícone, toque em <b>Sim</b> para colocar na tela inicial.
+                  </div>
+                  <div style={{width:36,height:36,borderRadius:"50%",border:"3px solid #e2e8f0",borderTopColor:"#2B7A78",animation:"spin 0.8s linear infinite"}}/>
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                </>
+              ):(
+                <>
+                  <div style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:8,textAlign:"center"}}>
+                    Instale o app da Iris
+                  </div>
+                  <div style={{fontSize:13.5,color:"#64748b",marginBottom:28,textAlign:"center",lineHeight:1.6,maxWidth:300}}>
+                    Acesse sua agenda direto da tela inicial, sem precisar abrir o navegador.
+                  </div>
+                  {!isIos&&(
+                    <button onClick={instalarApp} disabled={!deferredPrompt}
+                      style={{width:"100%",padding:"14px",background:deferredPrompt?"linear-gradient(135deg,#2B7A78,#3AAFA9)":"#e2e8f0",color:deferredPrompt?"#fff":"#94a3b8",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:deferredPrompt?"pointer":"default",fontFamily:"'Sora',sans-serif",marginBottom:12,transition:"all 0.2s"}}>
+                      {deferredPrompt?"Instalar agora":"Preparando instalação…"}
+                    </button>
+                  )}
+                  {isIos&&(
+                    <div style={{width:"100%",padding:"14px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,marginBottom:12,fontSize:13.5,color:"#475569",lineHeight:1.6,textAlign:"center"}}>
+                      Toque em <b>Compartilhar</b> ⬆️ e depois em <b>&quot;Adicionar à Tela de Início&quot;</b>.
+                    </div>
+                  )}
+                  <button onClick={dismissInstall}
+                    style={{background:"transparent",border:"none",cursor:"pointer",fontSize:14,color:"#94a3b8",fontFamily:"'Sora',sans-serif",padding:"8px 16px",marginTop:4}}>
+                    Agora não
+                  </button>
+                </>
               )}
-              {isIos&&(
-                <div style={{width:"100%",padding:"14px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,marginBottom:12,fontSize:13.5,color:"#475569",lineHeight:1.6,textAlign:"center"}}>
-                  Toque em <b>Compartilhar</b> ⬆️ e depois em <b>&quot;Adicionar à Tela de Início&quot;</b>.
-                </div>
-              )}
-              <button onClick={dismissInstall}
-                style={{background:"transparent",border:"none",cursor:"pointer",fontSize:14,color:"#94a3b8",fontFamily:"'Sora',sans-serif",padding:"8px 16px",marginTop:4}}>
-                Agora não
-              </button>
             </motion.div>
           </motion.div>
         )}
