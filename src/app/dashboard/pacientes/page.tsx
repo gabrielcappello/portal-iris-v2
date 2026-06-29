@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, MessageCircle } from "lucide-react";
 import { sb, calcularIdade, type Paciente, type Agendamento, type AnamnesePaciente } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
+import ChatManualModal from "@/components/ChatManualModal";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -72,10 +73,16 @@ export default function PacientesPage() {
   const [search, setSearch]             = useState("");
   const [expanded, setExpanded]         = useState<string|null>(null);
   const [loading, setLoading]           = useState(true);
+  const [chatPaciente, setChatPaciente] = useState<Paciente|null>(null);
+  const [clinicaId, setClinicaId]       = useState("");
+  const [operadorNome, setOperadorNome] = useState("");
 
   useEffect(() => {
-    const id = localStorage.getItem("clinica_id");
-    if (!id) return;
+    const id   = localStorage.getItem("clinica_id") || "";
+    const nome = localStorage.getItem("clinica_nome") || "Clínica";
+    setClinicaId(id);
+    setOperadorNome(nome);
+    if (!id) { setLoading(false); return; }
     Promise.all([
       sb.query<Paciente>("pacientes",     `?clinica_id=eq.${id}`),
       sb.query<Agendamento>("agendamentos",`?clinica_id=eq.${id}&order=data.desc,horario.desc`),
@@ -176,12 +183,20 @@ export default function PacientesPage() {
                     </td>
                     <td style={{padding:"12px 12px",fontSize:12,color:"#64748b",maxWidth:140}}>{ultimaProc||"—"}</td>
                     <td style={{padding:"12px 12px"}}>
-                      <button onClick={()=>setExpanded(isOpen?null:p.id)}
-                        style={{border:"none",background:"transparent",cursor:"pointer",color:"#94a3b8",padding:4,display:"flex",alignItems:"center"}}>
-                        <motion.div animate={{rotate:isOpen?180:0}} transition={{duration:0.2}}>
-                          <ChevronDown size={16}/>
-                        </motion.div>
-                      </button>
+                      <div style={{display:"flex",alignItems:"center",gap:4}}>
+                        {p.telefone&&(
+                          <button onClick={()=>setChatPaciente(p)} title="Chat manual WhatsApp"
+                            style={{border:"none",background:"rgba(43,122,120,0.08)",cursor:"pointer",color:"#2B7A78",padding:"4px 6px",borderRadius:7,display:"flex",alignItems:"center"}}>
+                            <MessageCircle size={14}/>
+                          </button>
+                        )}
+                        <button onClick={()=>setExpanded(isOpen?null:p.id)}
+                          style={{border:"none",background:"transparent",cursor:"pointer",color:"#94a3b8",padding:4,display:"flex",alignItems:"center"}}>
+                          <motion.div animate={{rotate:isOpen?180:0}} transition={{duration:0.2}}>
+                            <ChevronDown size={16}/>
+                          </motion.div>
+                        </button>
+                      </div>
                     </td>
                   </motion.tr>
 
@@ -256,6 +271,15 @@ export default function PacientesPage() {
           </tbody>
         </table>
       </div>
+
+      {chatPaciente && (
+        <ChatManualModal
+          paciente={chatPaciente}
+          clinicaId={clinicaId}
+          operadorNome={operadorNome}
+          onClose={() => setChatPaciente(null)}
+        />
+      )}
     </div>
   );
 }
