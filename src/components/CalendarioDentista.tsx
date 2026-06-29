@@ -220,8 +220,8 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "3px 0", cursor: "pointer" }}>
           <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#93A29D" }}>{dayAbrev}</span>
           <span style={hoje
-            ? { display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: "50%", background: "#2B7A78", color: "#fff", fontSize: 16, fontWeight: 700 }
-            : { fontSize: 17, fontWeight: 700, color: "#0E1F1C", lineHeight: 1.2 }}>{format(d, "d")}</span>
+            ? { display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: "#2B7A78", color: "#fff", fontSize: 13, fontWeight: 700 }
+            : { fontSize: 14, fontWeight: 700, color: "#0E1F1C", lineHeight: 1.2 }}>{format(d, "d")}</span>
           {n > 0 && <span style={{ fontSize: 10, color: "#2B7A78", fontWeight: 600 }}>{n} consulta{n !== 1 ? "s" : ""}</span>}
         </div>
       );
@@ -358,6 +358,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
           culture="pt-BR"
           dayPropGetter={(d) => ({ style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {} })}
           toolbar={false}
+          views={{ month: true, week: Week, day: true }}
         />
       </div>
 
