@@ -512,13 +512,25 @@ export default function CalendarioPage() {
       );
     },
     header: ({ date: d, label }: { date: Date; label: string }) => {
-      if (view === "month") return <span>{label}</span>;
+      // Mês: só o nome do dia da semana (eyebrow)
+      if (view === "month") {
+        return <span style={{ textTransform: "uppercase", fontSize: 10.5, letterSpacing: "0.06em", color: "#93A29D", fontWeight: 600 }}>{label}</span>;
+      }
+      // Semana/Dia: dia da semana em cima + número grande + círculo no hoje
       const dStr = format(d, "yyyy-MM-dd");
       const n = agendamentos.filter(a => a.data === dStr && STATUS_OCUPA.includes(a.status)).length;
+      const hoje = isToday(d);
       return (
         <div onClick={() => { setDate(d); setView("day"); }} title="Ver dia"
-          style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, cursor: "pointer" }}>
-          <span>{label}</span>
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "3px 0", cursor: "pointer" }}>
+          <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#93A29D" }}>
+            {format(d, "EEE", { locale: ptBR })}
+          </span>
+          <span style={hoje
+            ? { display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: "50%", background: "#2B7A78", color: "#fff", fontSize: 16, fontWeight: 700 }
+            : { fontSize: 17, fontWeight: 700, color: "#0E1F1C", lineHeight: 1.2 }}>
+            {format(d, "d")}
+          </span>
           {n > 0 && <span style={{ fontSize: 10, color: "#2B7A78", fontWeight: 600 }}>{t("calendar.appointments_count", { n })}</span>}
         </div>
       );
@@ -717,17 +729,18 @@ export default function CalendarioPage() {
                   onDoubleClick={() => abrirColorPicker(d.token, cor)}
                   title="Clique para filtrar · duplo clique para editar a cor"
                   style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "4px 12px", borderRadius: 20,
-                    border: `1px solid ${cor}`,
-                    background: ativo ? cor : cor + "05", // não selecionado: ~2% da cor (bem suave)
-                    color: ativo ? "#fff" : cor,
-                    fontSize: 11, fontWeight: 600, cursor: "pointer",
-                    fontFamily: "'Sora',sans-serif", transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: 7,
+                    padding: "5px 12px 5px 10px", borderRadius: 999,
+                    border: "1px solid #E8EDEB",
+                    background: ativo ? "#fff" : "#F5F8F8",
+                    color: "#0E1F1C",
+                    fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "'Sora',sans-serif", transition: "all 0.12s",
+                    opacity: ativo ? 1 : 0.25, // desmarcado: bem esmaecido (~25%)
                     outline: pickerAberto ? `2px solid ${cor}` : "none", outlineOffset: 1,
                     userSelect: "none",
                   }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: ativo ? "#fff" : cor, opacity: ativo ? 1 : 0.65, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: cor, display: "inline-block", flexShrink: 0 }} />
                   {d.nome}
                 </button>
 
