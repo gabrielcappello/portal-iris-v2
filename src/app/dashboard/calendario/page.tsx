@@ -1091,9 +1091,16 @@ export default function CalendarioPage() {
         .rbc-event-label { font-size: 10px; opacity: 0.7; font-weight: 600; }
         .rbc-event:focus { outline: none; }
         .rbc-show-more { font-size: 11px; color: #2B7A78; font-weight: 600; }
-        .rbc-time-slot { font-size: 10px; color: #94a3b8; }
-        .rbc-current-time-indicator { background: #2B7A78; }
+        .rbc-time-slot { font-size: 10px; color: #93A29D; border-top: none; }
+        .rbc-current-time-indicator { background: #2B7A78; height: 2px; }
         .rbc-allday-cell { font-size: 11px; }
+        /* grade mais clara (respiro) — linhas de hora e divisores suaves */
+        .rbc-time-content { border-top: 1px solid #E8EDEB; }
+        .rbc-timeslot-group { border-bottom: 1px solid #F1F4F3; min-height: 48px; }
+        .rbc-time-content > * + * { border-left: 1px solid #F1F4F3; }
+        .rbc-time-header-content { border-left: 1px solid #F1F4F3; }
+        .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
+        .rbc-time-gutter .rbc-timeslot-group { border-bottom: none; }
       `}</style>
     </div>
   );
