@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft, X, Download } from "lucide-react";
+import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft, X } from "lucide-react";
 import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
 import CalendarioDentista from "@/components/CalendarioDentista";
@@ -41,9 +41,12 @@ const STATUS_STYLE: Record<string,{bg:string;color:string;label:string}> = {
 };
 
 export default function DentistaApp() {
-  const params      = useParams<{clinicaId:string;idx:string}>();
-  const searchParams= useSearchParams();
-  const token       = searchParams.get("t")||"";
+  const params        = useParams<{clinicaId:string;idx:string}>();
+  const searchParams  = useSearchParams();
+  const tokenFromUrl  = searchParams.get("t") || "";
+  const tokenKey      = `iris-dentista-token-${params.clinicaId || ""}-${params.idx || ""}`;
+  const [token, setToken]           = useState(tokenFromUrl);
+  const [tokenReady, setTokenReady] = useState(!!tokenFromUrl);
 
   const [dentista, setDentista]   = useState<Dentista|null>(null);
   const [clinica,  setClinica]    = useState<Clinica|null>(null);
@@ -76,8 +79,24 @@ export default function DentistaApp() {
   const [resultadoRemarcar, setResultadoRemarcar] = useState<{ok:boolean;total_pacientes?:number;mensagem?:string;idempotente?:boolean;erro?:string}|null>(null);
   const [erroValidacaoRemarcar, setErroValidacaoRemarcar] = useState("");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstall, setShowInstall] = useState(false);
-  const [iosHint, setIosHint] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+
+  // Salva token no localStorage ao autenticar; recupera quando o app abre pelo ícone (sem ?t= na URL)
+  useEffect(()=>{
+    if(!params.clinicaId) return;
+    if(tokenFromUrl){
+      try{ localStorage.setItem(tokenKey, tokenFromUrl); }catch{}
+      setTokenReady(true);
+    } else {
+      try{
+        const stored=localStorage.getItem(tokenKey);
+        if(stored) setToken(stored);
+      }catch{}
+      setTokenReady(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   // Sync edit states when dentista loads
   useEffect(()=>{
@@ -93,13 +112,18 @@ export default function DentistaApp() {
   useEffect(()=>{
     if(typeof window==="undefined") return;
 
-    // já instalado (aberto pelo ícone, em standalone)?
+    // ?reset-pwa=1 → limpa o flag de dismiss (útil em testes)
+    if(searchParams.get("reset-pwa")==="1"){
+      try{ localStorage.removeItem("iris-pwa-dismiss"); }catch{}
+    }
+
     const nav = window.navigator as Navigator & { standalone?: boolean };
     const standalone = window.matchMedia?.("(display-mode: standalone)").matches || nav.standalone === true;
 
-    // aponta o <link rel="manifest"> para o manifest deste dentista
+    // Aponta <link rel="manifest"> para o manifest deste dentista
     try{
-      const href=`/api/manifest-dentista?clinica=${encodeURIComponent(String(params.clinicaId))}&idx=${encodeURIComponent(String(params.idx))}&t=${encodeURIComponent(token)}`;
+      const nomeParam=dentista?.nome?`&nome=${encodeURIComponent(dentista.nome)}`:"";
+      const href=`/api/manifest-dentista?clinica=${encodeURIComponent(String(params.clinicaId))}&idx=${encodeURIComponent(String(params.idx))}&t=${encodeURIComponent(token)}${nomeParam}`;
       let link=document.querySelector('link[rel="manifest"]') as HTMLLinkElement|null;
       if(!link){ link=document.createElement("link"); link.rel="manifest"; document.head.appendChild(link); }
       link.href=href;
@@ -108,31 +132,55 @@ export default function DentistaApp() {
       }
     }catch{}
 
-    // Service worker — exigido pelo Chrome para disparar o convite de instalação
     if("serviceWorker" in navigator){ navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
 
-    if(standalone) return; // já instalado → não oferece
+    if(standalone) return;
 
-    // Android/Chrome: guarda o evento e mostra o botão "Instalar"
-    const handler=(e:Event)=>{ e.preventDefault(); setDeferredPrompt(e as BeforeInstallPromptEvent); setShowInstall(true); };
-    window.addEventListener("beforeinstallprompt",handler as EventListener);
+    // Respeita dismiss por 14 dias
+    try{
+      const dismissed=localStorage.getItem("iris-pwa-dismiss");
+      if(dismissed && Date.now()-parseInt(dismissed) < 14*24*60*60*1000) return;
+    }catch{}
 
-    // iOS Safari não dispara beforeinstallprompt → mostra dica de "Adicionar à Tela de Início"
     const ua=window.navigator.userAgent||"";
-    if(/iphone|ipad|ipod/i.test(ua) && !/crios|fxios|edgios/i.test(ua)) setIosHint(true);
+    const isIosSafari=/iphone|ipad|ipod/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+    const isMobile=/android|iphone|ipad|ipod/i.test(ua);
 
-    return()=>window.removeEventListener("beforeinstallprompt",handler as EventListener);
+    if(isIosSafari) setIsIos(true);
+
+    // Em mobile mostra o modal após 1.5s independente do evento
+    // (no Android o botão "Instalar" só habilita quando beforeinstallprompt dispara)
+    let t: ReturnType<typeof setTimeout>|null=null;
+    if(isMobile){ t=setTimeout(()=>setShowInstallModal(true),1500); }
+
+    // Android/Chrome: captura o evento para habilitar o botão de instalar
+    // Desktop: mostra o modal quando o evento dispara (comportamento anterior)
+    const handler=(e:Event)=>{
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      if(!isMobile) setShowInstallModal(true);
+    };
+    window.addEventListener("beforeinstallprompt",handler as EventListener);
+    return ()=>{
+      if(t) clearTimeout(t);
+      window.removeEventListener("beforeinstallprompt",handler as EventListener);
+    };
   },[params.clinicaId,params.idx,token]);
 
   async function instalarApp(){
     if(!deferredPrompt) return;
     deferredPrompt.prompt();
     setDeferredPrompt(null);
-    setShowInstall(false);
+    setShowInstallModal(false);
+  }
+
+  function dismissInstall(){
+    try{ localStorage.setItem("iris-pwa-dismiss",Date.now().toString()); }catch{}
+    setShowInstallModal(false);
   }
 
   useEffect(()=>{
-    if(!params.clinicaId||!params.idx) return;
+    if(!params.clinicaId||!params.idx||!tokenReady) return;
     const idx=parseInt(params.idx);
     sb.query<Clinica>("clinicas",`?id=eq.${params.clinicaId}&select=*`)
       .then(rows=>{
@@ -159,7 +207,7 @@ export default function DentistaApp() {
       .catch(()=>{})
       .finally(()=>setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[params.clinicaId,params.idx,token]);
+  },[params.clinicaId,params.idx,token,tokenReady]);
 
   async function saveSettings(){
     if(!clinica||!dentista) return;
@@ -375,23 +423,6 @@ export default function DentistaApp() {
           )}
         </AnimatePresence>
 
-        {/* Instalar app (PWA) */}
-        {(showInstall||iosHint)&&(
-          <div style={{display:"flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid rgba(43,122,120,0.3)",borderRadius:12,padding:"10px 12px"}}>
-            <div style={{width:34,height:34,borderRadius:9,background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <Download size={17} color="#fff"/>
-            </div>
-            <div style={{flex:1,minWidth:0,fontSize:12.5,color:"#475569",lineHeight:1.35}}>
-              {showInstall
-                ? "Instale o app na tela inicial para abrir mais rápido."
-                : <>Para instalar: toque em <b>Compartilhar</b> e depois <b>“Adicionar à Tela de Início”</b>.</>}
-            </div>
-            {showInstall&&(
-              <button onClick={instalarApp} style={{flexShrink:0,padding:"8px 14px",border:"none",borderRadius:9,background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>Instalar</button>
-            )}
-            <button onClick={()=>{setShowInstall(false);setIosHint(false);}} style={{flexShrink:0,background:"transparent",border:"none",cursor:"pointer",color:"#cbd5e1",padding:4,display:"flex"}}><X size={16}/></button>
-          </div>
-        )}
 
         {/* Tabs */}
         <div style={{display:"flex",gap:4,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
@@ -841,6 +872,48 @@ export default function DentistaApp() {
           </div>
         )}
       </div>
+
+      {/* Modal de instalação PWA */}
+      <AnimatePresence>
+        {showInstallModal&&(
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            style={{position:"fixed",inset:0,zIndex:100,background:"rgba(15,23,42,0.55)",display:"flex",alignItems:"flex-end"}}
+            onClick={()=>setShowInstallModal(false)}>
+            <motion.div initial={{y:"100%"}} animate={{y:0}} exit={{y:"100%"}}
+              transition={{type:"spring",damping:28,stiffness:300}}
+              onClick={e=>e.stopPropagation()}
+              style={{width:"100%",background:"#fff",borderRadius:"20px 20px 0 0",
+                padding:`28px 24px calc(28px + env(safe-area-inset-bottom))`,
+                fontFamily:"'Sora',sans-serif",display:"flex",flexDirection:"column",alignItems:"center"}}>
+              <div style={{width:72,height:72,borderRadius:18,overflow:"hidden",marginBottom:16,
+                boxShadow:"0 8px 24px rgba(43,122,120,0.35)"}}>
+                <img src="/icon-192.png" alt="Iris" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              </div>
+              <div style={{fontSize:20,fontWeight:700,color:"#1e293b",marginBottom:8,textAlign:"center"}}>
+                Instale o app da Iris
+              </div>
+              <div style={{fontSize:13.5,color:"#64748b",marginBottom:28,textAlign:"center",lineHeight:1.6,maxWidth:300}}>
+                Acesse sua agenda direto da tela inicial, sem precisar abrir o navegador.
+              </div>
+              {!isIos&&(
+                <button onClick={instalarApp} disabled={!deferredPrompt}
+                  style={{width:"100%",padding:"14px",background:deferredPrompt?"linear-gradient(135deg,#2B7A78,#3AAFA9)":"#e2e8f0",color:deferredPrompt?"#fff":"#94a3b8",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:deferredPrompt?"pointer":"default",fontFamily:"'Sora',sans-serif",marginBottom:12,transition:"all 0.2s"}}>
+                  {deferredPrompt?"Instalar agora":"Preparando instalação…"}
+                </button>
+              )}
+              {isIos&&(
+                <div style={{width:"100%",padding:"14px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,marginBottom:12,fontSize:13.5,color:"#475569",lineHeight:1.6,textAlign:"center"}}>
+                  Toque em <b>Compartilhar</b> ⬆️ e depois em <b>&quot;Adicionar à Tela de Início&quot;</b>.
+                </div>
+              )}
+              <button onClick={dismissInstall}
+                style={{background:"transparent",border:"none",cursor:"pointer",fontSize:14,color:"#94a3b8",fontFamily:"'Sora',sans-serif",padding:"8px 16px",marginTop:4}}>
+                Agora não
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
