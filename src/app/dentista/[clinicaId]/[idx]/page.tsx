@@ -108,6 +108,9 @@ export default function DentistaApp() {
       }
     }catch{}
 
+    // Service worker — exigido pelo Chrome para disparar o convite de instalação
+    if("serviceWorker" in navigator){ navigator.serviceWorker.register("/sw.js").catch(()=>{}); }
+
     if(standalone) return; // já instalado → não oferece
 
     // Android/Chrome: guarda o evento e mostra o botão "Instalar"
