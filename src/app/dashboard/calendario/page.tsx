@@ -159,17 +159,6 @@ function slotsDoDentista(d: Dentista): number {
   return Math.floor(span / 45);
 }
 
-// hex (#RRGGBB) -> rgba com alpha (fundo claro/tint dos eventos)
-function hexToRgba(hex: string, alpha: number): string {
-  const h = (hex || "").replace("#", "").trim();
-  if (h.length !== 6) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  if ([r, g, b].some(n => isNaN(n))) return hex;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 // ── Vista Semana: oculta domingo (sempre) e sábado (se nenhum dentista trabalha) ──
 // O render interno do RBC chama Week.range diretamente, então embrulhamos a função.
 let MOSTRAR_SABADO = false; // atualizado pelo componente a cada render
@@ -482,15 +471,14 @@ export default function CalendarioPage() {
     else if (ev.status === "faltou") { opacity = 0.5; filter = "grayscale(55%)"; }
     return {
       style: {
-        backgroundColor: hexToRgba(ev.cor, 0.12),
+        backgroundColor: ev.cor,
         border: "none",
-        borderLeft: `3px solid ${ev.cor}`,
         boxShadow: "none",
-        borderRadius: 7,
+        borderRadius: 5,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
-        color: ev.cor,
-        padding: "2px 6px",
+        color: "#fff",
+        padding: "3px 7px",
         opacity,
         filter,
       },
@@ -843,9 +831,9 @@ export default function CalendarioPage() {
           />
         </div>
 
-        {/* rail direita: mini calendário + legenda (só Semana e Dia) */}
+        {/* rail: mini calendário (à esquerda, só Semana e Dia) */}
         {view !== "month" && (
-        <div style={{ flex: "0 0 230px", maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ flex: "0 0 230px", maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12, order: -1 }}>
 
           {/* mini calendário */}
           <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
@@ -881,24 +869,6 @@ export default function CalendarioPage() {
               })}
             </div>
           </aside>
-
-          {/* legenda de profissionais */}
-          {dentistas.length > 0 && (
-            <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 16, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#94a3b8", marginBottom: 11 }}>
-                {t("config.card_dentists")}
-              </div>
-              {dentistas.map(d => {
-                const cor = corParaDentista(d.token, d.cor);
-                return (
-                  <div key={d.token} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, color: "#334155", marginBottom: 9 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 3, background: cor, flexShrink: 0 }} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nome}</span>
-                  </div>
-                );
-              })}
-            </aside>
-          )}
 
         </div>
         )}
@@ -1098,12 +1068,17 @@ export default function CalendarioPage() {
         .rbc-event-label { font-size: 10px; opacity: 0.7; font-weight: 600; }
         .rbc-event:focus { outline: none; }
         .rbc-show-more { font-size: 11px; color: #2B7A78; font-weight: 600; }
-        .rbc-time-slot { font-size: 10px; color: #93A29D; border-top: none; }
-        .rbc-current-time-indicator { background: #2B7A78; height: 2px; }
+        .rbc-time-slot { font-size: 10px; border-top: none; }
+        /* rótulos de hora mais legíveis (07:00, 08:00…) */
+        .rbc-time-gutter .rbc-time-slot, .rbc-time-gutter .rbc-label { color: #64748b; font-weight: 500; }
+        /* linha vermelha da hora atual + bolinha na ponta */
+        .rbc-current-time-indicator { background: #EA4335; height: 2px; position: relative; }
+        .rbc-current-time-indicator::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #EA4335; }
         .rbc-allday-cell { font-size: 11px; }
-        /* grade mais clara (respiro) — linhas de hora e divisores suaves */
+        /* linhas de hora (cheia) e meia-hora (mais clara) */
         .rbc-time-content { border-top: 1px solid #E8EDEB; }
-        .rbc-timeslot-group { border-bottom: 1px solid #F1F4F3; min-height: 48px; }
+        .rbc-timeslot-group { border-bottom: 1px solid #e2e8f0; min-height: 48px; }
+        .rbc-day-slot .rbc-time-slot + .rbc-time-slot { border-top: 1px solid rgba(226,232,240,0.4); }
         .rbc-time-content > * + * { border-left: 1px solid #F1F4F3; }
         .rbc-time-header-content { border-left: 1px solid #F1F4F3; }
         .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
