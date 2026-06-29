@@ -9,7 +9,7 @@ import {
   isToday, isSameDay, isSameMonth, parseISO, eachDayOfInterval,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, X, Ban } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
 import Week from "react-big-calendar/lib/Week";
@@ -771,18 +771,6 @@ export default function CalendarioPage() {
 
       </div>{/* ── fim controles + pílulas ── */}
 
-      {/* ── Ocupação do período (com barra de progresso) ── */}
-      {ocupacao && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-          <div style={{ width: 120, height: 5, borderRadius: 99, background: "#e2e8f0", overflow: "hidden", flexShrink: 0 }}>
-            <div style={{ height: "100%", width: `${Math.min(ocupacao.pct, 100)}%`, background: "#2B7A78", borderRadius: 99, transition: "width 0.2s" }} />
-          </div>
-          <span style={{ fontSize: 12.5, color: "#64748b" }}>
-            {t("calendar.occupancy", { occ: ocupacao.ocupados, total: ocupacao.total, pct: ocupacao.pct })}
-          </span>
-        </div>
-      )}
-
       {/* ── Erro ── */}
       {erro && (
         <div style={{ padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626", marginBottom: 12 }}>{erro}</div>
@@ -818,7 +806,7 @@ export default function CalendarioPage() {
             onDrillDown={(d) => { setDate(d); setView("day"); }}
             min={minTime}
             max={maxTime}
-            style={{ height: view === "month" ? 620 : 700, padding: 8 }}
+            style={{ height: "calc(100vh - 200px)", minHeight: 520, padding: 8 }}
             messages={{
               today: "Hoje", previous: "Anterior", next: "Próximo",
               month: "Mês", week: "Semana", day: "Dia",
@@ -869,6 +857,24 @@ export default function CalendarioPage() {
               })}
             </div>
           </aside>
+
+          {/* ocupação (movida para a coluna esquerda) */}
+          {ocupacao && (
+            <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+              <div style={{ width: "100%", height: 5, borderRadius: 99, background: "#e2e8f0", overflow: "hidden", marginBottom: 8 }}>
+                <div style={{ height: "100%", width: `${Math.min(ocupacao.pct, 100)}%`, background: "#2B7A78", borderRadius: 99, transition: "width 0.2s" }} />
+              </div>
+              <div style={{ fontSize: 12, color: "#64748b" }}>
+                {t("calendar.occupancy", { occ: ocupacao.ocupados, total: ocupacao.total, pct: ocupacao.pct })}
+              </div>
+            </aside>
+          )}
+
+          {/* bloquear horários (placeholder — sem função ainda) */}
+          <button type="button" title={t("calendar.block_slots")}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "'Sora',sans-serif", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+            <Ban size={15} /> {t("calendar.block_slots")}
+          </button>
 
         </div>
         )}
