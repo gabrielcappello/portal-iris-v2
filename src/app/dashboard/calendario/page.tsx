@@ -724,7 +724,7 @@ export default function CalendarioPage() {
                     border: "1px solid #E8EDEB",
                     background: ativo ? "#fff" : "#F5F8F8",
                     color: "#0E1F1C",
-                    fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                    fontSize: 12.5, fontWeight: 500, cursor: "pointer",
                     fontFamily: "'Sora',sans-serif", transition: "all 0.12s",
                     opacity: ativo ? 1 : 0.25, // desmarcado: bem esmaecido (~25%)
                     outline: pickerAberto ? `2px solid ${cor}` : "none", outlineOffset: 1,
