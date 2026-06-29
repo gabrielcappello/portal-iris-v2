@@ -823,8 +823,8 @@ export default function CalendarioPage() {
         {view !== "month" && (
         <div style={{ flex: "0 0 230px", maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12, order: -1 }}>
 
-          {/* mini calendário */}
-          <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+          {/* mini calendário (por último — embaixo) */}
+          <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)", order: 2 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{format(miniMonth, "MMMM yyyy", { locale: ptBR })}</span>
               <div style={{ display: "flex", gap: 4 }}>
@@ -858,9 +858,9 @@ export default function CalendarioPage() {
             </div>
           </aside>
 
-          {/* ocupação (movida para a coluna esquerda) */}
+          {/* ocupação — primeiro (em cima) */}
           {ocupacao && (
-            <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+            <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)", order: 0 }}>
               <div style={{ width: "100%", height: 5, borderRadius: 99, background: "#e2e8f0", overflow: "hidden", marginBottom: 8 }}>
                 <div style={{ height: "100%", width: `${Math.min(ocupacao.pct, 100)}%`, background: "#2B7A78", borderRadius: 99, transition: "width 0.2s" }} />
               </div>
@@ -870,9 +870,9 @@ export default function CalendarioPage() {
             </aside>
           )}
 
-          {/* bloquear horários (placeholder — sem função ainda) */}
+          {/* bloquear horários (placeholder — sem função ainda) — segundo */}
           <button type="button" title={t("calendar.block_slots")}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "'Sora',sans-serif", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+            style={{ order: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "'Sora',sans-serif", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
             <Ban size={15} /> {t("calendar.block_slots")}
           </button>
 
