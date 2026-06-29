@@ -210,14 +210,15 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
         </div>
       );
     },
-    header: ({ date: d, label }: { date: Date; label: string }) => {
-      if (view === "month") return <span style={{ textTransform: "uppercase", fontSize: 10.5, letterSpacing: "0.06em", color: "#93A29D", fontWeight: 600 }}>{label}</span>;
+    header: ({ date: d }: { date: Date; label: string }) => {
+      const dayAbrev = format(d, "EEE", { locale: ptBR }).substring(0, 3);
+      if (view === "month") return <span style={{ textTransform: "uppercase", fontSize: 10.5, letterSpacing: "0.06em", color: "#93A29D", fontWeight: 600 }}>{dayAbrev}</span>;
       const n = eventos.filter(e => e.start instanceof Date && isSameDay(e.start as Date, d) && e.status && STATUS_OCUPA.includes(e.status)).length;
       const hoje = isToday(d);
       return (
         <div onClick={() => { setDate(d); setView("day"); }} title="Ver dia"
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "3px 0", cursor: "pointer" }}>
-          <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#93A29D" }}>{format(d, "EEE", { locale: ptBR })}</span>
+          <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#93A29D" }}>{dayAbrev}</span>
           <span style={hoje
             ? { display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: "50%", background: "#2B7A78", color: "#fff", fontSize: 16, fontWeight: 700 }
             : { fontSize: 17, fontWeight: 700, color: "#0E1F1C", lineHeight: 1.2 }}>{format(d, "d")}</span>
@@ -354,7 +355,6 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
           max={maxTime}
           style={{ height: "calc(100vh - 210px)", minHeight: 440, padding: "4px 2px" }}
           messages={{ today: "Hoje", previous: "Anterior", next: "Próximo", month: "Mês", week: "Semana", day: "Dia", noEventsInRange: "Nenhum evento.", showMore: (total: number) => `+${total} mais` }}
-          formats={{ dayFormat: "EEE d", weekdayFormat: "EEE" }}
           culture="pt-BR"
           dayPropGetter={(d) => ({ style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {} })}
           toolbar={false}
