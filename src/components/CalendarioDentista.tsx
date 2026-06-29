@@ -564,6 +564,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
         .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
         .rbc-time-gutter .rbc-timeslot-group { border-bottom: none; }
         .rbc-time-gutter { min-width: 40px !important; width: 40px !important; }
+        .rbc-time-header-gutter { min-width: 40px !important; width: 40px !important; }
         .rbc-time-gutter .rbc-label { font-size: 9px !important; padding: 0 4px !important; }
       `}</style>
     </div>
