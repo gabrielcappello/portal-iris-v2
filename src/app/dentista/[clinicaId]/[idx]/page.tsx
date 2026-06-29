@@ -438,12 +438,12 @@ export default function DentistaApp() {
 
 
         {/* Tabs */}
-        <div style={{display:"flex",gap:4,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
+        <div style={{display:"flex",gap:3,background:"#fff",borderRadius:10,padding:3,border:"1px solid #e2e8f0"}}>
           {([["calendario","Calendário"],["pacientes","Pacientes"],["remarcar","Remarcar"]] as const).map(([tab,label])=>{
             const on=activeTab===tab;
             return (
               <button key={tab} onClick={()=>setActiveTab(tab)}
-                style={{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,fontFamily:"'Sora',sans-serif",transition:"all 0.15s",
+                style={{flex:1,padding:"6px 4px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11.5,fontWeight:500,fontFamily:"'Sora',sans-serif",transition:"all 0.15s",
                   background:on?"rgba(43,122,120,0.10)":"transparent",
                   color:on?"#2B7A78":"#94a3b8"}}>
                 {label}

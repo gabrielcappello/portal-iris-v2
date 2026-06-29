@@ -302,108 +302,102 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
     <div style={{ fontFamily: "'Sora',sans-serif" }}>
 
       {/* ── Controles ── */}
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <button onClick={navAnterior} style={{ ...btnBase, padding: "6px 10px" }}><ChevronLeft size={14} /></button>
-          <button onClick={navHoje} style={btnBase}>Hoje</button>
-          <button onClick={navProximo} style={{ ...btnBase, padding: "6px 10px" }}><ChevronRight size={14} /></button>
+      <div style={{ marginBottom: 8 }}>
+        {/* Linha 1: nav + período + refresh */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+          <div style={{ display: "flex", gap: 2 }}>
+            <button onClick={navAnterior} style={{ padding: "3px 7px", fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#475569", display: "flex", alignItems: "center" }}><ChevronLeft size={12} /></button>
+            <button onClick={navHoje} style={{ padding: "3px 9px", fontSize: 11, fontWeight: 600, border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#475569", fontFamily: "'Sora',sans-serif" }}>Hoje</button>
+            <button onClick={navProximo} style={{ padding: "3px 7px", fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#475569", display: "flex", alignItems: "center" }}><ChevronRight size={12} /></button>
+          </div>
+          <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{labelPeriodo}</div>
+          <button onClick={() => buscarEventos(view, date)} disabled={carregando}
+            style={{ padding: "3px 7px", border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#475569", display: "flex", alignItems: "center", opacity: carregando ? 0.5 : 1 }}>
+            <RefreshCw size={12} style={{ animation: carregando ? "spin 1s linear infinite" : "none" }} />
+          </button>
         </div>
-        <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#1e293b", textTransform: "capitalize", minWidth: 140 }}>{labelPeriodo}</div>
-        <div style={{ display: "flex", gap: 2, background: "#eef2f1", border: "1px solid #e2e8f0", borderRadius: 10, padding: 3 }}>
+        {/* Linha 2: seletor de vista — largura total */}
+        <div style={{ display: "flex", background: "#eef2f1", border: "1px solid #e2e8f0", borderRadius: 8, padding: 2 }}>
           {(["month", "week", "day"] as View[]).map(v => {
             const on = view === v;
             return (
               <button key={v} onClick={() => setView(v)}
-                style={{ fontSize: 12.5, fontWeight: 600, fontFamily: "'Sora',sans-serif", border: "none", borderRadius: 7, padding: "5px 14px", cursor: "pointer", background: on ? "#2B7A78" : "transparent", color: on ? "#fff" : "#64748b", boxShadow: on ? "0 1px 2px rgba(43,122,120,0.25)" : "none", transition: "all 0.12s" }}>
+                style={{ flex: 1, fontSize: 11.5, fontWeight: 600, fontFamily: "'Sora',sans-serif", border: "none", borderRadius: 6, padding: "5px 0", cursor: "pointer", background: on ? "#2B7A78" : "transparent", color: on ? "#fff" : "#64748b", transition: "all 0.12s" }}>
                 {v === "month" ? "Mês" : v === "week" ? "Semana" : "Dia"}
               </button>
             );
           })}
         </div>
-        <button onClick={() => buscarEventos(view, date)} disabled={carregando} style={{ ...btnBase, padding: "6px 10px", opacity: carregando ? 0.5 : 1 }}>
-          <RefreshCw size={13} style={{ animation: carregando ? "spin 1s linear infinite" : "none" }} />
-        </button>
       </div>
 
       {erro && <div style={{ padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626", marginBottom: 12 }}>{erro}</div>}
 
-      {/* ── Grade + rail ── */}
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+      {/* ── Calendário principal ── */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)", marginBottom: 10 }}>
+        {carregando && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: 13, color: "#94a3b8" }}>Carregando...</div>
+          </div>
+        )}
+        <Calendar
+          localizer={localizer}
+          events={eventos}
+          view={view}
+          date={date}
+          onView={() => {}}
+          onNavigate={() => {}}
+          eventPropGetter={eventPropGetter}
+          components={calComponents}
+          onSelectEvent={(ev) => abrirDrawer(ev as CalEvent)}
+          onDrillDown={(d) => { setDate(d); setView("day"); }}
+          min={minTime}
+          max={maxTime}
+          style={{ height: "calc(100vh - 210px)", minHeight: 440, padding: "4px 2px" }}
+          messages={{ today: "Hoje", previous: "Anterior", next: "Próximo", month: "Mês", week: "Semana", day: "Dia", noEventsInRange: "Nenhum evento.", showMore: (total: number) => `+${total} mais` }}
+          culture="pt-BR"
+          dayPropGetter={(d) => ({ style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {} })}
+          toolbar={false}
+        />
+      </div>
 
-        {/* calendário */}
-        <div style={{ flex: "1 1 480px", minWidth: 0, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-          {carregando && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>Carregando agenda...</div>
-            </div>
-          )}
-          <Calendar
-            localizer={localizer}
-            events={eventos}
-            view={view}
-            date={date}
-            onView={() => {}}
-            onNavigate={() => {}}
-            eventPropGetter={eventPropGetter}
-            components={calComponents}
-            onSelectEvent={(ev) => abrirDrawer(ev as CalEvent)}
-            onDrillDown={(d) => { setDate(d); setView("day"); }}
-            min={minTime}
-            max={maxTime}
-            style={{ height: "calc(100vh - 240px)", minHeight: 460, padding: 8 }}
-            messages={{ today: "Hoje", previous: "Anterior", next: "Próximo", month: "Mês", week: "Semana", day: "Dia", noEventsInRange: "Nenhum evento neste período.", showMore: (total: number) => `+${total} mais` }}
-            culture="pt-BR"
-            dayPropGetter={(d) => ({ style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {} })}
-            toolbar={false}
-          />
-        </div>
+      {/* ── Mini calendário + Bloquear (só Semana/Dia) ── */}
+      {view !== "month" && (
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
 
-        {/* rail (só Semana e Dia) */}
-        {view !== "month" && (
-        <div style={{ flex: "0 0 230px", maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12, order: -1 }}>
-
-          {/* ocupação — placeholder (cálculo real depende do n8n) */}
-          <aside style={{ order: 0, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-            <div style={{ width: "100%", height: 5, borderRadius: 99, background: "#e2e8f0", overflow: "hidden", marginBottom: 8 }}>
-              <div style={{ height: "100%", width: "0%", background: "#2B7A78", borderRadius: 99 }} />
-            </div>
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>Ocupação · em breve</div>
-          </aside>
-
-          {/* bloquear horários (placeholder — sem função ainda) */}
-          <button type="button" title="Bloquear horários"
-            style={{ order: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "'Sora',sans-serif", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-            <Ban size={15} /> Bloquear horários
-          </button>
-
-          {/* mini calendário (por último) */}
-          <aside style={{ order: 2, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{format(miniMonth, "MMMM yyyy", { locale: ptBR })}</span>
-              <div style={{ display: "flex", gap: 4 }}>
-                <button onClick={() => setMiniMonth(m => subMonths(m, 1))} style={{ width: 24, height: 24, border: "none", background: "#f1f5f9", borderRadius: 7, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronLeft size={13} /></button>
-                <button onClick={() => setMiniMonth(m => addMonths(m, 1))} style={{ width: 24, height: 24, border: "none", background: "#f1f5f9", borderRadius: 7, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronRight size={13} /></button>
+          {/* Mini calendário */}
+          <div style={{ flex: 1, minWidth: 0, background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "10px 10px 8px", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{format(miniMonth, "MMMM yyyy", { locale: ptBR })}</span>
+              <div style={{ display: "flex", gap: 2 }}>
+                <button onClick={() => setMiniMonth(m => subMonths(m, 1))} style={{ width: 20, height: 20, border: "none", background: "#f1f5f9", borderRadius: 6, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronLeft size={11} /></button>
+                <button onClick={() => setMiniMonth(m => addMonths(m, 1))} style={{ width: 20, height: 20, border: "none", background: "#f1f5f9", borderRadius: 6, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronRight size={11} /></button>
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
-              {semanaLabels.map((l, i) => <div key={i} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", padding: "2px 0" }}>{l}</div>)}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1, marginBottom: 1 }}>
+              {semanaLabels.map((l, i) => <div key={i} style={{ textAlign: "center", fontSize: 8, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>{l}</div>)}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1 }}>
               {miniDias.map(dia => {
                 const fora = !isSameMonth(dia, miniMonth); const hoje = isToday(dia); const sel = diaNoPeriodo(dia);
                 return (
                   <button key={dia.toISOString()} onClick={() => { setDate(dia); setView("day"); }}
-                    style={{ aspectRatio: "1", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11.5, fontFamily: "'Sora',sans-serif", background: hoje ? "#2B7A78" : sel ? "rgba(43,122,120,0.12)" : "transparent", color: hoje ? "#fff" : fora ? "#cbd5e1" : "#334155", fontWeight: (hoje || sel) ? 700 : 400, transition: "background 0.12s" }}>
+                    style={{ aspectRatio: "1", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 10, fontFamily: "'Sora',sans-serif", background: hoje ? "#2B7A78" : sel ? "rgba(43,122,120,0.12)" : "transparent", color: hoje ? "#fff" : fora ? "#cbd5e1" : "#334155", fontWeight: (hoje || sel) ? 700 : 400, transition: "background 0.12s" }}>
                     {format(dia, "d")}
                   </button>
                 );
               })}
             </div>
-          </aside>
+          </div>
+
+          {/* Bloquear horários */}
+          <button type="button" title="Bloquear horários"
+            style={{ flexShrink: 0, width: 76, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, padding: "12px 6px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, fontSize: 10.5, fontWeight: 600, color: "#64748b", cursor: "pointer", fontFamily: "'Sora',sans-serif", boxShadow: "0 1px 2px rgba(16,40,36,0.04)", alignSelf: "stretch" }}>
+            <Ban size={16} color="#94a3b8" />
+            <span style={{ textAlign: "center", lineHeight: 1.3 }}>Bloquear horários</span>
+          </button>
 
         </div>
-        )}
-      </div>
+      )}
 
       {/* ── Drawer: ficha do paciente ── */}
       {drawerEvent && (
@@ -569,6 +563,8 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
         .rbc-time-content > * + * { border-left: 1px solid #F1F4F3; }
         .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
         .rbc-time-gutter .rbc-timeslot-group { border-bottom: none; }
+        .rbc-time-gutter { min-width: 40px !important; width: 40px !important; }
+        .rbc-time-gutter .rbc-label { font-size: 9px !important; padding: 0 4px !important; }
       `}</style>
     </div>
   );
