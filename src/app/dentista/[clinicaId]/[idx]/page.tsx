@@ -1,7 +1,7 @@
 ﻿"use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft } from "lucide-react";
+import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft, X, Download } from "lucide-react";
 import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
 import CalendarioDentista from "@/components/CalendarioDentista";
@@ -75,7 +75,9 @@ export default function DentistaApp() {
   const [comandoIdRemarcar, setComandoIdRemarcar] = useState("");
   const [resultadoRemarcar, setResultadoRemarcar] = useState<{ok:boolean;total_pacientes?:number;mensagem?:string;idempotente?:boolean;erro?:string}|null>(null);
   const [erroValidacaoRemarcar, setErroValidacaoRemarcar] = useState("");
-  const installedRef = useRef(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstall, setShowInstall] = useState(false);
+  const [iosHint, setIosHint] = useState(false);
 
   // Sync edit states when dentista loads
   useEffect(()=>{
@@ -87,17 +89,44 @@ export default function DentistaApp() {
 
   useEffect(()=>{setCalValResult(null);setCalSaveErr("");},[editCalendar]);
 
-  // PWA install prompt
+  // ── PWA: manifest dinâmico do dentista + oferta de instalação ──
   useEffect(()=>{
-    if(installedRef.current) return;
-    const handler=(e:Event)=>{
-      e.preventDefault();
-      (e as BeforeInstallPromptEvent).prompt();
-      installedRef.current=true;
-    };
+    if(typeof window==="undefined") return;
+
+    // já instalado (aberto pelo ícone, em standalone)?
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || nav.standalone === true;
+
+    // aponta o <link rel="manifest"> para o manifest deste dentista
+    try{
+      const href=`/api/manifest-dentista?clinica=${encodeURIComponent(String(params.clinicaId))}&idx=${encodeURIComponent(String(params.idx))}&t=${encodeURIComponent(token)}`;
+      let link=document.querySelector('link[rel="manifest"]') as HTMLLinkElement|null;
+      if(!link){ link=document.createElement("link"); link.rel="manifest"; document.head.appendChild(link); }
+      link.href=href;
+      if(!document.querySelector('link[rel="apple-touch-icon"]')){
+        const al=document.createElement("link"); al.rel="apple-touch-icon"; al.href="/apple-icon.png"; document.head.appendChild(al);
+      }
+    }catch{}
+
+    if(standalone) return; // já instalado → não oferece
+
+    // Android/Chrome: guarda o evento e mostra o botão "Instalar"
+    const handler=(e:Event)=>{ e.preventDefault(); setDeferredPrompt(e as BeforeInstallPromptEvent); setShowInstall(true); };
     window.addEventListener("beforeinstallprompt",handler as EventListener);
+
+    // iOS Safari não dispara beforeinstallprompt → mostra dica de "Adicionar à Tela de Início"
+    const ua=window.navigator.userAgent||"";
+    if(/iphone|ipad|ipod/i.test(ua) && !/crios|fxios|edgios/i.test(ua)) setIosHint(true);
+
     return()=>window.removeEventListener("beforeinstallprompt",handler as EventListener);
-  },[]);
+  },[params.clinicaId,params.idx,token]);
+
+  async function instalarApp(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    setDeferredPrompt(null);
+    setShowInstall(false);
+  }
 
   useEffect(()=>{
     if(!params.clinicaId||!params.idx) return;
@@ -275,7 +304,7 @@ export default function DentistaApp() {
     <div style={{minHeight:"100svh",background:"#f8fafc",fontFamily:"'Sora',sans-serif"}}>
 
       {/* Header */}
-      <div style={{background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",padding:"16px 20px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:10,boxShadow:"0 2px 12px rgba(43,122,120,0.25)"}}>
+      <div style={{background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",padding:"calc(16px + env(safe-area-inset-top)) 20px 16px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:10,boxShadow:"0 2px 12px rgba(43,122,120,0.25)"}}>
         <div style={{width:38,height:38,borderRadius:10,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>
           {(dentista.nome||"?")[0].toUpperCase()}
         </div>
@@ -342,6 +371,24 @@ export default function DentistaApp() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Instalar app (PWA) */}
+        {(showInstall||iosHint)&&(
+          <div style={{display:"flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid rgba(43,122,120,0.3)",borderRadius:12,padding:"10px 12px"}}>
+            <div style={{width:34,height:34,borderRadius:9,background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <Download size={17} color="#fff"/>
+            </div>
+            <div style={{flex:1,minWidth:0,fontSize:12.5,color:"#475569",lineHeight:1.35}}>
+              {showInstall
+                ? "Instale o app na tela inicial para abrir mais rápido."
+                : <>Para instalar: toque em <b>Compartilhar</b> e depois <b>“Adicionar à Tela de Início”</b>.</>}
+            </div>
+            {showInstall&&(
+              <button onClick={instalarApp} style={{flexShrink:0,padding:"8px 14px",border:"none",borderRadius:9,background:"linear-gradient(135deg,#2B7A78,#3AAFA9)",color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>Instalar</button>
+            )}
+            <button onClick={()=>{setShowInstall(false);setIosHint(false);}} style={{flexShrink:0,background:"transparent",border:"none",cursor:"pointer",color:"#cbd5e1",padding:4,display:"flex"}}><X size={16}/></button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{display:"flex",gap:4,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e2e8f0"}}>
