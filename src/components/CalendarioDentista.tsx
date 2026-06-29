@@ -354,6 +354,12 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
           max={maxTime}
           style={{ height: "calc(100vh - 210px)", minHeight: 440, padding: "4px 2px" }}
           messages={{ today: "Hoje", previous: "Anterior", next: "Próximo", month: "Mês", week: "Semana", day: "Dia", noEventsInRange: "Nenhum evento.", showMore: (total: number) => `+${total} mais` }}
+          formats={{
+            dayFormat: (date: Date, culture: string, loc: typeof localizer) =>
+              loc.format(date, "EEE d", culture ?? "pt-BR"),
+            weekdayFormat: (date: Date, culture: string, loc: typeof localizer) =>
+              loc.format(date, "EEE", culture ?? "pt-BR"),
+          }}
           culture="pt-BR"
           dayPropGetter={(d) => ({ style: isToday(d) ? { background: "rgba(43,122,120,0.04)" } : {} })}
           toolbar={false}
