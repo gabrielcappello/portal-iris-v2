@@ -159,6 +159,17 @@ function slotsDoDentista(d: Dentista): number {
   return Math.floor(span / 45);
 }
 
+// hex (#RRGGBB) -> rgba com alpha (fundo claro/tint dos eventos)
+function hexToRgba(hex: string, alpha: number): string {
+  const h = (hex || "").replace("#", "").trim();
+  if (h.length !== 6) return hex;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  if ([r, g, b].some(n => isNaN(n))) return hex;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // ── Vista Semana: oculta domingo (sempre) e sábado (se nenhum dentista trabalha) ──
 // O render interno do RBC chama Week.range diretamente, então embrulhamos a função.
 let MOSTRAR_SABADO = false; // atualizado pelo componente a cada render
@@ -471,13 +482,13 @@ export default function CalendarioPage() {
     else if (ev.status === "faltou") { opacity = 0.5; filter = "grayscale(55%)"; }
     return {
       style: {
-        backgroundColor: ev.cor,
+        backgroundColor: hexToRgba(ev.cor, 0.12),
         borderLeft: `3px solid ${ev.cor}`,
-        borderRadius: 5,
+        borderRadius: 7,
         fontSize: 11,
         fontFamily: "'Sora',sans-serif",
-        color: "#fff",
-        padding: "1px 4px",
+        color: ev.cor,
+        padding: "2px 6px",
         opacity,
         filter,
       },
@@ -668,12 +679,23 @@ export default function CalendarioPage() {
             {t("calendar.export_day")}
           </button>
         )}
-        <div style={{ display: "flex", gap: 4 }}>
-          {(["month", "week", "day"] as View[]).map(v => (
-            <button key={v} onClick={() => setView(v)} style={view === v ? btnActive : btnBase}>
-              {v === "month" ? "Mês" : v === "week" ? "Semana" : "Dia"}
-            </button>
-          ))}
+        <div style={{ display: "flex", gap: 2, background: "#eef2f1", border: "1px solid #e2e8f0", borderRadius: 10, padding: 3 }}>
+          {(["month", "week", "day"] as View[]).map(v => {
+            const on = view === v;
+            return (
+              <button key={v} onClick={() => setView(v)}
+                style={{
+                  fontSize: 12.5, fontWeight: 600, fontFamily: "'Sora',sans-serif",
+                  border: "none", borderRadius: 7, padding: "5px 14px", cursor: "pointer",
+                  background: on ? "#2B7A78" : "transparent",
+                  color: on ? "#fff" : "#64748b",
+                  boxShadow: on ? "0 1px 2px rgba(43,122,120,0.25)" : "none",
+                  transition: "all 0.12s",
+                }}>
+                {v === "month" ? "Mês" : v === "week" ? "Semana" : "Dia"}
+              </button>
+            );
+          })}
         </div>
         <button onClick={() => buscarEventos(view, date, filtroTokens)} disabled={carregando}
           style={{ ...btnBase, padding: "6px 10px", opacity: carregando ? 0.5 : 1 }}>
@@ -746,11 +768,15 @@ export default function CalendarioPage() {
 
       </div>{/* ── fim controles + pílulas ── */}
 
-      {/* ── Ocupação do período ── */}
+      {/* ── Ocupação do período (com barra de progresso) ── */}
       {ocupacao && (
-        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: ocupacao.pct >= 80 ? "#dc2626" : ocupacao.pct >= 50 ? "#d97706" : "#16a34a", display: "inline-block" }} />
-          {t("calendar.occupancy", { occ: ocupacao.ocupados, total: ocupacao.total, pct: ocupacao.pct })}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ width: 120, height: 5, borderRadius: 99, background: "#e2e8f0", overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ height: "100%", width: `${Math.min(ocupacao.pct, 100)}%`, background: "#2B7A78", borderRadius: 99, transition: "width 0.2s" }} />
+          </div>
+          <span style={{ fontSize: 12.5, color: "#64748b" }}>
+            {t("calendar.occupancy", { occ: ocupacao.ocupados, total: ocupacao.total, pct: ocupacao.pct })}
+          </span>
         </div>
       )}
 
@@ -770,7 +796,7 @@ export default function CalendarioPage() {
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
 
         {/* calendário */}
-        <div style={{ flex: "1 1 520px", minWidth: 0, background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative" }}>
+        <div style={{ flex: "1 1 520px", minWidth: 0, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
           {carregando && (
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: 13, color: "#94a3b8" }}>Carregando agenda...</div>
@@ -802,37 +828,64 @@ export default function CalendarioPage() {
           />
         </div>
 
-        {/* mini calendário lateral (só Semana e Dia) */}
+        {/* rail direita: mini calendário + legenda (só Semana e Dia) */}
         {view !== "month" && (
-        <aside style={{ flex: "0 0 230px", maxWidth: "100%", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <button onClick={() => setMiniMonth(m => subMonths(m, 1))} style={{ ...btnBase, padding: "4px 7px" }}><ChevronLeft size={13} /></button>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{format(miniMonth, "MMMM yyyy", { locale: ptBR })}</span>
-            <button onClick={() => setMiniMonth(m => addMonths(m, 1))} style={{ ...btnBase, padding: "4px 7px" }}><ChevronRight size={13} /></button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-            {semanaLabels.map((l, i) => (
-              <div key={i} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", padding: "2px 0" }}>{l}</div>
-            ))}
-            {miniDias.map(dia => {
-              const fora = !isSameMonth(dia, miniMonth);
-              const hoje = isToday(dia);
-              const sel = diaNoPeriodo(dia);
-              return (
-                <button key={dia.toISOString()} onClick={() => { setDate(dia); setView("day"); }}
-                  style={{
-                    aspectRatio: "1", border: "none", borderRadius: 6, cursor: "pointer",
-                    fontSize: 11, fontFamily: "'Sora',sans-serif",
-                    background: hoje ? "#2B7A78" : sel ? "rgba(43,122,120,0.12)" : "transparent",
-                    color: hoje ? "#fff" : fora ? "#cbd5e1" : "#334155",
-                    fontWeight: (hoje || sel) ? 700 : 400, transition: "background 0.12s",
-                  }}>
-                  {format(dia, "d")}
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+        <div style={{ flex: "0 0 230px", maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {/* mini calendário */}
+          <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 14, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>{format(miniMonth, "MMMM yyyy", { locale: ptBR })}</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button onClick={() => setMiniMonth(m => subMonths(m, 1))} style={{ width: 24, height: 24, border: "none", background: "#f1f5f9", borderRadius: 7, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronLeft size={13} /></button>
+                <button onClick={() => setMiniMonth(m => addMonths(m, 1))} style={{ width: 24, height: 24, border: "none", background: "#f1f5f9", borderRadius: 7, cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center" }}><ChevronRight size={13} /></button>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
+              {semanaLabels.map((l, i) => (
+                <div key={i} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", padding: "2px 0" }}>{l}</div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+              {miniDias.map(dia => {
+                const fora = !isSameMonth(dia, miniMonth);
+                const hoje = isToday(dia);
+                const sel = diaNoPeriodo(dia);
+                return (
+                  <button key={dia.toISOString()} onClick={() => { setDate(dia); setView("day"); }}
+                    style={{
+                      aspectRatio: "1", border: "none", borderRadius: 7, cursor: "pointer",
+                      fontSize: 11.5, fontFamily: "'Sora',sans-serif",
+                      background: hoje ? "#2B7A78" : sel ? "rgba(43,122,120,0.12)" : "transparent",
+                      color: hoje ? "#fff" : fora ? "#cbd5e1" : "#334155",
+                      fontWeight: (hoje || sel) ? 700 : 400, transition: "background 0.12s",
+                    }}>
+                    {format(dia, "d")}
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* legenda de profissionais */}
+          {dentistas.length > 0 && (
+            <aside style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 16, boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#94a3b8", marginBottom: 11 }}>
+                {t("config.card_dentists")}
+              </div>
+              {dentistas.map(d => {
+                const cor = corParaDentista(d.token, d.cor);
+                return (
+                  <div key={d.token} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, color: "#334155", marginBottom: 9 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: cor, flexShrink: 0 }} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nome}</span>
+                  </div>
+                );
+              })}
+            </aside>
+          )}
+
+        </div>
         )}
       </div>
 
@@ -1021,6 +1074,8 @@ export default function CalendarioPage() {
           width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
         }
         .rbc-event, .rbc-event.rbc-selected { background-color: transparent; border: none; }
+        .rbc-event-content { font-weight: 600; }
+        .rbc-event-label { font-size: 10px; opacity: 0.7; font-weight: 600; }
         .rbc-event:focus { outline: none; }
         .rbc-show-more { font-size: 11px; color: #2B7A78; font-weight: 600; }
         .rbc-time-slot { font-size: 10px; color: #94a3b8; }
