@@ -84,12 +84,14 @@ export default function PacientesPage() {
   const [anamneseCache, setAnamneseCache]       = useState<Record<string, AnamneseData>>({});
   const [clinicaId, setClinicaId]               = useState("");
   const [operadorNome, setOperadorNome]         = useState("");
+  const [usuarioId, setUsuarioId]               = useState("");
 
   useEffect(() => {
     const id   = localStorage.getItem("clinica_id") || "";
     const nome = localStorage.getItem("clinica_nome") || "Clínica";
     setClinicaId(id);
     setOperadorNome(nome);
+    setUsuarioId(localStorage.getItem("user_id") || "");
     if (!id) { setLoading(false); return; }
     Promise.all([
       sb.query<Paciente>("pacientes",     `?clinica_id=eq.${id}`),
@@ -320,7 +322,7 @@ export default function PacientesPage() {
         <OdontogramaModal
           paciente={odontoPaciente}
           clinicaId={clinicaId}
-          operadorNome={operadorNome}
+          usuarioId={usuarioId}
           onClose={() => setOdontoPaciente(null)}
         />
       )}

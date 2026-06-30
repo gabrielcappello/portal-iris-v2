@@ -282,11 +282,15 @@ function Legenda() {
 type Props = {
   paciente: Paciente;
   clinicaId: string;
-  operadorNome: string;
+  usuarioId: string; // UUID do usuário logado — vai nos campos de autoria (criado_por etc.)
   onClose: () => void;
 };
 
-export default function OdontogramaModal({ paciente, clinicaId, operadorNome, onClose }: Props) {
+const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClose }: Props) {
+  // só envia como autor se for um UUID válido; senão null (os campos *_por são uuid no banco)
+  const autor = RE_UUID.test(usuarioId) ? usuarioId : undefined;
   const [dentes, setDentes] = useState<DenteOdonto[]>([]);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -328,15 +332,15 @@ export default function OdontogramaModal({ paciente, clinicaId, operadorNome, on
     if (!denteSel) return;
     comSalvar(() => registrarAchado({
       denteId: denteSel.id, clinicaId, pacienteId: paciente.id, achadoId,
-      zonas, observacoes: obs || undefined, criadoPor: operadorNome,
+      zonas, observacoes: obs || undefined, criadoPor: autor,
     }));
   }
   function handleResolver(eventoId: string) {
-    comSalvar(() => resolverAchado({ eventoId, status: "resolvido", resolvidoPor: operadorNome }));
+    comSalvar(() => resolverAchado({ eventoId, status: "resolvido", resolvidoPor: autor }));
   }
   function handleEstado(estado: EstadoDente) {
     if (!denteSel) return;
-    comSalvar(() => atualizarEstadoDente({ denteId: denteSel.id, estado, atualizadoPor: operadorNome }));
+    comSalvar(() => atualizarEstadoDente({ denteId: denteSel.id, estado, atualizadoPor: autor }));
   }
 
   const totalComAchados = dentes.filter(d => d.eventos_ativos.length > 0).length;
