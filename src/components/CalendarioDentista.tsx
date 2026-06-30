@@ -8,7 +8,7 @@ import {
   isToday, isSameDay, isSameMonth, parseISO, eachDayOfInterval,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, RefreshCw, X, Ban } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, X, Ban, Clock } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
 import Week from "react-big-calendar/lib/Week";
@@ -400,8 +400,8 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
       {/* ── Calendário principal ── */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)", marginBottom: 10 }}>
         {carregando && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ fontSize: 13, color: "#94a3b8" }}>Carregando...</div>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.55)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Clock size={30} color="#2B7A78" strokeWidth={1.5} style={{ animation: "spin 2.4s linear infinite", opacity: 0.75 }} />
           </div>
         )}
         <Calendar
