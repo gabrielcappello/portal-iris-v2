@@ -79,17 +79,11 @@ function getRangeForView(view: View, date: Date): { inicio: string; fim: string 
 
 const STATUS_OCUPA = ["confirmado", "ok", "faltou"];
 
-// Vista Semana: oculta domingo sempre; sábado só se o dentista trabalha sábado
-let MOSTRAR_SABADO = false;
+// Vista Semana: Seg–Sáb (sem domingo)
 const _weekRangeOrig = Week.range;
 Week.range = (date: Date, opts: { localizer: unknown }) => {
   const dias: Date[] = _weekRangeOrig(date, opts);
-  return dias.filter((d: Date) => {
-    const dow = d.getDay();
-    if (dow === 0) return false;
-    if (dow === 6 && !MOSTRAR_SABADO) return false;
-    return true;
-  });
+  return dias.filter((d: Date) => d.getDay() !== 0);
 };
 
 const btnBase: React.CSSProperties = {
@@ -125,9 +119,6 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerStatus, setDrawerStatus] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
-
-  // sábado da vista semana = só se este dentista trabalha sábado
-  MOSTRAR_SABADO = String(dentista.sabado) === "true";
 
   const buscarEventos = useCallback(async (v: View, d: Date) => {
     if (!token) return;
@@ -270,7 +261,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
           <span style={hoje
             ? { display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: "#2B7A78", color: "#fff", fontSize: 13, fontWeight: 700 }
             : { fontSize: 14, fontWeight: 700, color: "#0E1F1C", lineHeight: 1.2 }}>{format(d, "d")}</span>
-          {n > 0 && <span style={{ fontSize: 10, color: "#2B7A78", fontWeight: 600 }}>{n} consulta{n !== 1 ? "s" : ""}</span>}
+          {n > 0 && <span style={{ fontSize: 9, color: "#2B7A78", fontWeight: 400, letterSpacing: 0 }}>{n}c</span>}
         </div>
       );
     },
@@ -649,9 +640,9 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
         .rbc-time-content > * + * { border-left: 1px solid #F1F4F3; }
         .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
         .rbc-time-gutter .rbc-timeslot-group { border-bottom: none; }
-        .rbc-time-gutter { min-width: 40px !important; width: 40px !important; }
-        .rbc-time-header-gutter { min-width: 40px !important; width: 40px !important; }
-        .rbc-time-gutter .rbc-label { font-size: 9px !important; padding: 0 4px !important; }
+        .rbc-time-gutter { min-width: 32px !important; width: 32px !important; }
+        .rbc-time-header-gutter { min-width: 32px !important; width: 32px !important; }
+        .rbc-time-gutter .rbc-label { font-size: 8px !important; padding: 0 3px !important; }
       `}</style>
 
       {anamnesePac && (
