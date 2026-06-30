@@ -350,34 +350,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   return (
     <div style={{ fontFamily: "'Sora',sans-serif" }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
-    {/* wrapper que recebe o transform do swipe — drawer fica FORA para não se deslocar */}
-    <div
-      style={{
-        transform: `translateX(${calOffset}px)`,
-        transition: calTransition ? "transform 0.22s cubic-bezier(0.4,0,0.2,1)" : "none",
-        position: "relative",
-      }}
-    >
-
-      {/* ── Seta indicadora durante o arrasto ── */}
-      {calOffset !== 0 && !calTransition && (
-        <div style={{ position: "absolute", top: 0, bottom: 0, zIndex: 20, pointerEvents: "none",
-          left: calOffset > 0 ? 0 : "auto", right: calOffset < 0 ? 0 : "auto",
-          display: "flex", alignItems: "center" }}>
-          <div style={{
-            opacity: Math.min(Math.abs(calOffset) / 65, 1),
-            background: "rgba(43,122,120,0.13)",
-            borderRadius: calOffset > 0 ? "0 12px 12px 0" : "12px 0 0 12px",
-            padding: "22px 10px", display: "flex", alignItems: "center",
-          }}>
-            {calOffset > 0
-              ? <ChevronLeft  size={26} color="#2B7A78" strokeWidth={2.5} />
-              : <ChevronRight size={26} color="#2B7A78" strokeWidth={2.5} />}
-          </div>
-        </div>
-      )}
-
-      {/* ── Controles ── */}
+      {/* ── Controles — ficam FORA do transform ── */}
       <div style={{ marginBottom: 8 }}>
         {/* Linha 1: nav + período + refresh */}
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
@@ -407,6 +380,31 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
       </div>
 
       {erro && <div style={{ padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626", marginBottom: 12 }}>{erro}</div>}
+
+      {/* wrapper transform — só o calendário desliza, controles ficam fixos acima */}
+      <div style={{
+        transform: `translateX(${calOffset}px)`,
+        transition: calTransition ? "transform 0.22s cubic-bezier(0.4,0,0.2,1)" : "none",
+        position: "relative",
+      }}>
+
+        {/* seta indicadora durante o arrasto */}
+        {calOffset !== 0 && !calTransition && (
+          <div style={{ position: "absolute", top: 0, bottom: 0, zIndex: 20, pointerEvents: "none",
+            left: calOffset > 0 ? 0 : "auto", right: calOffset < 0 ? 0 : "auto",
+            display: "flex", alignItems: "center" }}>
+            <div style={{
+              opacity: Math.min(Math.abs(calOffset) / 65, 1),
+              background: "rgba(43,122,120,0.13)",
+              borderRadius: calOffset > 0 ? "0 12px 12px 0" : "12px 0 0 12px",
+              padding: "22px 10px", display: "flex", alignItems: "center",
+            }}>
+              {calOffset > 0
+                ? <ChevronLeft  size={26} color="#2B7A78" strokeWidth={2.5} />
+                : <ChevronRight size={26} color="#2B7A78" strokeWidth={2.5} />}
+            </div>
+          </div>
+        )}
 
       {/* ── Calendário principal ── */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)", marginBottom: 10 }}>
