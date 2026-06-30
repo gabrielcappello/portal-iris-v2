@@ -7,6 +7,7 @@ import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import ChatManualModal from "@/components/ChatManualModal";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
+import OdontogramaModal from "@/components/OdontogramaModal";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -79,6 +80,7 @@ export default function PacientesPage() {
   const [loading, setLoading]           = useState(true);
   const [chatPaciente, setChatPaciente]         = useState<Paciente|null>(null);
   const [anamnesePaciente, setAnamnesePaciente] = useState<Paciente|null>(null);
+  const [odontoPaciente, setOdontoPaciente]     = useState<Paciente|null>(null);
   const [anamneseCache, setAnamneseCache]       = useState<Record<string, AnamneseData>>({});
   const [clinicaId, setClinicaId]               = useState("");
   const [operadorNome, setOperadorNome]         = useState("");
@@ -261,9 +263,18 @@ export default function PacientesPage() {
                               )}
 
                               {/* Odontograma */}
-                              <div>
-                                <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{t("patients.odontogram")}</div>
-                                <div style={{height:64,borderRadius:10,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1"}}>{t("patients.odontogram_wip")}</div>
+                              <div style={{ padding: "12px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>{t("patients.odontogram")}</div>
+                                    <div style={{ fontSize: 12, color: "#94a3b8" }}>Mapa dentário · achados, restaurações e estado dos dentes</div>
+                                  </div>
+                                  <button onClick={() => setOdontoPaciente(p)}
+                                    style={{ padding: "6px 14px", fontSize: 12, fontWeight: 700, border: "1px solid #e2e8f0", borderRadius: 8,
+                                      cursor: "pointer", background: "#fff", color: "#2B7A78", fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
+                                    Abrir
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Fechar */}
@@ -302,6 +313,15 @@ export default function PacientesPage() {
             }
             setAnamnesePaciente(null);
           }}
+        />
+      )}
+
+      {odontoPaciente && (
+        <OdontogramaModal
+          paciente={odontoPaciente}
+          clinicaId={clinicaId}
+          operadorNome={operadorNome}
+          onClose={() => setOdontoPaciente(null)}
         />
       )}
     </div>

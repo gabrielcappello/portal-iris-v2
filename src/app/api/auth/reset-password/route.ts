@@ -8,7 +8,8 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!;
+// Prefere SUPABASE_SECRET (nome novo padrão do projeto); cai pra SUPABASE_SERVICE_KEY por compat.
+const SERVICE_KEY = process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
 
 const SB_HEADERS = {
   apikey: SERVICE_KEY,
