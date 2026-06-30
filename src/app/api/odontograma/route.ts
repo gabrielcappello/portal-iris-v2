@@ -25,6 +25,8 @@ const RPCS_PERMITIDAS = new Set([
   "resolver_achado_odontograma",
   "atualizar_estado_dente",
   "criar_consulta_odontograma",
+  "registrar_sondagem_periodontal",
+  "buscar_sondagem_periodontal",
 ]);
 
 export async function POST(req: Request) {

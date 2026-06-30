@@ -325,6 +325,50 @@ export async function resolverAchado(args: {
   });
 }
 
+// ── Sondagem periodontal ──────────────────────────────────────────────────────
+
+export type SondagemDente = {
+  dente_id: string; numero_iso: string; data_exame?: string;
+  prof_mv?: number | null; prof_v?: number | null; prof_dv?: number | null;
+  prof_ml?: number | null; prof_l?: number | null; prof_dl?: number | null;
+  marg_mv?: number | null; marg_v?: number | null; marg_dv?: number | null;
+  marg_ml?: number | null; marg_l?: number | null; marg_dl?: number | null;
+  mobilidade?: number | null; furcacao?: number | null;
+  sangramento?: boolean; placa?: boolean; supuracao?: boolean; tartaro?: boolean;
+};
+
+export const SITES_PROF: (keyof SondagemDente)[] = ["prof_mv", "prof_v", "prof_dv", "prof_ml", "prof_l", "prof_dl"];
+
+// Maior profundidade de bolsa registrada (para alerta visual). >=4mm = atenção.
+export function piorBolsa(s?: SondagemDente | null): number {
+  if (!s) return 0;
+  return SITES_PROF.reduce((m, k) => { const v = s[k]; return typeof v === "number" && v > m ? v : m; }, 0);
+}
+
+export async function buscarSondagem(pacienteId: string): Promise<SondagemDente[]> {
+  return (await callRpc<SondagemDente[]>("buscar_sondagem_periodontal", { p_paciente_id: pacienteId })) ?? [];
+}
+
+export async function registrarSondagem(args: {
+  denteId: string; clinicaId: string; pacienteId: string;
+  prof: (number | null)[]; marg: (number | null)[]; // [mv,v,dv,ml,l,dl]
+  mobilidade?: number | null; furcacao?: number | null;
+  sangramento?: boolean; placa?: boolean; supuracao?: boolean; tartaro?: boolean;
+  criadoPor?: string;
+}): Promise<void> {
+  await callRpc("registrar_sondagem_periodontal", {
+    p_dente_id: args.denteId, p_clinica_id: args.clinicaId, p_paciente_id: args.pacienteId,
+    p_prof_mv: args.prof[0], p_prof_v: args.prof[1], p_prof_dv: args.prof[2],
+    p_prof_ml: args.prof[3], p_prof_l: args.prof[4], p_prof_dl: args.prof[5],
+    p_marg_mv: args.marg[0], p_marg_v: args.marg[1], p_marg_dv: args.marg[2],
+    p_marg_ml: args.marg[3], p_marg_l: args.marg[4], p_marg_dl: args.marg[5],
+    p_mobilidade: args.mobilidade ?? null, p_furcacao: args.furcacao ?? null,
+    p_sangramento: !!args.sangramento, p_placa: !!args.placa,
+    p_supuracao: !!args.supuracao, p_tartaro: !!args.tartaro,
+    p_criado_por: args.criadoPor ?? null,
+  });
+}
+
 export async function atualizarEstadoDente(args: {
   denteId: string; estado: EstadoDente; atualizadoPor?: string; observacoes?: string;
 }): Promise<void> {

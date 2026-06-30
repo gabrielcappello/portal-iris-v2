@@ -7,7 +7,8 @@ import {
   corDominante, corEvento, nomeEvento, zonasDoDente, getPlano, ehPlanejadoPendente,
   valorPendenteDente, formatBRL, COR_ESPECIALIDADE, COR_EXISTENTE, COR_A_FAZER,
   ROTULO_ZONA, ROTULO_ESTADO, ARCADA_SUPERIOR, ARCADA_INFERIOR,
-  type DenteOdonto, type Zona, type EstadoDente, type Intencao,
+  buscarSondagem, registrarSondagem, piorBolsa,
+  type DenteOdonto, type Zona, type EstadoDente, type Intencao, type SondagemDente,
 } from "@/lib/odontograma";
 import { toothAssetUrl } from "@/lib/odontograma-assets";
 
@@ -36,10 +37,11 @@ function agruparPorEsp(precios: Procedimento[]): [string, Procedimento[]][] {
 
 // ── Dente realista (imagem + tint) ────────────────────────────────────────────
 
-function ToothImage({ dente, selecionado, align, onSelect }: {
+function ToothImage({ dente, selecionado, align, sondagem, onSelect }: {
   dente: DenteOdonto;
   selecionado: boolean;
   align: "flex-end" | "flex-start";
+  sondagem?: SondagemDente;
   onSelect: (numero: string) => void;
 }) {
   const url = toothAssetUrl(dente.numero_iso, "vestibular");
@@ -48,6 +50,7 @@ function ToothImage({ dente, selecionado, align, onSelect }: {
   const cor = corDominante(dente.eventos_ativos);
   const n = dente.eventos_ativos.length;
   const temAFazer = dente.eventos_ativos.some(ehPlanejadoPendente);
+  const bolsa = piorBolsa(sondagem);
 
   return (
     <div
@@ -92,14 +95,21 @@ function ToothImage({ dente, selecionado, align, onSelect }: {
             border: "1.5px solid #fff",
           }}>{n}</span>
         )}
+        {bolsa >= 4 && !ausente && (
+          <span title={`Bolsa ${bolsa}mm`} style={{
+            position: "absolute", top: -4, left: -4, width: 9, height: 9, borderRadius: 99,
+            background: bolsa >= 6 ? "#dc2626" : "#d97706", border: "1.5px solid #fff",
+          }} />
+        )}
       </div>
     </div>
   );
 }
 
-function Arcada({ porNumero, selecionado, onSelect }: {
+function Arcada({ porNumero, selecionado, sondagem, onSelect }: {
   porNumero: Record<string, DenteOdonto>;
   selecionado: string | null;
+  sondagem: Record<string, SondagemDente>;
   onSelect: (n: string) => void;
 }) {
   return (
@@ -113,14 +123,14 @@ function Arcada({ porNumero, selecionado, onSelect }: {
             {c === 8 && <div style={{ width: 10, flexShrink: 0, borderLeft: "1px dashed #e2e8f0", margin: "0 3px" }} />}
             <div style={{ flex: "1 1 0", maxWidth: 52, minWidth: 26, display: "flex", flexDirection: "column" }}>
               <div style={{ height: 128 }}>
-                {dSup && <ToothImage dente={dSup} selecionado={selecionado === nSup} align="flex-end" onSelect={onSelect} />}
+                {dSup && <ToothImage dente={dSup} selecionado={selecionado === nSup} align="flex-end" sondagem={sondagem[nSup]} onSelect={onSelect} />}
               </div>
               <div style={{ padding: "3px 0", textAlign: "center", fontFamily: "monospace", lineHeight: 1.35 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: selecionado === nSup ? BRAND : "#64748b" }}>{nSup}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: selecionado === nInf ? BRAND : "#cbd5e1" }}>{nInf}</div>
               </div>
               <div style={{ height: 128 }}>
-                {dInf && <ToothImage dente={dInf} selecionado={selecionado === nInf} align="flex-start" onSelect={onSelect} />}
+                {dInf && <ToothImage dente={dInf} selecionado={selecionado === nInf} align="flex-start" sondagem={sondagem[nInf]} onSelect={onSelect} />}
               </div>
             </div>
           </Fragment>
@@ -130,25 +140,130 @@ function Arcada({ porNumero, selecionado, onSelect }: {
   );
 }
 
+// ── Sondagem periodontal ──────────────────────────────────────────────────────
+
+type SondagemArgs = {
+  prof: (number | null)[]; marg: (number | null)[];
+  mobilidade: number | null; furcacao: number | null;
+  sangramento: boolean; placa: boolean; supuracao: boolean; tartaro: boolean;
+};
+
+function NumIn({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input type="number" min="0" max="15" value={value} onChange={e => onChange(e.target.value)}
+      style={{ width: 34, padding: "5px 3px", fontSize: 12, textAlign: "center", border: "1px solid #e2e8f0", borderRadius: 6, outline: "none", fontFamily: FONT, color: "#1e293b", background: "#fff", boxSizing: "border-box" }} />
+  );
+}
+
+const PROF_KEYS = ["prof_mv", "prof_v", "prof_dv", "prof_ml", "prof_l", "prof_dl"] as const;
+const MARG_KEYS = ["marg_mv", "marg_v", "marg_dv", "marg_ml", "marg_l", "marg_dl"] as const;
+
+function SondagemForm({ sondagem, salvando, onSalvar }: {
+  sondagem?: SondagemDente;
+  salvando: boolean;
+  onSalvar: (args: SondagemArgs) => void;
+}) {
+  const ini = (keys: readonly (keyof SondagemDente)[]) =>
+    keys.map(k => { const v = sondagem?.[k]; return v == null ? "" : String(v); });
+  const [prof, setProf] = useState<string[]>(ini(PROF_KEYS));
+  const [marg, setMarg] = useState<string[]>(ini(MARG_KEYS));
+  const [mob, setMob] = useState(sondagem?.mobilidade != null ? String(sondagem.mobilidade) : "");
+  const [furc, setFurc] = useState(sondagem?.furcacao != null ? String(sondagem.furcacao) : "");
+  const [sang, setSang] = useState(!!sondagem?.sangramento);
+  const [placa, setPlaca] = useState(!!sondagem?.placa);
+  const [sup, setSup] = useState(!!sondagem?.supuracao);
+  const [tart, setTart] = useState(!!sondagem?.tartaro);
+
+  const num = (s: string): number | null => s === "" ? null : Number(s);
+  const setAt = (arr: string[], set: (a: string[]) => void, i: number, v: string) => {
+    const c = [...arr]; c[i] = v; set(c);
+  };
+
+  function salvar() {
+    onSalvar({
+      prof: prof.map(num), marg: marg.map(num),
+      mobilidade: num(mob), furcacao: num(furc),
+      sangramento: sang, placa, supuracao: sup, tartaro: tart,
+    });
+  }
+
+  const linha = (label: string, arr: string[], set: (a: string[]) => void, base: number) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+      <span style={{ width: 34, fontSize: 10, color: "#94a3b8" }}>{label}</span>
+      {[0, 1, 2].map(j => <NumIn key={j} value={arr[base + j]} onChange={v => setAt(arr, set, base + j, v)} />)}
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      {sondagem?.data_exame && (
+        <div style={{ fontSize: 11, color: "#cbd5e1", marginBottom: 8 }}>Último exame: {new Date(sondagem.data_exame).toLocaleDateString("pt-BR")}</div>
+      )}
+
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Profundidade de bolsa (mm)</div>
+      {linha("Vest", prof, setProf, 0)}
+      {linha("Ling", prof, setProf, 3)}
+
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", margin: "10px 0 6px" }}>Margem / recessão (mm)</div>
+      {linha("Vest", marg, setMarg, 0)}
+      {linha("Ling", marg, setMarg, 3)}
+
+      <div style={{ display: "flex", gap: 14, marginTop: 10, alignItems: "center" }}>
+        <label style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+          Mobilidade
+          <select value={mob} onChange={e => setMob(e.target.value)} style={{ padding: "4px 6px", fontSize: 12, border: "1px solid #e2e8f0", borderRadius: 6, fontFamily: FONT, background: "#fff", color: "#1e293b" }}>
+            <option value="">—</option>{[0, 1, 2, 3].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <label style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+          Furcação
+          <select value={furc} onChange={e => setFurc(e.target.value)} style={{ padding: "4px 6px", fontSize: 12, border: "1px solid #e2e8f0", borderRadius: 6, fontFamily: FONT, background: "#fff", color: "#1e293b" }}>
+            <option value="">—</option>{[0, 1, 2, 3].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 10 }}>
+        {([["sangramento", sang, setSang], ["placa", placa, setPlaca], ["supuração", sup, setSup], ["tártaro", tart, setTart]] as const).map(([label, val, set]) => (
+          <label key={label} style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 5, cursor: "pointer", textTransform: "capitalize" }}>
+            <input type="checkbox" checked={val} onChange={e => set(e.target.checked)} />
+            {label}
+          </label>
+        ))}
+      </div>
+
+      <button type="button" onClick={salvar} disabled={salvando}
+        style={{ marginTop: 12, width: "100%", padding: "9px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT,
+          border: "none", borderRadius: 9, cursor: salvando ? "wait" : "pointer", background: "#0f766e", color: "#fff",
+          opacity: salvando ? 0.7 : 1 }}>
+        Salvar sondagem
+      </button>
+    </div>
+  );
+}
+
 // ── Painel de detalhe do dente ────────────────────────────────────────────────
 
 const ESTADOS: EstadoDente[] = ["presente", "ausente", "extraido", "nao_erupcionado", "impactado"];
 
-function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onResolver, onRealizar, onEstado }: {
+function DetalheDente({ dente, zonaInicial, precios, sondagem, salvando, onRegistrar, onResolver, onRealizar, onEstado, onSondagem }: {
   dente: DenteOdonto;
   zonaInicial?: Zona;
   precios: Procedimento[];
+  sondagem?: SondagemDente;
   salvando: boolean;
   onRegistrar: (proc: Procedimento, zonas: Zona[], obs: string, intencao: Intencao, valor?: number) => void;
   onResolver: (eventoId: string) => void;
   onRealizar: (ev: DenteOdonto["eventos_ativos"][number]) => void;
   onEstado: (estado: EstadoDente) => void;
+  onSondagem: (args: SondagemArgs) => void;
 }) {
   const [procNome, setProcNome] = useState("");
   const [intencao, setIntencao] = useState<Intencao>("planejado");
   const [valor, setValor] = useState("");
   const [zonas, setZonas] = useState<Zona[]>(zonaInicial ? [zonaInicial] : []);
   const [obs, setObs] = useState("");
+  const [showPerio, setShowPerio] = useState(false);
 
   const grupos = useMemo(() => agruparPorEsp(precios), [precios]);
   const proc = precios.find(p => p.nome === procNome);
@@ -311,6 +426,21 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
         </button>
         {!proc && <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>Selecione um procedimento acima para registrar.</div>}
       </div>
+
+      {/* Sondagem periodontal */}
+      <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 14 }}>
+        <button type="button" onClick={() => setShowPerio(v => !v)}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: FONT }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px" }}>
+            Sondagem periodontal
+            {piorBolsa(sondagem) >= 4 && (
+              <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: "#fff", background: piorBolsa(sondagem) >= 6 ? "#dc2626" : "#d97706", padding: "1px 6px", borderRadius: 99 }}>{piorBolsa(sondagem)}mm</span>
+            )}
+          </span>
+          <span style={{ fontSize: 11, color: "#94a3b8" }}>{showPerio ? "▲" : "▼"}</span>
+        </button>
+        {showPerio && <SondagemForm sondagem={sondagem} salvando={salvando} onSalvar={onSondagem} />}
+      </div>
     </div>
   );
 }
@@ -346,6 +476,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
 
   const [dentes, setDentes] = useState<DenteOdonto[]>([]);
   const [precios, setPrecios] = useState<Procedimento[]>([]);
+  const [sondagem, setSondagem] = useState<Record<string, SondagemDente>>({});
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -362,11 +493,16 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
     (async () => {
       setLoading(true); setErro("");
       try {
-        const [l, cli] = await Promise.all([
+        const [l, cli, snd] = await Promise.all([
           carregarOdontograma(paciente.id, clinicaId),
           sb.query<{ precios?: Procedimento[] }>("clinicas", `?id=eq.${clinicaId}&select=precios`).catch(() => []),
+          buscarSondagem(paciente.id).catch(() => [] as SondagemDente[]),
         ]);
-        if (vivo) { setDentes(l); setPrecios(cli[0]?.precios ?? []); }
+        if (vivo) {
+          setDentes(l);
+          setPrecios(cli[0]?.precios ?? []);
+          setSondagem(Object.fromEntries(snd.map(s => [s.numero_iso, s])));
+        }
       } catch (e) { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar."); }
       finally { if (vivo) setLoading(false); }
     })();
@@ -415,6 +551,14 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
     if (!denteSel) return;
     comSalvar(() => atualizarEstadoDente({ denteId: denteSel.id, estado, atualizadoPor: autor }));
   }
+  function handleSondagem(args: { prof: (number|null)[]; marg: (number|null)[]; mobilidade: number|null; furcacao: number|null; sangramento: boolean; placa: boolean; supuracao: boolean; tartaro: boolean }) {
+    if (!denteSel) return;
+    comSalvar(async () => {
+      await registrarSondagem({ denteId: denteSel.id, clinicaId, pacienteId: paciente.id, criadoPor: autor, ...args });
+      const snd = await buscarSondagem(paciente.id);
+      setSondagem(Object.fromEntries(snd.map(s => [s.numero_iso, s])));
+    });
+  }
 
   const totalComAchados = dentes.filter(d => d.eventos_ativos.length > 0).length;
   const orcamentoAFazer = dentes.reduce((s, d) => s + valorPendenteDente(d), 0);
@@ -452,7 +596,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
               <div style={{ textAlign: "center", color: "#dc2626", fontSize: 13, paddingTop: 60 }}>{erro}</div>
             ) : (
               <>
-                <Arcada porNumero={porNumero} selecionado={sel?.numero ?? null} onSelect={selecionar} />
+                <Arcada porNumero={porNumero} selecionado={sel?.numero ?? null} sondagem={sondagem} onSelect={selecionar} />
                 <Legenda precios={precios} />
                 {!denteSel && (
                   <div style={{ textAlign: "center", fontSize: 12, color: "#cbd5e1" }}>
@@ -471,11 +615,13 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
                 dente={denteSel}
                 zonaInicial={sel?.zona}
                 precios={precios}
+                sondagem={sondagem[denteSel.numero_iso]}
                 salvando={salvando}
                 onRegistrar={handleRegistrar}
                 onResolver={handleResolver}
                 onRealizar={handleRealizar}
                 onEstado={handleEstado}
+                onSondagem={handleSondagem}
               />
               <button onClick={() => setSel(null)}
                 style={{ marginTop: 18, fontSize: 11, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: FONT }}>
