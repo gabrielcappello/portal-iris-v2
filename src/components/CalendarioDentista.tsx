@@ -8,7 +8,7 @@ import {
   isToday, isSameDay, isSameMonth, parseISO, eachDayOfInterval,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, RefreshCw, X, Ban, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, X, Ban } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
 import Week from "react-big-calendar/lib/Week";
@@ -401,7 +401,19 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)", marginBottom: 10 }}>
         {carregando && (
           <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.55)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Clock size={30} color="#2B7A78" strokeWidth={1.5} style={{ animation: "spin 2.4s linear infinite", opacity: 0.75 }} />
+            <div style={{
+              width: 60, height: 60, borderRadius: 18, flexShrink: 0, opacity: 0.5,
+              background: "linear-gradient(135deg,#2B7A78,#3AAFA9)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "spin 2.4s linear infinite",
+              boxShadow: "0 4px 18px rgba(43,122,120,0.28)",
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 36, height: 36 }} fill="white">
+                <circle cx="12" cy="12" r="10" fillOpacity="0.2"/>
+                <circle cx="12" cy="12" r="6"  fillOpacity="0.38"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
           </div>
         )}
         <Calendar
