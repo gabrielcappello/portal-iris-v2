@@ -2,10 +2,11 @@
 import { useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Search, ChevronDown, MessageCircle } from "lucide-react";
-import { sb, calcularIdade, type Paciente, type Agendamento, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, calcularIdade, type Paciente, type Agendamento } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import ChatManualModal from "@/components/ChatManualModal";
+import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -17,50 +18,53 @@ function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>
   };
 }
 
-function anamneseAlertas(a: AnamnesePaciente|undefined, t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): string[] {
-  if (!a) return [];
-  const al: string[] = [];
-  if (a.diabetes)    al.push(t("health.diabetes"));
-  if (a.hipertensao) al.push(t("health.hypertension"));
-  if (a.gravidez)    al.push(t("health.pregnancy"));
-  if (a.fumante)     al.push(t("health.smoker"));
-  if (a.alergias?.trim())                   al.push(t("patients.alert_allergies",{valor:a.alergias.trim()}));
-  if (a.medicamentos_uso_continuo?.trim())  al.push(t("patients.alert_medications",{valor:a.medicamentos_uso_continuo.trim()}));
-  if (a.observacoes_saude?.trim())          al.push(t("patients.alert_notes",{valor:a.observacoes_saude.trim()}));
-  return al;
+function temAlertaSaude(a: AnamneseData | undefined): boolean {
+  if (!a) return false;
+  // novo formato: verifica se algum campo relevante é "sim"
+  const campos = ["fumante","diabetes","hipertensao","anticoagulantes","gravidez"] as const;
+  if (campos.some(c => a[c] === "sim")) return true;
+  // formato legado (boolean)
+  if (a.diabetes === true || a.hipertensao === true || a.gravidez === true || a.fumante === true) return true;
+  return false;
 }
 
-function AnamneseCard({anamnese,t}: {anamnese?: AnamnesePaciente; t:(key:TranslationKey,vars?:Record<string,string|number>)=>string}) {
-  const alertas = anamneseAlertas(anamnese,t);
-  const temAlerta = alertas.length > 0;
-  const bg    = temAlerta ? "rgba(239,68,68,0.06)"   : "rgba(16,185,129,0.06)";
-  const border= temAlerta ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(16,185,129,0.25)";
-  const color = temAlerta ? "#dc2626" : "#059669";
-  const icon  = temAlerta ? "⚠️" : "✓";
-  const titulo= temAlerta ? t("patients.health_alerts") : t("patients.anamnesis_label");
-  const sub   = !anamnese ? t("patients.anamnesis_none") : temAlerta ? "" : t("patients.no_alerts");
+function contarCampos(a: AnamneseData): number {
+  return Object.keys(a).filter(k => k !== "_meta").length;
+}
+
+function formatarDataAnamnese(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function AnamneseCard({ anamnese, onEditar }: { anamnese?: AnamneseData; onEditar: () => void }) {
+  const meta = anamnese?._meta as { atualizada_em?: string } | undefined;
+  const campos = anamnese ? contarCampos(anamnese) : 0;
+  const temDados = campos > 0;
+
   return (
-    <div style={{padding:"12px 14px",background:bg,border,borderRadius:10}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:temAlerta?8:0}}>
-        <span style={{fontSize:15}}>{icon}</span>
-        <div style={{flex:1}}>
-          <div style={{fontSize:12,fontWeight:700,color,textTransform:"uppercase",letterSpacing:"0.5px"}}>{titulo}</div>
-          {sub&&<div style={{fontSize:12,color,opacity:0.8,marginTop:1}}>{sub}</div>}
+    <div style={{ padding: "12px 14px", background: temDados ? "rgba(43,122,120,0.04)" : "#f8fafc", border: `1px solid ${temDados ? "rgba(43,122,120,0.2)" : "#e2e8f0"}`, borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>
+            Anamnese {temDados && <span style={{ color: "#2B7A78" }}>✓</span>}
+          </div>
+          {temDados ? (
+            <>
+              <div style={{ fontSize: 12, color: "#64748b" }}>{campos} campo{campos !== 1 ? "s" : ""} preenchido{campos !== 1 ? "s" : ""}</div>
+              {meta?.atualizada_em && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>Última atualização: {formatarDataAnamnese(meta.atualizada_em)}</div>}
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: "#94a3b8" }}>Nenhum dado registrado</div>
+          )}
         </div>
-        {anamnese?.data_ultima_atualizacao&&(
-          <div style={{fontSize:10,color:"#94a3b8"}}>{anamnese.data_ultima_atualizacao.slice(0,10)}</div>
-        )}
+        <button onClick={onEditar}
+          style={{ padding: "6px 14px", fontSize: 12, fontWeight: 700, border: "1px solid #e2e8f0", borderRadius: 8,
+            cursor: "pointer", background: "#fff", color: "#2B7A78", fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
+          {temDados ? "Ver / Editar" : "Preencher"}
+        </button>
       </div>
-      {temAlerta&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-          {alertas.map(al=>(
-            <span key={al} style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:99,
-              background:"rgba(239,68,68,0.1)",color:"#dc2626",border:"1px solid rgba(239,68,68,0.2)"}}>
-              {al}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -73,9 +77,11 @@ export default function PacientesPage() {
   const [search, setSearch]             = useState("");
   const [expanded, setExpanded]         = useState<string|null>(null);
   const [loading, setLoading]           = useState(true);
-  const [chatPaciente, setChatPaciente] = useState<Paciente|null>(null);
-  const [clinicaId, setClinicaId]       = useState("");
-  const [operadorNome, setOperadorNome] = useState("");
+  const [chatPaciente, setChatPaciente]         = useState<Paciente|null>(null);
+  const [anamnesePaciente, setAnamnesePaciente] = useState<Paciente|null>(null);
+  const [anamneseCache, setAnamneseCache]       = useState<Record<string, AnamneseData>>({});
+  const [clinicaId, setClinicaId]               = useState("");
+  const [operadorNome, setOperadorNome]         = useState("");
 
   useEffect(() => {
     const id   = localStorage.getItem("clinica_id") || "";
@@ -148,7 +154,8 @@ export default function PacientesPage() {
             {filtered.map((p,i)=>{
               const {total, ultima, ultimaProc} = stats(p);
               const isOpen = expanded===p.id;
-              const alertas = anamneseAlertas(p.anamnese,t);
+              const anamnese = anamneseCache[p.id] ?? (p.anamnese as unknown as AnamneseData);
+              const alerta = temAlertaSaude(anamnese);
               return (
                 <Fragment key={p.id}>
                   <motion.tr initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.01}}
@@ -167,7 +174,7 @@ export default function PacientesPage() {
                         <div>
                           <div style={{fontSize:13,fontWeight:600,color:"#1e293b",display:"flex",alignItems:"center",gap:6}}>
                             {p.nome}
-                            {alertas.length>0&&(
+                            {alerta&&(
                               <span style={{width:7,height:7,borderRadius:"50%",background:"#dc2626",display:"inline-block",flexShrink:0}}/>
                             )}
                           </div>
@@ -227,7 +234,10 @@ export default function PacientesPage() {
                               </div>
 
                               {/* Anamnese */}
-                              <AnamneseCard anamnese={p.anamnese} t={t}/>
+                              <AnamneseCard
+                                anamnese={anamneseCache[p.id] ?? (p.anamnese as unknown as AnamneseData)}
+                                onEditar={() => setAnamnesePaciente(p)}
+                              />
 
                               {/* Histórico */}
                               {histPaciente(p).length>0&&(
@@ -278,6 +288,20 @@ export default function PacientesPage() {
           clinicaId={clinicaId}
           operadorNome={operadorNome}
           onClose={() => setChatPaciente(null)}
+        />
+      )}
+
+      {anamnesePaciente && (
+        <AnamneseModal
+          paciente={anamnesePaciente}
+          clinicaId={clinicaId}
+          operadorNome={operadorNome}
+          onClose={(atualizada) => {
+            if (atualizada && anamnesePaciente) {
+              setAnamneseCache(prev => ({ ...prev, [anamnesePaciente.id]: atualizada }));
+            }
+            setAnamnesePaciente(null);
+          }}
         />
       )}
     </div>
