@@ -1,15 +1,16 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { X, Plus, Check, RotateCcw } from "lucide-react";
 import { type Paciente } from "@/lib/supabase";
 import {
   carregarOdontograma, registrarAchado, resolverAchado, atualizarEstadoDente,
-  glifoZonas, coresPorZona, eventosSemZona, zonasDoDente,
+  corDominante, zonasDoDente,
   ACHADOS, ACHADO_POR_ID, CORES_CATEGORIA, corDoAchado,
   ROTULO_ZONA, ROTULO_ESTADO,
   ARCADA_SUPERIOR, ARCADA_INFERIOR,
   type DenteOdonto, type Zona, type EstadoDente, type CategoriaAchado,
 } from "@/lib/odontograma";
+import { toothAssetUrl } from "@/lib/odontograma-assets";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
@@ -25,93 +26,102 @@ function formatarData(iso?: string): string {
   return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-// ── Glifo de um dente (vista oclusal, 5 superfícies) ──────────────────────────
+// ── Dente realista (imagem + tint do achado) ──────────────────────────────────
 
-const S = 34; // lado do quadrado de superfícies
-const POLI: Record<"top" | "right" | "bottom" | "left" | "center", string> = {
-  top:    "2,2 32,2 23,11 11,11",
-  right:  "32,2 32,32 23,23 23,11",
-  bottom: "32,32 2,32 11,23 23,23",
-  left:   "2,2 11,11 11,23 2,32",
-  center: "11,11 23,11 23,23 11,23",
-};
-
-function ToothGlyph({ dente, selecionado, onSelect }: {
+function ToothImage({ dente, selecionado, align, onSelect }: {
   dente: DenteOdonto;
   selecionado: boolean;
-  onSelect: (numero: string, zona?: Zona) => void;
+  align: "flex-end" | "flex-start"; // superior alinha embaixo (coroa p/ centro), inferior em cima
+  onSelect: (numero: string) => void;
 }) {
+  const url = toothAssetUrl(dente.numero_iso, "vestibular");
   const ausente = dente.estado === "ausente" || dente.estado === "extraido";
   const especial = dente.estado === "nao_erupcionado" || dente.estado === "impactado";
-  const g = glifoZonas(dente);
-  const cores = coresPorZona(dente.eventos_ativos);
-  const semZona = eventosSemZona(dente.eventos_ativos);
-  const numeroEmCima = dente.arcada === "superior";
-
-  const fill = (zona: Zona) => cores[zona] || "#ffffff";
-
-  const label = (
-    <div style={{
-      fontSize: 10, fontWeight: 700, color: selecionado ? BRAND : "#94a3b8",
-      fontFamily: "monospace", textAlign: "center", lineHeight: 1,
-    }}>{dente.numero_iso}</div>
-  );
+  const cor = corDominante(dente.eventos_ativos);
+  const n = dente.eventos_ativos.length;
 
   return (
     <div
       onClick={() => onSelect(dente.numero_iso)}
       title={`Dente ${dente.numero_iso} — ${ROTULO_ESTADO[dente.estado]}`}
       style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-        cursor: "pointer", padding: "3px 2px", borderRadius: 8,
-        background: selecionado ? "rgba(43,122,120,0.08)" : "transparent",
+        width: "100%", height: "100%", display: "flex", alignItems: align, justifyContent: "center",
+        cursor: "pointer", position: "relative", borderRadius: 6, padding: "2px 1px", boxSizing: "border-box",
+        background: selecionado ? "rgba(43,122,120,0.10)" : "transparent",
         outline: selecionado ? `1.5px solid ${BRAND}` : "1.5px solid transparent",
         transition: "background 0.12s, outline 0.12s",
       }}>
-      {numeroEmCima && label}
-      <div style={{ position: "relative" }}>
-        <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} style={{ display: "block", opacity: ausente ? 0.28 : 1 }}>
-          {(["top", "right", "bottom", "left", "center"] as const).map(pos => (
-            <polygon key={pos} points={POLI[pos]}
-              fill={fill(g[pos])} stroke="#cbd5e1" strokeWidth={0.8}
-              strokeDasharray={especial ? "2 1.5" : undefined}
-              onClick={e => { e.stopPropagation(); onSelect(dente.numero_iso, g[pos]); }}
-              style={{ cursor: "pointer" }} />
-          ))}
-        </svg>
-        {ausente && (
-          <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-            <line x1="6" y1="6" x2="28" y2="28" stroke="#94a3b8" strokeWidth={2} strokeLinecap="round" />
-            <line x1="28" y1="6" x2="6" y2="28" stroke="#94a3b8" strokeWidth={2} strokeLinecap="round" />
-          </svg>
-        )}
-        {semZona.length > 0 && !ausente && (
-          <span style={{
-            position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: 99,
-            background: corDoAchado(semZona[0].achado_id), border: "1.5px solid #fff",
+      <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={`Dente ${dente.numero_iso}`} draggable={false}
+          style={{
+            maxWidth: "100%", maxHeight: 116, height: "auto", display: "block", userSelect: "none",
+            opacity: ausente ? 0.2 : (especial ? 0.5 : 1),
+            filter: ausente ? "grayscale(1)" : "none",
+          }} />
+        {/* tint na forma do dente */}
+        {cor && !ausente && (
+          <div style={{
+            position: "absolute", inset: 0,
+            WebkitMaskImage: `url(${url})`, maskImage: `url(${url})`,
+            WebkitMaskSize: "contain", maskSize: "contain",
+            WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center", maskPosition: "center",
+            background: cor, opacity: 0.45, mixBlendMode: "multiply", pointerEvents: "none",
           }} />
         )}
+        {/* X de ausente */}
+        {ausente && (
+          <svg viewBox="0 0 40 40" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+            <line x1="9" y1="9" x2="31" y2="31" stroke="#94a3b8" strokeWidth={2.5} strokeLinecap="round" />
+            <line x1="31" y1="9" x2="9" y2="31" stroke="#94a3b8" strokeWidth={2.5} strokeLinecap="round" />
+          </svg>
+        )}
+        {/* badge de contagem */}
+        {n > 0 && !ausente && (
+          <span style={{
+            position: "absolute", top: -4, right: -4, minWidth: 13, height: 13, padding: "0 3px",
+            borderRadius: 99, background: cor ?? "#64748b", color: "#fff", fontSize: 9, fontWeight: 700,
+            display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #fff",
+          }}>{n}</span>
+        )}
       </div>
-      {!numeroEmCima && label}
     </div>
   );
 }
 
-function ArcadaRow({ numeros, dentes, selecionado, onSelect }: {
-  numeros: string[]; dentes: Record<string, DenteOdonto>;
-  selecionado: string | null; onSelect: (n: string, z?: Zona) => void;
+// ── Arcada (2 fileiras + faixa de números no meio) ────────────────────────────
+
+function Arcada({ porNumero, selecionado, onSelect }: {
+  porNumero: Record<string, DenteOdonto>;
+  selecionado: string | null;
+  onSelect: (n: string) => void;
 }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: 1 }}>
-      {numeros.map((n, i) => {
-        const d = dentes[n];
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", gap: 1, width: "100%" }}>
+      {ARCADA_SUPERIOR.map((nSup, c) => {
+        const nInf = ARCADA_INFERIOR[c];
+        const dSup = porNumero[nSup];
+        const dInf = porNumero[nInf];
         return (
-          <div key={n} style={{ display: "flex" }}>
-            {i === numeros.length / 2 && (
-              <div style={{ width: 10, alignSelf: "stretch", borderLeft: "1px dashed #e2e8f0", marginLeft: 4 }} />
-            )}
-            {d && <ToothGlyph dente={d} selecionado={selecionado === n} onSelect={onSelect} />}
-          </div>
+          <Fragment key={c}>
+            {c === 8 && <div style={{ width: 10, flexShrink: 0, borderLeft: "1px dashed #e2e8f0", margin: "0 3px" }} />}
+            <div style={{ flex: "1 1 0", maxWidth: 52, minWidth: 26, display: "flex", flexDirection: "column" }}>
+              {/* dente superior (coroa p/ baixo) */}
+              <div style={{ height: 128 }}>
+                {dSup && <ToothImage dente={dSup} selecionado={selecionado === nSup} align="flex-end" onSelect={onSelect} />}
+              </div>
+              {/* números */}
+              <div style={{ padding: "3px 0", textAlign: "center", fontFamily: "monospace", lineHeight: 1.35 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: selecionado === nSup ? BRAND : "#64748b" }}>{nSup}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: selecionado === nInf ? BRAND : "#cbd5e1" }}>{nInf}</div>
+              </div>
+              {/* dente inferior (coroa p/ cima) */}
+              <div style={{ height: 128 }}>
+                {dInf && <ToothImage dente={dInf} selecionado={selecionado === nInf} align="flex-start" onSelect={onSelect} />}
+              </div>
+            </div>
+          </Fragment>
         );
       })}
     </div>
@@ -130,8 +140,6 @@ function DetalheDente({ dente, zonaInicial, salvando, onRegistrar, onResolver, o
   onResolver: (eventoId: string) => void;
   onEstado: (estado: EstadoDente) => void;
 }) {
-  // O componente é remontado a cada seleção (key inclui um nonce), então o
-  // estado inicial já reflete a superfície clicada — sem necessidade de efeito.
   const [achadoId, setAchadoId] = useState("");
   const [zonas, setZonas] = useState<Zona[]>(zonaInicial ? [zonaInicial] : []);
   const [obs, setObs] = useState("");
@@ -148,11 +156,14 @@ function DetalheDente({ dente, zonaInicial, salvando, onRegistrar, onResolver, o
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Cabeçalho do dente */}
-      <div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", fontFamily: "monospace" }}>{dente.numero_iso}</div>
-        <div style={{ fontSize: 12, color: "#64748b", textTransform: "capitalize" }}>
-          {dente.tipo_dente} · {dente.arcada} {dente.lado}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={toothAssetUrl(dente.numero_iso, "vestibular")} alt="" style={{ height: 56, width: "auto" }} />
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", fontFamily: "monospace" }}>{dente.numero_iso}</div>
+          <div style={{ fontSize: 12, color: "#64748b", textTransform: "capitalize" }}>
+            {dente.tipo_dente} · {dente.arcada} {dente.lado}
+          </div>
         </div>
       </div>
 
@@ -253,8 +264,6 @@ function DetalheDente({ dente, zonaInicial, salvando, onRegistrar, onResolver, o
   );
 }
 
-// ── Legenda ───────────────────────────────────────────────────────────────────
-
 function Legenda() {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", justifyContent: "center" }}>
@@ -304,8 +313,8 @@ export default function OdontogramaModal({ paciente, clinicaId, operadorNome, on
   const porNumero: Record<string, DenteOdonto> = Object.fromEntries(dentes.map(d => [d.numero_iso, d]));
   const denteSel = sel ? porNumero[sel.numero] : null;
 
-  function selecionar(numero: string, zona?: Zona) {
-    setSel(prev => ({ numero, zona, nonce: (prev?.nonce ?? 0) + 1 }));
+  function selecionar(numero: string) {
+    setSel(prev => ({ numero, nonce: (prev?.nonce ?? 0) + 1 }));
   }
 
   async function comSalvar(fn: () => Promise<void>) {
@@ -335,7 +344,7 @@ export default function OdontogramaModal({ paciente, clinicaId, operadorNome, on
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.45)", padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: "min(1080px,100%)", maxHeight: "94vh", background: "#fff", borderRadius: 16, display: "flex", flexDirection: "column", boxShadow: "0 24px 70px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+      <div style={{ width: "min(1120px,100%)", maxHeight: "94vh", background: "#fff", borderRadius: 16, display: "flex", flexDirection: "column", boxShadow: "0 24px 70px rgba(0,0,0,0.25)", overflow: "hidden" }}>
 
         {/* Cabeçalho */}
         <div style={{ padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
@@ -353,21 +362,17 @@ export default function OdontogramaModal({ paciente, clinicaId, operadorNome, on
         {/* Corpo */}
         <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
           {/* Mapa */}
-          <div style={{ flex: 1, padding: "20px 16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+          <div style={{ flex: 1, padding: "20px 16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
             {loading ? (
               <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, paddingTop: 60 }}>Carregando odontograma…</div>
             ) : erro && dentes.length === 0 ? (
               <div style={{ textAlign: "center", color: "#dc2626", fontSize: 13, paddingTop: 60 }}>{erro}</div>
             ) : (
               <>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
-                  <ArcadaRow numeros={ARCADA_SUPERIOR} dentes={porNumero} selecionado={sel?.numero ?? null} onSelect={selecionar} />
-                  <div style={{ width: "70%", borderTop: "1px dashed #e2e8f0", margin: "2px 0" }} />
-                  <ArcadaRow numeros={ARCADA_INFERIOR} dentes={porNumero} selecionado={sel?.numero ?? null} onSelect={selecionar} />
-                </div>
+                <Arcada porNumero={porNumero} selecionado={sel?.numero ?? null} onSelect={selecionar} />
                 <Legenda />
                 {!denteSel && (
-                  <div style={{ textAlign: "center", fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>
+                  <div style={{ textAlign: "center", fontSize: 12, color: "#cbd5e1" }}>
                     Clique em um dente para ver e registrar achados.
                   </div>
                 )}

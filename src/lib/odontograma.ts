@@ -174,6 +174,18 @@ export function eventosSemZona(eventos: EventoOdonto[]): EventoOdonto[] {
   return eventos.filter(e => !e.zonas?.length);
 }
 
+// Cor dominante do dente (maior prioridade entre os achados ativos) — para o tint.
+export function corDominante(eventos: EventoOdonto[]): string | null {
+  let melhor = 99;
+  let cor: string | null = null;
+  for (const ev of eventos) {
+    const cat = ACHADO_POR_ID[ev.achado_id]?.categoria;
+    const p = cat ? PRIORIDADE_CATEGORIA.indexOf(cat) : 99;
+    if (p >= 0 && p < melhor) { melhor = p; cor = corDoAchado(ev.achado_id); }
+  }
+  return cor;
+}
+
 // ── Cliente (via proxy /api/odontograma) ──────────────────────────────────────
 
 async function callRpc<T = unknown>(rpc: string, params: Record<string, unknown>): Promise<T> {
