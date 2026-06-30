@@ -1,28 +1,20 @@
 "use client";
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import { X, Plus, Check, RotateCcw } from "lucide-react";
 import { sb, type Paciente } from "@/lib/supabase";
 import {
   carregarOdontograma, registrarAchado, resolverAchado, atualizarEstadoDente,
-  corDominante, zonasDoDente, getPlano, ehPlanejadoPendente, valorPendenteDente, formatBRL,
-  COR_EXISTENTE, COR_A_FAZER,
-  ACHADOS, ACHADO_POR_ID, CORES_CATEGORIA, corDoAchado,
-  ROTULO_ZONA, ROTULO_ESTADO,
-  ARCADA_SUPERIOR, ARCADA_INFERIOR,
-  type DenteOdonto, type Zona, type EstadoDente, type CategoriaAchado, type Intencao,
+  corDominante, corEvento, nomeEvento, zonasDoDente, getPlano, ehPlanejadoPendente,
+  valorPendenteDente, formatBRL, COR_ESPECIALIDADE, COR_EXISTENTE, COR_A_FAZER,
+  ROTULO_ZONA, ROTULO_ESTADO, ARCADA_SUPERIOR, ARCADA_INFERIOR,
+  type DenteOdonto, type Zona, type EstadoDente, type Intencao,
 } from "@/lib/odontograma";
 import { toothAssetUrl } from "@/lib/odontograma-assets";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
 
-type Procedimento = { esp: string; nome: string; valor: number; tempo: number; mostrar_valor?: boolean };
-type PlanoForm = { intencao: Intencao; procedimento?: string; valor?: number };
-
-const NOME_CATEGORIA: Record<CategoriaAchado, string> = {
-  patologia: "Patologias", restauracao: "Restaurações", endodontia: "Endodontia",
-  protese_implante: "Prótese / Implante", sintoma: "Sintomas",
-};
+type Procedimento = { esp: string; nome: string; valor: number; tempo: number; ativo?: boolean; mostrar_valor?: boolean };
 
 function formatarData(iso?: string): string {
   if (!iso) return "";
@@ -30,7 +22,19 @@ function formatarData(iso?: string): string {
   return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-// ── Dente realista (imagem + tint do achado) ──────────────────────────────────
+// agrupa procedimentos por especialidade preservando a ordem da clínica
+function agruparPorEsp(precios: Procedimento[]): [string, Procedimento[]][] {
+  const grupos: [string, Procedimento[]][] = [];
+  for (const p of precios) {
+    if (p.ativo === false) continue;
+    let g = grupos.find(([esp]) => esp === p.esp);
+    if (!g) { g = [p.esp, []]; grupos.push(g); }
+    g[1].push(p);
+  }
+  return grupos;
+}
+
+// ── Dente realista (imagem + tint) ────────────────────────────────────────────
 
 function ToothImage({ dente, selecionado, align, onSelect }: {
   dente: DenteOdonto;
@@ -135,34 +139,34 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
   zonaInicial?: Zona;
   precios: Procedimento[];
   salvando: boolean;
-  onRegistrar: (achadoId: string, zonas: Zona[], obs: string, plano: PlanoForm) => void;
+  onRegistrar: (proc: Procedimento, zonas: Zona[], obs: string, intencao: Intencao, valor?: number) => void;
   onResolver: (eventoId: string) => void;
   onRealizar: (ev: DenteOdonto["eventos_ativos"][number]) => void;
   onEstado: (estado: EstadoDente) => void;
 }) {
-  const [achadoId, setAchadoId] = useState("");
+  const [procNome, setProcNome] = useState("");
+  const [intencao, setIntencao] = useState<Intencao>("planejado");
+  const [valor, setValor] = useState("");
   const [zonas, setZonas] = useState<Zona[]>(zonaInicial ? [zonaInicial] : []);
   const [obs, setObs] = useState("");
-  const [intencao, setIntencao] = useState<Intencao>("existente");
-  const [procedimento, setProcedimento] = useState("");
-  const [valor, setValor] = useState("");
 
+  const grupos = useMemo(() => agruparPorEsp(precios), [precios]);
+  const proc = precios.find(p => p.nome === procNome);
+  const corSel = proc ? (COR_ESPECIALIDADE[proc.esp] ?? "#64748b") : "#64748b";
   const zonasDisponiveis = zonasDoDente(dente);
+
+  function escolherProc(nome: string) {
+    setProcNome(nome);
+    const p = precios.find(x => x.nome === nome);
+    if (p) setValor(p.valor ? String(p.valor) : "");
+  }
   function toggleZona(z: Zona) {
     setZonas(prev => prev.includes(z) ? prev.filter(x => x !== z) : [...prev, z]);
   }
-  function escolherProcedimento(nome: string) {
-    setProcedimento(nome);
-    const p = precios.find(x => x.nome === nome);
-    if (p) setValor(String(p.valor));
-  }
   function registrar() {
-    if (!achadoId) return;
-    const plano: PlanoForm = intencao === "planejado"
-      ? { intencao, procedimento: procedimento || undefined, valor: valor ? Number(valor) : undefined }
-      : { intencao: "existente" };
-    onRegistrar(achadoId, zonas, obs.trim(), plano);
-    setAchadoId(""); setZonas([]); setObs(""); setIntencao("existente"); setProcedimento(""); setValor("");
+    if (!proc) return;
+    onRegistrar(proc, zonas, obs.trim(), intencao, valor ? Number(valor) : undefined);
+    setProcNome(""); setValor(""); setZonas([]); setObs(""); setIntencao("planejado");
   }
 
   return (
@@ -196,13 +200,13 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
         </div>
       </div>
 
-      {/* Achados ativos */}
+      {/* Lista de procedimentos do dente */}
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 6 }}>
-          Achados {dente.eventos_ativos.length > 0 && `(${dente.eventos_ativos.length})`}
+          Procedimentos {dente.eventos_ativos.length > 0 && `(${dente.eventos_ativos.length})`}
         </div>
         {dente.eventos_ativos.length === 0 ? (
-          <div style={{ fontSize: 12, color: "#cbd5e1" }}>Nenhum achado registrado.</div>
+          <div style={{ fontSize: 12, color: "#cbd5e1" }}>Nenhum procedimento registrado.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {dente.eventos_ativos.map(ev => {
@@ -211,16 +215,16 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
               const realizado = plano.status === "realizado";
               return (
                 <div key={ev.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "#f8fafc", borderRadius: 8, border: "1px solid #f1f5f9" }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 99, background: corDoAchado(ev.achado_id), marginTop: 3, flexShrink: 0 }} />
+                  <span style={{ width: 9, height: 9, borderRadius: 99, background: corEvento(ev), marginTop: 3, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>{ACHADO_POR_ID[ev.achado_id]?.nome ?? ev.achado_id}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>{nomeEvento(ev)}</span>
                       {aFazer && <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", background: COR_A_FAZER, padding: "1px 6px", borderRadius: 99 }}>A FAZER</span>}
                       {realizado && <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", background: "#059669", padding: "1px 6px", borderRadius: 99 }}>REALIZADO</span>}
                       {!aFazer && !realizado && <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", background: COR_EXISTENTE, padding: "1px 6px", borderRadius: 99 }}>EXISTENTE</span>}
                     </div>
                     {ev.zonas?.length ? <div style={{ fontSize: 11, color: "#94a3b8" }}>{ev.zonas.map(z => ROTULO_ZONA[z]).join(", ")}</div> : null}
-                    {plano.procedimento && <div style={{ fontSize: 11, color: "#64748b" }}>{plano.procedimento}{plano.valor != null ? ` · ${formatBRL(plano.valor)}` : ""}</div>}
+                    {plano.valor != null && <div style={{ fontSize: 11, color: "#64748b" }}>{formatBRL(plano.valor)}</div>}
                     {ev.observacoes && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{ev.observacoes}</div>}
                     {ev.criado_em && <div style={{ fontSize: 10, color: "#cbd5e1", marginTop: 2 }}>{formatarData(ev.criado_em)}</div>}
                     {aFazer && (
@@ -241,90 +245,85 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
         )}
       </div>
 
-      {/* Registrar achado */}
+      {/* Registrar procedimento */}
       <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 14 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 8 }}>Registrar achado</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 8 }}>Registrar procedimento</div>
 
-        <select value={achadoId} onChange={e => setAchadoId(e.target.value)}
+        <select value={procNome} onChange={e => escolherProc(e.target.value)}
           style={{ width: "100%", padding: "8px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }}>
-          <option value="">Selecione um achado…</option>
-          {(Object.keys(NOME_CATEGORIA) as CategoriaAchado[]).map(cat => (
-            <optgroup key={cat} label={NOME_CATEGORIA[cat]}>
-              {ACHADOS.filter(a => a.categoria === cat).map(a => (
-                <option key={a.id} value={a.id}>{a.nome}</option>
-              ))}
+          <option value="">Selecione um procedimento…</option>
+          {grupos.map(([esp, items]) => (
+            <optgroup key={esp} label={esp}>
+              {items.map((p, i) => <option key={i} value={p.nome}>{p.nome}{p.valor ? ` — ${formatBRL(p.valor)}` : ""}</option>)}
             </optgroup>
           ))}
         </select>
+        {precios.length === 0 && (
+          <div style={{ marginTop: 6, fontSize: 11, color: "#d97706" }}>Nenhum procedimento cadastrado em Procedimentos &amp; Preços.</div>
+        )}
 
-            {/* Intenção: existente x a fazer */}
-            <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Este achado é…</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {([["existente", "Existente", COR_EXISTENTE], ["planejado", "A fazer", COR_A_FAZER]] as const).map(([val, label, c]) => {
-                const on = intencao === val;
-                return (
-                  <button key={val} type="button" onClick={() => setIntencao(val)}
-                    style={{ flex: 1, padding: "7px", fontSize: 12, fontWeight: 700, fontFamily: FONT, borderRadius: 8, cursor: "pointer",
-                      border: `1px solid ${on ? c : "#e2e8f0"}`, background: on ? c : "#fff", color: on ? "#fff" : "#64748b" }}>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Intenção */}
+        <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Este procedimento é…</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {([["existente", "Existente", COR_EXISTENTE], ["planejado", "A fazer", COR_A_FAZER]] as const).map(([val, label, c]) => {
+            const on = intencao === val;
+            return (
+              <button key={val} type="button" onClick={() => setIntencao(val)}
+                style={{ flex: 1, padding: "7px", fontSize: 12, fontWeight: 700, fontFamily: FONT, borderRadius: 8, cursor: "pointer",
+                  border: `1px solid ${on ? c : "#e2e8f0"}`, background: on ? c : "#fff", color: on ? "#fff" : "#64748b" }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
 
-            {/* Procedimento + valor (só p/ "a fazer") */}
-            {intencao === "planejado" && (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-                <select value={procedimento} onChange={e => escolherProcedimento(e.target.value)}
-                  style={{ width: "100%", padding: "8px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }}>
-                  <option value="">Procedimento (opcional)…</option>
-                  {precios.map((p, i) => <option key={i} value={p.nome}>{p.nome}{p.valor ? ` — ${formatBRL(p.valor)}` : ""}</option>)}
-                </select>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
-                  <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
-                    style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
-                </div>
-              </div>
-            )}
+        {/* Valor */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
+          <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
+            style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
+        </div>
 
-            <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Superfícies (opcional)</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {zonasDisponiveis.map(z => {
-                const on = zonas.includes(z);
-                return (
-                  <button key={z} type="button" onClick={() => toggleZona(z)}
-                    style={{ padding: "4px 10px", fontSize: 11, fontWeight: 600, fontFamily: FONT,
-                      border: `1px solid ${on ? corDoAchado(achadoId) : "#e2e8f0"}`, borderRadius: 99, cursor: "pointer",
-                      background: on ? corDoAchado(achadoId) : "#fff", color: on ? "#fff" : "#64748b" }}>
-                    {ROTULO_ZONA[z]}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Superfícies */}
+        <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Superfícies (opcional)</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {zonasDisponiveis.map(z => {
+            const on = zonas.includes(z);
+            return (
+              <button key={z} type="button" onClick={() => toggleZona(z)}
+                style={{ padding: "4px 10px", fontSize: 11, fontWeight: 600, fontFamily: FONT,
+                  border: `1px solid ${on ? corSel : "#e2e8f0"}`, borderRadius: 99, cursor: "pointer",
+                  background: on ? corSel : "#fff", color: on ? "#fff" : "#64748b" }}>
+                {ROTULO_ZONA[z]}
+              </button>
+            );
+          })}
+        </div>
 
-            <input type="text" value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)"
-              style={{ marginTop: 10, width: "100%", padding: "8px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
+        <input type="text" value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)"
+          style={{ marginTop: 10, width: "100%", padding: "8px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
 
-            <button type="button" onClick={registrar} disabled={salvando || !achadoId}
-              style={{ marginTop: 10, width: "100%", padding: "9px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT,
-                border: "none", borderRadius: 9, cursor: (salvando || !achadoId) ? "not-allowed" : "pointer", background: BRAND, color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (salvando || !achadoId) ? 0.5 : 1 }}>
-              <Plus size={14} /> Registrar
-            </button>
-            {!achadoId && <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>Selecione um achado acima para registrar.</div>}
+        <button type="button" onClick={registrar} disabled={salvando || !proc}
+          style={{ marginTop: 10, width: "100%", padding: "9px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT,
+            border: "none", borderRadius: 9, cursor: (salvando || !proc) ? "not-allowed" : "pointer", background: BRAND, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (salvando || !proc) ? 0.5 : 1 }}>
+          <Plus size={14} /> Registrar
+        </button>
+        {!proc && <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>Selecione um procedimento acima para registrar.</div>}
       </div>
     </div>
   );
 }
 
-function Legenda() {
+function Legenda({ precios }: { precios: Procedimento[] }) {
+  const esps = Array.from(new Set(precios.filter(p => p.ativo !== false).map(p => p.esp)));
+  if (!esps.length) return null;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", justifyContent: "center" }}>
-      {(Object.keys(NOME_CATEGORIA) as CategoriaAchado[]).map(cat => (
-        <div key={cat} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
-          <span style={{ width: 9, height: 9, borderRadius: 99, background: CORES_CATEGORIA[cat] }} />
-          {NOME_CATEGORIA[cat]}
+      {esps.map(esp => (
+        <div key={esp} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
+          <span style={{ width: 9, height: 9, borderRadius: 99, background: COR_ESPECIALIDADE[esp] ?? "#64748b" }} />
+          {esp}
         </div>
       ))}
     </div>
@@ -388,16 +387,13 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
     finally { setSalvando(false); }
   }
 
-  function handleRegistrar(achadoId: string, zonas: Zona[], obs: string, plano: PlanoForm) {
+  function handleRegistrar(proc: Procedimento, zonas: Zona[], obs: string, intencao: Intencao, valor?: number) {
     if (!denteSel) return;
-    const detalhes: Record<string, unknown> = { intencao: plano.intencao };
-    if (plano.intencao === "planejado") {
-      detalhes.plano_status = "pendente";
-      if (plano.procedimento) detalhes.procedimento = plano.procedimento;
-      if (plano.valor != null && !Number.isNaN(plano.valor)) detalhes.valor = plano.valor;
-    }
+    const detalhes: Record<string, unknown> = { procedimento: proc.nome, esp: proc.esp, intencao };
+    if (valor != null && !Number.isNaN(valor)) detalhes.valor = valor;
+    if (intencao === "planejado") detalhes.plano_status = "pendente";
     comSalvar(() => registrarAchado({
-      denteId: denteSel.id, clinicaId, pacienteId: paciente.id, achadoId,
+      denteId: denteSel.id, clinicaId, pacienteId: paciente.id, achadoId: "procedimento",
       zonas, detalhes, observacoes: obs || undefined, criadoPor: autor,
     }));
   }
@@ -406,10 +402,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
   }
   function handleRealizar(ev: DenteOdonto["eventos_ativos"][number]) {
     if (!denteSel) return;
-    const plano = getPlano(ev);
-    const detalhes: Record<string, unknown> = { intencao: "planejado", plano_status: "realizado" };
-    if (plano.procedimento) detalhes.procedimento = plano.procedimento;
-    if (plano.valor != null) detalhes.valor = plano.valor;
+    const detalhes = { ...(ev.detalhes ?? {}), intencao: "planejado", plano_status: "realizado" };
     comSalvar(async () => {
       await registrarAchado({
         denteId: denteSel.id, clinicaId, pacienteId: paciente.id, achadoId: ev.achado_id,
@@ -436,7 +429,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>Odontograma — {paciente.nome}</div>
             <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>
-              {loading ? "Carregando…" : `${totalComAchados} dente${totalComAchados !== 1 ? "s" : ""} com achados`}
+              {loading ? "Carregando…" : `${totalComAchados} dente${totalComAchados !== 1 ? "s" : ""} com procedimentos`}
             </div>
           </div>
           {orcamentoAFazer > 0 && (
@@ -460,10 +453,10 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
             ) : (
               <>
                 <Arcada porNumero={porNumero} selecionado={sel?.numero ?? null} onSelect={selecionar} />
-                <Legenda />
+                <Legenda precios={precios} />
                 {!denteSel && (
                   <div style={{ textAlign: "center", fontSize: 12, color: "#cbd5e1" }}>
-                    Clique em um dente para ver e registrar achados.
+                    Clique em um dente para ver e registrar procedimentos.
                   </div>
                 )}
               </>

@@ -210,16 +210,39 @@ export function formatBRL(v: number): string {
 export const COR_EXISTENTE = "#2563eb"; // azul — já está na boca
 export const COR_A_FAZER  = "#dc2626"; // vermelho — planejado
 
-// Cor dominante do dente (maior prioridade entre os achados ativos) — para o tint.
+// Cor por especialidade da clínica (procedimentos). Chave = campo `esp` dos preços.
+export const COR_ESPECIALIDADE: Record<string, string> = {
+  "🦷 Clínico Geral":   "#2563eb",
+  "🔧 Endodontia":      "#7c3aed",
+  "📐 Ortodontia":      "#0891b2",
+  "🔩 Implantodontia":  "#0d9488",
+  "🦴 Prótese":         "#ca8a04",
+  "🩺 Periodontia":     "#db2777",
+  "✨ Estética":        "#d946ef",
+  "👶 Odontopediatria": "#f59e0b",
+  "🔪 Cirurgia":        "#dc2626",
+  "🩻 Radiologia":      "#64748b",
+};
+
+// Nome a exibir do evento: procedimento da clínica (em detalhes) ou achado do catálogo.
+export function nomeEvento(ev: EventoOdonto): string {
+  const d = (ev.detalhes ?? {}) as Record<string, unknown>;
+  if (typeof d.procedimento === "string") return d.procedimento;
+  return ACHADO_POR_ID[ev.achado_id]?.nome ?? ev.achado_id;
+}
+
+// Cor do evento: por especialidade (procedimento) ou por categoria (achado do catálogo).
+export function corEvento(ev: EventoOdonto): string {
+  const d = (ev.detalhes ?? {}) as Record<string, unknown>;
+  if (typeof d.esp === "string" && COR_ESPECIALIDADE[d.esp]) return COR_ESPECIALIDADE[d.esp];
+  return corDoAchado(ev.achado_id);
+}
+
+// Cor dominante do dente — para o tint. Prioriza um "a fazer" pendente.
 export function corDominante(eventos: EventoOdonto[]): string | null {
-  let melhor = 99;
-  let cor: string | null = null;
-  for (const ev of eventos) {
-    const cat = ACHADO_POR_ID[ev.achado_id]?.categoria;
-    const p = cat ? PRIORIDADE_CATEGORIA.indexOf(cat) : 99;
-    if (p >= 0 && p < melhor) { melhor = p; cor = corDoAchado(ev.achado_id); }
-  }
-  return cor;
+  if (!eventos.length) return null;
+  const aFazer = eventos.find(ehPlanejadoPendente);
+  return corEvento(aFazer ?? eventos[0]);
 }
 
 // ── Cliente (via proxy /api/odontograma) ──────────────────────────────────────
