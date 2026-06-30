@@ -257,10 +257,9 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
           ))}
         </select>
 
-        {achadoId && (
-          <>
             {/* Intenção: existente x a fazer */}
-            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Este achado é…</div>
+            <div style={{ display: "flex", gap: 6 }}>
               {([["existente", "Existente", COR_EXISTENTE], ["planejado", "A fazer", COR_A_FAZER]] as const).map(([val, label, c]) => {
                 const on = intencao === val;
                 return (
@@ -307,14 +306,13 @@ function DetalheDente({ dente, zonaInicial, precios, salvando, onRegistrar, onRe
             <input type="text" value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)"
               style={{ marginTop: 10, width: "100%", padding: "8px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
 
-            <button type="button" onClick={registrar} disabled={salvando}
+            <button type="button" onClick={registrar} disabled={salvando || !achadoId}
               style={{ marginTop: 10, width: "100%", padding: "9px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT,
-                border: "none", borderRadius: 9, cursor: salvando ? "wait" : "pointer", background: BRAND, color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: salvando ? 0.7 : 1 }}>
+                border: "none", borderRadius: 9, cursor: (salvando || !achadoId) ? "not-allowed" : "pointer", background: BRAND, color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (salvando || !achadoId) ? 0.5 : 1 }}>
               <Plus size={14} /> Registrar
             </button>
-          </>
-        )}
+            {!achadoId && <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>Selecione um achado acima para registrar.</div>}
       </div>
     </div>
   );
