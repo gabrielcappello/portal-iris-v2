@@ -2,9 +2,10 @@
 import { useState, useEffect, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown } from "lucide-react";
-import { sb, calcularIdade, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, calcularIdade, type Agendamento, type Paciente } from "@/lib/supabase";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
+import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -16,17 +17,20 @@ function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>
   };
 }
 
-function anamneseAlertas(a: AnamnesePaciente|undefined, t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): string[] {
-  if (!a) return [];
-  const al: string[] = [];
-  if (a.diabetes)    al.push(t("health.diabetes"));
-  if (a.hipertensao) al.push(t("health.hypertension"));
-  if (a.gravidez)    al.push(t("health.pregnancy"));
-  if (a.fumante)     al.push(t("health.smoker"));
-  if (a.alergias?.trim())                  al.push(t("patients.alert_allergies",{valor:a.alergias.trim()}));
-  if (a.medicamentos_uso_continuo?.trim()) al.push(t("patients.alert_medications",{valor:a.medicamentos_uso_continuo.trim()}));
-  if (a.observacoes_saude?.trim())         al.push(t("patients.alert_notes",{valor:a.observacoes_saude.trim()}));
-  return al;
+function temAlertaSaude(a: AnamneseData | undefined): boolean {
+  if (!a) return false;
+  const campos = ["fumante","diabetes","hipertensao","anticoagulantes","gravidez"] as const;
+  if (campos.some(c => a[c] === "sim")) return true;
+  if (a.diabetes === true || a.hipertensao === true || a.gravidez === true || a.fumante === true) return true;
+  return false;
+}
+function contarCampos(a: AnamneseData): number {
+  return Object.keys(a).filter(k => k !== "_meta").length;
+}
+function formatarDataAnamnese(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 export default function AgendamentosPage() {
@@ -40,8 +44,12 @@ export default function AgendamentosPage() {
   const [updating, setUpdating]         = useState<string|null>(null);
   const [expanded, setExpanded]         = useState<string|null>(null);
   const [fichaOpen, setFichaOpen]       = useState<string|null>(null);
+  const [anamnesePac, setAnamnesePac]   = useState<Paciente|null>(null);
+  const [anamneseCache, setAnamneseCache] = useState<Record<string, AnamneseData>>({});
+  const [operadorNome, setOperadorNome] = useState("");
 
   useEffect(() => {
+    setOperadorNome(localStorage.getItem("clinica_nome") || "");
     const id = localStorage.getItem("clinica_id");
     if (!id) return;
     Promise.all([
@@ -124,7 +132,8 @@ export default function AgendamentosPage() {
               const isUpdating = updating===a.id;
               const isOpen = expanded===a.id;
               const pac = pacientes.find(p=>p.id===a.paciente_id||p.telefone===a.telefone);
-              const alertas = anamneseAlertas(pac?.anamnese,t);
+              const anPac = pac ? (anamneseCache[pac.id] ?? (pac.anamnese as unknown as AnamneseData)) : undefined;
+              const alerta = temAlertaSaude(anPac);
               const fichaIsOpen = fichaOpen===a.id;
               const histPac = pac ? agendamentos.filter(x=>x.paciente_id===pac.id||x.telefone===pac.telefone) : [];
 
@@ -141,7 +150,7 @@ export default function AgendamentosPage() {
                     <td style={{padding:"12px 12px"}}>
                       <div style={{fontSize:13,fontWeight:600,color:"#1e293b",display:"flex",alignItems:"center",gap:6}}>
                         {a.nome||"—"}
-                        {alertas.length>0&&<span style={{width:6,height:6,borderRadius:"50%",background:"#dc2626",display:"inline-block",flexShrink:0}}/>}
+                        {alerta&&<span style={{width:6,height:6,borderRadius:"50%",background:"#dc2626",display:"inline-block",flexShrink:0}}/>}
                       </div>
                       {a.telefone&&<div style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace",marginTop:1}}>{a.telefone}</div>}
                     </td>
@@ -211,7 +220,6 @@ export default function AgendamentosPage() {
                                   cursor:"pointer",fontFamily:"'Sora',sans-serif",width:"100%",textAlign:"left"}}>
                                 <span style={{fontSize:13,fontWeight:700,color:"#2B7A78"}}>
                                   {t("appointments.patient_record")}{pac?` — ${pac.nome}`:""}
-                                  {alertas.length>0&&<span style={{marginLeft:8,fontSize:11,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",fontWeight:600}}>{t("appointments.alert_count",{n:alertas.length,plural:alertas.length>1?"s":""})}</span>}
                                 </span>
                                 <motion.div animate={{rotate:fichaIsOpen?180:0}} transition={{duration:0.2}} style={{color:"#2B7A78",flexShrink:0}}>
                                   <ChevronDown size={14}/>
@@ -249,24 +257,30 @@ export default function AgendamentosPage() {
                                           </div>
                                           {/* Anamnese */}
                                           {(()=>{
-                                            const temAlerta=alertas.length>0;
+                                            const an=anamneseCache[pac.id]??(pac.anamnese as unknown as AnamneseData);
+                                            const campos=an?contarCampos(an):0;
+                                            const meta=an?._meta as {atualizada_em?:string}|undefined;
                                             return(
-                                              <div style={{padding:"10px 12px",background:temAlerta?"rgba(239,68,68,0.06)":"rgba(16,185,129,0.06)",border:temAlerta?"1px solid rgba(239,68,68,0.25)":"1px solid rgba(16,185,129,0.25)",borderRadius:8}}>
-                                                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:temAlerta?6:0}}>
-                                                  <span>{temAlerta?"⚠️":"✓"}</span>
-                                                  <div style={{fontSize:12,fontWeight:700,color:temAlerta?"#dc2626":"#059669",textTransform:"uppercase",letterSpacing:"0.5px"}}>
-                                                    {temAlerta?t("patients.health_alerts"):t("patients.anamnesis_label")}
+                                              <div style={{padding:"10px 12px",background:campos>0?"rgba(43,122,120,0.04)":"#f8fafc",border:`1px solid ${campos>0?"rgba(43,122,120,0.2)":"#e2e8f0"}`,borderRadius:8}}>
+                                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                                  <div style={{flex:1}}>
+                                                    <div style={{fontSize:11,fontWeight:700,color:"#475569",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>
+                                                      Anamnese {campos>0&&<span style={{color:"#2B7A78"}}>✓</span>}
+                                                    </div>
+                                                    {campos>0?(
+                                                      <>
+                                                        <div style={{fontSize:11,color:"#64748b"}}>{campos} campo{campos!==1?"s":""} preenchido{campos!==1?"s":""}</div>
+                                                        {meta?.atualizada_em&&<div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{formatarDataAnamnese(meta.atualizada_em)}</div>}
+                                                      </>
+                                                    ):(
+                                                      <div style={{fontSize:11,color:"#94a3b8"}}>Nenhum dado registrado</div>
+                                                    )}
                                                   </div>
+                                                  <button onClick={()=>setAnamnesePac(pac)}
+                                                    style={{padding:"5px 11px",fontSize:11,fontWeight:700,border:"1px solid #e2e8f0",borderRadius:7,cursor:"pointer",background:"#fff",color:"#2B7A78",fontFamily:"'Sora',sans-serif",flexShrink:0}}>
+                                                    {campos>0?"Ver / Editar":"Preencher"}
+                                                  </button>
                                                 </div>
-                                                {!pac.anamnese&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>{t("patients.anamnesis_none")}</div>}
-                                                {pac.anamnese&&!temAlerta&&<div style={{fontSize:11,color:"#059669",opacity:0.8}}>{t("patients.no_alerts")}</div>}
-                                                {temAlerta&&(
-                                                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                                                    {alertas.map(al=>(
-                                                      <span key={al} style={{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",border:"1px solid rgba(239,68,68,0.2)"}}>{al}</span>
-                                                    ))}
-                                                  </div>
-                                                )}
                                               </div>
                                             );
                                           })()}
@@ -311,6 +325,20 @@ export default function AgendamentosPage() {
           </tbody>
         </table>
       </div>
+
+      {anamnesePac && (
+        <AnamneseModal
+          paciente={anamnesePac}
+          clinicaId={localStorage.getItem("clinica_id") || ""}
+          operadorNome={operadorNome}
+          onClose={(atualizada) => {
+            if (atualizada && anamnesePac) {
+              setAnamneseCache(prev => ({ ...prev, [anamnesePac.id]: atualizada }));
+            }
+            setAnamnesePac(null);
+          }}
+        />
+      )}
     </div>
   );
 }

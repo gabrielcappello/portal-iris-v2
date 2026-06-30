@@ -13,7 +13,8 @@ import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, X, Ban } from "lucide-
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
 import Week from "react-big-calendar/lib/Week";
-import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
+import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -48,17 +49,20 @@ function getStatusStyle(t: Tt): Record<string, { bg: string; color: string; labe
   };
 }
 
-function anamneseAlertas(a: AnamnesePaciente | undefined, t: Tt): string[] {
-  if (!a) return [];
-  const al: string[] = [];
-  if (a.diabetes)    al.push(t("health.diabetes"));
-  if (a.hipertensao) al.push(t("health.hypertension"));
-  if (a.gravidez)    al.push(t("health.pregnancy"));
-  if (a.fumante)     al.push(t("health.smoker"));
-  if (a.alergias?.trim())                  al.push(t("patients.alert_allergies", { valor: a.alergias.trim() }));
-  if (a.medicamentos_uso_continuo?.trim()) al.push(t("patients.alert_medications", { valor: a.medicamentos_uso_continuo.trim() }));
-  if (a.observacoes_saude?.trim())         al.push(t("patients.alert_notes", { valor: a.observacoes_saude.trim() }));
-  return al;
+function temAlertaSaude(a: AnamneseData | undefined): boolean {
+  if (!a) return false;
+  const campos = ["fumante","diabetes","hipertensao","anticoagulantes","gravidez"] as const;
+  if (campos.some(c => a[c] === "sim")) return true;
+  if (a.diabetes === true || a.hipertensao === true || a.gravidez === true || a.fumante === true) return true;
+  return false;
+}
+function contarCamposAn(a: AnamneseData): number {
+  return Object.keys(a).filter(k => k !== "_meta").length;
+}
+function formatarDataAn(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 // ── date-fns localizer ────────────────────────────────────────────────────────
@@ -228,6 +232,9 @@ export default function CalendarioPage() {
   const [hexInput, setHexInput] = useState("");
   const [savingCor, setSavingCor] = useState(false);
   const [corErro, setCorErro] = useState("");
+  const [anamnesePac, setAnamnesePac]       = useState<Paciente|null>(null);
+  const [anamneseCache, setAnamneseCache]   = useState<Record<string, AnamneseData>>({});
+  const [operadorNome, setOperadorNome]     = useState("");
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -286,6 +293,7 @@ export default function CalendarioPage() {
 
   // ── carregar clínica ────────────────────────────────────────────────────────
   useEffect(() => {
+    setOperadorNome(localStorage.getItem("clinica_nome") || "");
     const token = localStorage.getItem("auth_token");
     if (!token) { router.replace("/login"); return; }
     const id = localStorage.getItem("clinica_id");
@@ -648,7 +656,7 @@ export default function CalendarioPage() {
     return <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 13 }}>Carregando...</div>;
   }
 
-  const drawerAlertas = anamneseAlertas(drawerPaciente?.anamnese, t);
+  const drawerAn = drawerPaciente ? (anamneseCache[drawerPaciente.id] ?? (drawerPaciente.anamnese as unknown as AnamneseData)) : undefined;
   const drawerTotal = drawerHist.filter(a => ["confirmado", "ok"].includes(a.status)).length;
   // histórico mostra só o que é acionável aqui: confirmado / veio (ok) / faltou
   // (cancelado e remarcado não aparecem)
@@ -985,24 +993,31 @@ export default function CalendarioPage() {
 
                       {/* anamnese */}
                       {(() => {
-                        const temAlerta = drawerAlertas.length > 0;
+                        const campos = drawerAn ? contarCamposAn(drawerAn) : 0;
+                        const meta = drawerAn?._meta as { atualizada_em?: string } | undefined;
                         return (
-                          <div style={{ padding: "10px 12px", background: temAlerta ? "rgba(239,68,68,0.06)" : "rgba(16,185,129,0.06)", border: temAlerta ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(16,185,129,0.25)", borderRadius: 8 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: temAlerta ? 6 : 0 }}>
-                              <span>{temAlerta ? "⚠️" : "✓"}</span>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: temAlerta ? "#dc2626" : "#059669", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                {temAlerta ? t("patients.health_alerts") : t("patients.anamnesis_label")}
+                          <div style={{ padding: "10px 12px", background: campos > 0 ? "rgba(43,122,120,0.04)" : "#f8fafc", border: `1px solid ${campos > 0 ? "rgba(43,122,120,0.2)" : "#e2e8f0"}`, borderRadius: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>
+                                  Anamnese {campos > 0 && <span style={{ color: "#2B7A78" }}>✓</span>}
+                                </div>
+                                {campos > 0 ? (
+                                  <>
+                                    <div style={{ fontSize: 11, color: "#64748b" }}>{campos} campo{campos !== 1 ? "s" : ""} preenchido{campos !== 1 ? "s" : ""}</div>
+                                    {meta?.atualizada_em && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{formatarDataAn(meta.atualizada_em)}</div>}
+                                  </>
+                                ) : (
+                                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Nenhum dado registrado</div>
+                                )}
                               </div>
+                              {drawerPaciente && (
+                                <button onClick={() => setAnamnesePac(drawerPaciente)}
+                                  style={{ padding: "5px 11px", fontSize: 11, fontWeight: 700, border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#2B7A78", fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
+                                  {campos > 0 ? "Ver / Editar" : "Preencher"}
+                                </button>
+                              )}
                             </div>
-                            {!drawerPaciente.anamnese && <div style={{ fontSize: 11, color: "#059669", opacity: 0.8 }}>{t("patients.anamnesis_none")}</div>}
-                            {drawerPaciente.anamnese && !temAlerta && <div style={{ fontSize: 11, color: "#059669", opacity: 0.8 }}>{t("patients.no_alerts")}</div>}
-                            {temAlerta && (
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                                {drawerAlertas.map(al => (
-                                  <span key={al} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: "rgba(239,68,68,0.1)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.2)" }}>{al}</span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         );
                       })()}
@@ -1090,6 +1105,20 @@ export default function CalendarioPage() {
         .rbc-time-header.rbc-overflowing { border-right-color: #E8EDEB; }
         .rbc-time-gutter .rbc-timeslot-group { border-bottom: none; }
       `}</style>
+
+      {anamnesePac && clinica && (
+        <AnamneseModal
+          paciente={anamnesePac}
+          clinicaId={clinica.id}
+          operadorNome={operadorNome}
+          onClose={(atualizada) => {
+            if (atualizada && anamnesePac) {
+              setAnamneseCache(prev => ({ ...prev, [anamnesePac.id]: atualizada }));
+            }
+            setAnamnesePac(null);
+          }}
+        />
+      )}
     </div>
   );
 }
