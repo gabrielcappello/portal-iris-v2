@@ -8,6 +8,7 @@ import type { TranslationKey } from "@/lib/i18n/translations";
 import ChatManualModal from "@/components/ChatManualModal";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
+import { listarTratamentosRealizados, formatBRL, ROTULO_ZONA, type TratamentoRealizado } from "@/lib/odontograma";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -85,6 +86,16 @@ export default function PacientesPage() {
   const [clinicaId, setClinicaId]               = useState("");
   const [operadorNome, setOperadorNome]         = useState("");
   const [usuarioId, setUsuarioId]               = useState("");
+  const [realizadosCache, setRealizadosCache]   = useState<Record<string, TratamentoRealizado[]>>({});
+  const [realizadosLoading, setRealizadosLoading] = useState<string|null>(null);
+
+  const fetchRealizados = (pid: string) => {
+    setRealizadosLoading(pid);
+    listarTratamentosRealizados(pid)
+      .then(itens => setRealizadosCache(prev => ({ ...prev, [pid]: itens })))
+      .catch(() => {})
+      .finally(() => setRealizadosLoading(cur => cur === pid ? null : cur));
+  };
 
   useEffect(() => {
     const id   = localStorage.getItem("clinica_id") || "";
@@ -98,6 +109,12 @@ export default function PacientesPage() {
       sb.query<Agendamento>("agendamentos",`?clinica_id=eq.${id}&order=data.desc,horario.desc`),
     ]).then(([p,a])=>{ setPacientes(p); setAgendamentos(a); }).finally(()=>setLoading(false));
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (expanded && realizadosCache[expanded] === undefined) fetchRealizados(expanded);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded]);
 
   function histPaciente(p: Paciente) {
     return agendamentos.filter(a=>a.paciente_id===p.id||a.telefone===p.telefone);
@@ -279,6 +296,37 @@ export default function PacientesPage() {
                                 </div>
                               </div>
 
+                              {/* Tratamentos realizados (do odontograma) */}
+                              {(() => {
+                                const itens = realizadosCache[p.id];
+                                if (realizadosLoading === p.id && itens === undefined)
+                                  return <div style={{ fontSize: 11, color: "#cbd5e1" }}>Carregando tratamentos…</div>;
+                                if (!itens || itens.length === 0) return null;
+                                const total = itens.reduce((s, it) => s + (it.valor ?? 0), 0);
+                                return (
+                                  <div>
+                                    <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+                                      <span>Tratamentos realizados</span>
+                                      {total > 0 && <span style={{ color: "#059669" }}>{formatBRL(total)}</span>}
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                                      {itens.map((it, i) => (
+                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid #f1f5f9" }}>
+                                          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "monospace", color: "#2B7A78", minWidth: 22, textAlign: "center" }}>{it.dente}</span>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{it.procedimento}</div>
+                                            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>
+                                              {formatarDataAnamnese(it.data)}{it.zonas?.length ? ` · ${it.zonas.map(z => ROTULO_ZONA[z]).join(", ")}` : ""}
+                                            </div>
+                                          </div>
+                                          {it.valor != null && <span style={{ fontSize: 12, fontWeight: 700, color: "#059669", flexShrink: 0 }}>{formatBRL(it.valor)}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
                               {/* Fechar */}
                               <button onClick={()=>setExpanded(null)}
                                 style={{alignSelf:"flex-start",padding:"8px 16px",border:"1px solid #cbd5e1",borderRadius:8,background:"#f1f5f9",cursor:"pointer",fontSize:12,fontWeight:700,color:"#475569",fontFamily:"'Sora',sans-serif"}}>
@@ -323,7 +371,10 @@ export default function PacientesPage() {
           paciente={odontoPaciente}
           clinicaId={clinicaId}
           usuarioId={usuarioId}
-          onClose={() => setOdontoPaciente(null)}
+          onClose={() => {
+            if (odontoPaciente) fetchRealizados(odontoPaciente.id);
+            setOdontoPaciente(null);
+          }}
         />
       )}
     </div>

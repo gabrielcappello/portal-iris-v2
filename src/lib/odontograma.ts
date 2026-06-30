@@ -272,6 +272,30 @@ export async function carregarOdontograma(pacienteId: string, clinicaId: string)
   return resp?.dentes ?? [];
 }
 
+/** Só lê o odontograma (não inicializa). Vazio se o paciente nunca abriu. */
+export async function buscarOdontograma(pacienteId: string): Promise<DenteOdonto[]> {
+  const resp = await callRpc<RespostaCompleta>("buscar_odontograma_completo", { p_paciente_id: pacienteId });
+  return resp?.dentes ?? [];
+}
+
+export type TratamentoRealizado = {
+  dente: string; procedimento: string; valor?: number; data?: string; zonas?: Zona[] | null;
+};
+
+/** Lista os procedimentos marcados como realizados (para a ficha do paciente). */
+export async function listarTratamentosRealizados(pacienteId: string): Promise<TratamentoRealizado[]> {
+  const dentes = await buscarOdontograma(pacienteId);
+  const itens: TratamentoRealizado[] = [];
+  for (const d of dentes) {
+    for (const ev of d.eventos_ativos) {
+      if (getPlano(ev).status === "realizado") {
+        itens.push({ dente: d.numero_iso, procedimento: nomeEvento(ev), valor: getPlano(ev).valor ?? undefined, data: ev.criado_em, zonas: ev.zonas });
+      }
+    }
+  }
+  return itens.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""));
+}
+
 export async function registrarAchado(args: {
   denteId: string; clinicaId: string; pacienteId: string; achadoId: string;
   zonas: Zona[]; detalhes?: Record<string, unknown>; observacoes?: string;
