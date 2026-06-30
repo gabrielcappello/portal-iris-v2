@@ -4,9 +4,12 @@
 // SERVICE/SECRET key do Supabase (nunca exposta ao browser). O cliente envia
 // { rpc, params } e este handler encaminha para /rest/v1/rpc/{rpc}.
 //
-// Spec: usar sb_secret no header `apikey` (sem Authorization: Bearer) e nunca
-// a chave anon antiga. O isolamento por clinica_id é responsabilidade das
-// queries — sempre passar p_clinica_id nos params quando a RPC pedir.
+// A chave secreta vai em `apikey` E `Authorization: Bearer`. A env do projeto é
+// uma JWT service_role legada (eyJ…) — para JWTs legadas o PostgREST resolve o
+// role pelo Bearer; sem ele a request cai em `anon` (mesmo com a service_role no
+// apikey). Mandar nos dois headers é robusto para o formato legado e o novo
+// (sb_secret_…). Isolamento por clinica_id é do backend — sempre passar
+// p_clinica_id nos params quando a RPC pedir.
 
 import { NextResponse } from "next/server";
 
@@ -25,6 +28,9 @@ const RPCS_PERMITIDAS = new Set([
 ]);
 
 export async function POST(req: Request) {
+  // LOG TEMPORÁRIO (remover depois): confirma só a EXISTÊNCIA das env vars em prod, nunca o valor.
+  console.log("[odontograma] tem chave:", Boolean(process.env.SUPABASE_SECRET), Boolean(process.env.SUPABASE_SERVICE_KEY));
+
   if (!SECRET_KEY) {
     return NextResponse.json(
       { ok: false, message: "Servidor sem chave do Supabase configurada." },
@@ -52,6 +58,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         apikey: SECRET_KEY,
+        Authorization: `Bearer ${SECRET_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(params ?? {}),
