@@ -6,6 +6,7 @@ import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type 
 import { useParams, useSearchParams } from "next/navigation";
 import CalendarioDentista from "@/components/CalendarioDentista";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
+import DatePickerInline from "@/components/DatePickerInline";
 
 const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
 const N8N_REMARCACAO_URL = "/api/remarcacao-massa";
@@ -800,7 +801,7 @@ export default function DentistaApp() {
 
                     <div style={{marginBottom:16}}>
                       <label style={rLabelSt}>Data afetada</label>
-                      <input type="date" value={dataAlvo} onChange={e=>setDataAlvo(e.target.value)} style={rInputSt}/>
+                      <DatePickerInline value={dataAlvo} onChange={setDataAlvo}/>
                     </div>
 
                     {escopoTipo==="intervalo"&&(
