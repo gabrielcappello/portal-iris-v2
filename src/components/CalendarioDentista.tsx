@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, RefreshCw, X, Ban } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // @ts-expect-error react-big-calendar não publica tipos para o import interno /lib/Week
 import Week from "react-big-calendar/lib/Week";
+import { flushSync } from "react-dom";
 import { sb, calcularIdade, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 
@@ -179,21 +180,52 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   function navProximo() { if (view === "month") setDate(d => addMonths(d, 1)); else if (view === "week") setDate(d => addWeeks(d, 1)); else setDate(d => addDays(d, 1)); }
   function navHoje() { setDate(new Date()); }
 
-  // Swipe horizontal para navegar
+  // ── Swipe animado ──────────────────────────────────────────────────────────
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const [calOffset, setCalOffset]         = useState(0);
+  const [calTransition, setCalTransition] = useState(false);
+
   function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0];
-    swipeStart.current = { x: t.clientX, y: t.clientY };
+    if (drawerEvent) return;
+    swipeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    setCalTransition(false);
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (!swipeStart.current || drawerEvent) return;
+    const dx = e.touches[0].clientX - swipeStart.current.x;
+    const dy = e.touches[0].clientY - swipeStart.current.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+      setCalOffset(dx * 0.42);
+    }
   }
   function onTouchEnd(e: React.TouchEvent) {
     if (!swipeStart.current) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - swipeStart.current.x;
-    const dy = t.clientY - swipeStart.current.y;
+    const dx = e.changedTouches[0].clientX - swipeStart.current.x;
+    const dy = e.changedTouches[0].clientY - swipeStart.current.y;
     swipeStart.current = null;
-    // só activa se horizontal dominante e > 55px
-    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (dx < 0) navProximo(); else navAnterior();
+
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.5) {
+      setCalTransition(true); setCalOffset(0); return;
+    }
+
+    const goNext = dx < 0;
+    const W = typeof window !== "undefined" ? window.innerWidth : 400;
+    setCalTransition(true);
+    setCalOffset(goNext ? -W : W);          // slide para fora
+
+    setTimeout(() => {
+      if (goNext) navProximo(); else navAnterior();
+      flushSync(() => {                      // posiciona do outro lado sem transição
+        setCalTransition(false);
+        setCalOffset(goNext ? W : -W);
+      });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setCalTransition(true);
+          setCalOffset(0);                   // slide para o centro
+        });
+      });
+    }, 200);
   }
 
   const labelPeriodo = useMemo(() => {
@@ -316,7 +348,32 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   const drawerStat = STATUS_STYLE[drawerStatus];
 
   return (
-    <div style={{ fontFamily: "'Sora',sans-serif" }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div style={{ fontFamily: "'Sora',sans-serif" }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+
+    {/* wrapper que recebe o transform do swipe — drawer fica FORA para não se deslocar */}
+    <div style={{
+      transform: `translateX(${calOffset}px)`,
+      transition: calTransition ? "transform 0.22s cubic-bezier(0.4,0,0.2,1)" : "none",
+      position: "relative",
+    }}>
+
+      {/* ── Seta indicadora durante o arrasto ── */}
+      {calOffset !== 0 && !calTransition && (
+        <div style={{ position: "absolute", top: 0, bottom: 0, zIndex: 20, pointerEvents: "none",
+          left: calOffset > 0 ? 0 : "auto", right: calOffset < 0 ? 0 : "auto",
+          display: "flex", alignItems: "center" }}>
+          <div style={{
+            opacity: Math.min(Math.abs(calOffset) / 65, 1),
+            background: "rgba(43,122,120,0.13)",
+            borderRadius: calOffset > 0 ? "0 12px 12px 0" : "12px 0 0 12px",
+            padding: "22px 10px", display: "flex", alignItems: "center",
+          }}>
+            {calOffset > 0
+              ? <ChevronLeft  size={26} color="#2B7A78" strokeWidth={2.5} />
+              : <ChevronRight size={26} color="#2B7A78" strokeWidth={2.5} />}
+          </div>
+        </div>
+      )}
 
       {/* ── Controles ── */}
       <div style={{ marginBottom: 8 }}>
@@ -416,6 +473,8 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
 
         </div>
       )}
+
+    </div> {/* fim wrapper transform */}
 
       {/* ── Drawer: ficha do paciente ── */}
       {drawerEvent && (
