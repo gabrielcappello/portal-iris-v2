@@ -2,25 +2,31 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Search, Settings, Calendar, Clock, AlertTriangle, Check, ArrowLeft, X } from "lucide-react";
-import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente, type AnamnesePaciente } from "@/lib/supabase";
+import { sb, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
 import { useParams, useSearchParams } from "next/navigation";
 import CalendarioDentista from "@/components/CalendarioDentista";
+import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 
 const N8N_VALIDATE_CALENDAR_URL = "https://singingdugong-n8n.cloudfy.live/webhook/validate-calendar";
 const N8N_REMARCACAO_URL = "/api/remarcacao-massa";
 const MOTIVO_PADRAO = "Imprevisto na agenda do profissional";
 
-function anamneseAlertas(a?: AnamnesePaciente): string[] {
-  if (!a) return [];
-  const al: string[] = [];
-  if (a.diabetes)    al.push("Diabetes");
-  if (a.hipertensao) al.push("Hipertensão");
-  if (a.gravidez)    al.push("Gravidez");
-  if (a.fumante)     al.push("Fumante");
-  if (a.alergias?.trim())                  al.push(`Alergias: ${a.alergias.trim()}`);
-  if (a.medicamentos_uso_continuo?.trim()) al.push(`Medicamentos: ${a.medicamentos_uso_continuo.trim()}`);
-  if (a.observacoes_saude?.trim())         al.push(`Obs.: ${a.observacoes_saude.trim()}`);
-  return al;
+function temAlertaSaude(a: AnamneseData | undefined): boolean {
+  if (!a) return false;
+  const campos = ["fumante","diabetes","hipertensao","anticoagulantes","gravidez"] as const;
+  if (campos.some(c => a[c] === "sim")) return true;
+  if (a.diabetes === true || a.hipertensao === true || a.gravidez === true || a.fumante === true) return true;
+  return false;
+}
+
+function contarCampos(a: AnamneseData): number {
+  return Object.keys(a).filter(k => k !== "_meta").length;
+}
+
+function formatarDataAnamnese(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function formatarData(iso:string):string{
@@ -78,6 +84,8 @@ export default function DentistaApp() {
   const [comandoIdRemarcar, setComandoIdRemarcar] = useState("");
   const [resultadoRemarcar, setResultadoRemarcar] = useState<{ok:boolean;total_pacientes?:number;mensagem?:string;idempotente?:boolean;erro?:string}|null>(null);
   const [erroValidacaoRemarcar, setErroValidacaoRemarcar] = useState("");
+  const [anamnesePac, setAnamnesePac]       = useState<Paciente|null>(null);
+  const [anamneseCache, setAnamneseCache]   = useState<Record<string, AnamneseData>>({});
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -580,28 +588,30 @@ export default function DentistaApp() {
                                             </div>
                                             {/* Anamnese */}
                                             {(()=>{
-                                              const alertas=anamneseAlertas(pac.anamnese);
-                                              const temAlerta=alertas.length>0;
-                                              const bg=temAlerta?"rgba(239,68,68,0.06)":"rgba(16,185,129,0.06)";
-                                              const border=temAlerta?"1px solid rgba(239,68,68,0.25)":"1px solid rgba(16,185,129,0.25)";
-                                              const color=temAlerta?"#dc2626":"#059669";
+                                              const an=anamneseCache[pac.id]??(pac.anamnese as unknown as AnamneseData);
+                                              const campos=an?contarCampos(an):0;
+                                              const meta=an?._meta as {atualizada_em?:string}|undefined;
                                               return(
-                                                <div style={{padding:"10px 12px",background:bg,border,borderRadius:8}}>
-                                                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:temAlerta?6:0}}>
-                                                    <span style={{fontSize:13}}>{temAlerta?"⚠️":"✓"}</span>
-                                                    <div style={{fontSize:12,fontWeight:700,color,textTransform:"uppercase",letterSpacing:"0.5px"}}>
-                                                      {temAlerta?"Alertas de saúde":"Anamnese"}
+                                                <div style={{padding:"10px 12px",background:campos>0?"rgba(43,122,120,0.04)":"#f8fafc",border:`1px solid ${campos>0?"rgba(43,122,120,0.2)":"#e2e8f0"}`,borderRadius:8}}>
+                                                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                                    <div style={{flex:1}}>
+                                                      <div style={{fontSize:11,fontWeight:700,color:"#475569",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>
+                                                        Anamnese {campos>0&&<span style={{color:"#2B7A78"}}>✓</span>}
+                                                      </div>
+                                                      {campos>0?(
+                                                        <>
+                                                          <div style={{fontSize:11,color:"#64748b"}}>{campos} campo{campos!==1?"s":""} preenchido{campos!==1?"s":""}</div>
+                                                          {meta?.atualizada_em&&<div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{formatarDataAnamnese(meta.atualizada_em)}</div>}
+                                                        </>
+                                                      ):(
+                                                        <div style={{fontSize:11,color:"#94a3b8"}}>Nenhum dado registrado</div>
+                                                      )}
                                                     </div>
+                                                    <button onClick={()=>setAnamnesePac(pac)}
+                                                      style={{padding:"5px 11px",fontSize:11,fontWeight:700,border:"1px solid #e2e8f0",borderRadius:7,cursor:"pointer",background:"#fff",color:"#2B7A78",fontFamily:"'Sora',sans-serif",flexShrink:0}}>
+                                                      {campos>0?"Ver / Editar":"Preencher"}
+                                                    </button>
                                                   </div>
-                                                  {!pac.anamnese&&<div style={{fontSize:11,color,opacity:0.8}}>Não coletada</div>}
-                                                  {pac.anamnese&&!temAlerta&&<div style={{fontSize:11,color,opacity:0.8}}>Sem alertas registrados</div>}
-                                                  {temAlerta&&(
-                                                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                                                      {alertas.map(al=>(
-                                                        <span key={al} style={{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:99,background:"rgba(239,68,68,0.1)",color:"#dc2626",border:"1px solid rgba(239,68,68,0.2)"}}>{al}</span>
-                                                      ))}
-                                                    </div>
-                                                  )}
                                                 </div>
                                               );
                                             })()}
@@ -719,6 +729,35 @@ export default function DentistaApp() {
                               </div>
                             </div>
                           )}
+                          {/* Anamnese */}
+                          {(()=>{
+                            const an=anamneseCache[p.id]??(p.anamnese as unknown as AnamneseData);
+                            const campos=an?contarCampos(an):0;
+                            const meta=an?._meta as {atualizada_em?:string}|undefined;
+                            return(
+                              <div style={{padding:"10px 12px",background:campos>0?"rgba(43,122,120,0.04)":"#f8fafc",border:`1px solid ${campos>0?"rgba(43,122,120,0.2)":"#e2e8f0"}`,borderRadius:8}}>
+                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  <div style={{flex:1}}>
+                                    <div style={{fontSize:10,fontWeight:700,color:"#475569",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>
+                                      Anamnese {campos>0&&<span style={{color:"#2B7A78"}}>✓</span>}
+                                    </div>
+                                    {campos>0?(
+                                      <>
+                                        <div style={{fontSize:11,color:"#64748b"}}>{campos} campo{campos!==1?"s":""} preenchido{campos!==1?"s":""}</div>
+                                        {meta?.atualizada_em&&<div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{formatarDataAnamnese(meta.atualizada_em)}</div>}
+                                      </>
+                                    ):(
+                                      <div style={{fontSize:11,color:"#94a3b8"}}>Nenhum dado registrado</div>
+                                    )}
+                                  </div>
+                                  <button onClick={()=>setAnamnesePac(p)}
+                                    style={{padding:"5px 11px",fontSize:11,fontWeight:700,border:"1px solid #e2e8f0",borderRadius:7,cursor:"pointer",background:"#fff",color:"#2B7A78",fontFamily:"'Sora',sans-serif",flexShrink:0}}>
+                                    {campos>0?"Ver / Editar":"Preencher"}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </motion.div>
                     )}
@@ -942,6 +981,21 @@ export default function DentistaApp() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal de anamnese */}
+      {anamnesePac && (
+        <AnamneseModal
+          paciente={anamnesePac}
+          clinicaId={params.clinicaId}
+          operadorNome={dentista?.nome || "Dentista"}
+          onClose={(atualizada) => {
+            if (atualizada && anamnesePac) {
+              setAnamneseCache(prev => ({ ...prev, [anamnesePac.id]: atualizada }));
+            }
+            setAnamnesePac(null);
+          }}
+        />
+      )}
     </div>
   );
 }
