@@ -174,6 +174,42 @@ export function eventosSemZona(eventos: EventoOdonto[]): EventoOdonto[] {
   return eventos.filter(e => !e.zonas?.length);
 }
 
+// ── Plano de tratamento (modelado dentro de detalhes jsonb) ───────────────────
+
+export type Intencao = "existente" | "planejado";
+export type PlanoStatus = "pendente" | "realizado";
+export type PlanoAchado = { intencao: Intencao; procedimento?: string; valor?: number; status: PlanoStatus | null };
+
+export function getPlano(ev: EventoOdonto): PlanoAchado {
+  const d = (ev.detalhes ?? {}) as Record<string, unknown>;
+  const intencao: Intencao = d.intencao === "planejado" ? "planejado" : "existente";
+  const status: PlanoStatus | null =
+    d.plano_status === "realizado" ? "realizado" : (intencao === "planejado" ? "pendente" : null);
+  return {
+    intencao,
+    procedimento: typeof d.procedimento === "string" ? d.procedimento : undefined,
+    valor: typeof d.valor === "number" ? d.valor : undefined,
+    status,
+  };
+}
+
+export function ehPlanejadoPendente(ev: EventoOdonto): boolean {
+  const p = getPlano(ev);
+  return p.intencao === "planejado" && p.status !== "realizado";
+}
+
+export function valorPendenteDente(d: DenteOdonto): number {
+  return d.eventos_ativos.reduce(
+    (s, ev) => (ehPlanejadoPendente(ev) ? s + (getPlano(ev).valor ?? 0) : s), 0);
+}
+
+export function formatBRL(v: number): string {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export const COR_EXISTENTE = "#2563eb"; // azul — já está na boca
+export const COR_A_FAZER  = "#dc2626"; // vermelho — planejado
+
 // Cor dominante do dente (maior prioridade entre os achados ativos) — para o tint.
 export function corDominante(eventos: EventoOdonto[]): string | null {
   let melhor = 99;
