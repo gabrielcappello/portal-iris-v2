@@ -351,11 +351,14 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
     <div style={{ fontFamily: "'Sora',sans-serif" }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
     {/* wrapper que recebe o transform do swipe — drawer fica FORA para não se deslocar */}
-    <div style={{
-      transform: `translateX(${calOffset}px)`,
-      transition: calTransition ? "transform 0.22s cubic-bezier(0.4,0,0.2,1)" : "none",
-      position: "relative",
-    }}>
+    <div
+      className={calOffset !== 0 ? "rbc-swiping" : undefined}
+      style={{
+        transform: `translateX(${calOffset}px)`,
+        transition: calTransition ? "transform 0.22s cubic-bezier(0.4,0,0.2,1)" : "none",
+        position: "relative",
+      }}
+    >
 
       {/* ── Seta indicadora durante o arrasto ── */}
       {calOffset !== 0 && !calTransition && (
@@ -626,6 +629,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
         .rbc-header { font-size: 11px; font-weight: 600; color: #64748b; padding: 6px 2px; border-bottom: 1px solid #f1f5f9; }
         .rbc-month-view, .rbc-time-view { border: none !important; }
         .rbc-time-header { position: sticky; top: 0; z-index: 6; background: #fff; }
+        .rbc-swiping .rbc-time-header { position: relative !important; top: auto !important; }
         .rbc-time-header .rbc-header { overflow: visible; padding: 4px 2px; border-bottom: none; }
         .rbc-time-header-content { border-bottom: 1px solid #E8EDEB; }
         .rbc-time-view .rbc-allday-cell { display: none; }
