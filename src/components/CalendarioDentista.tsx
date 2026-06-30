@@ -179,6 +179,23 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   function navProximo() { if (view === "month") setDate(d => addMonths(d, 1)); else if (view === "week") setDate(d => addWeeks(d, 1)); else setDate(d => addDays(d, 1)); }
   function navHoje() { setDate(new Date()); }
 
+  // Swipe horizontal para navegar
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (!swipeStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    // só activa se horizontal dominante e > 55px
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) navProximo(); else navAnterior();
+  }
+
   const labelPeriodo = useMemo(() => {
     if (view === "month") return format(date, "MMMM yyyy", { locale: ptBR });
     if (view === "week") {
@@ -299,7 +316,7 @@ export default function CalendarioDentista({ clinicaId, dentista }: { clinicaId:
   const drawerStat = STATUS_STYLE[drawerStatus];
 
   return (
-    <div style={{ fontFamily: "'Sora',sans-serif" }}>
+    <div style={{ fontFamily: "'Sora',sans-serif" }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
       {/* ── Controles ── */}
       <div style={{ marginBottom: 8 }}>
