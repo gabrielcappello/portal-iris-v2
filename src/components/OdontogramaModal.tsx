@@ -284,7 +284,7 @@ function DetalheDente({ dente, zonaInicial, precios, sondagem, salvando, onRegis
   }
   function registrar() {
     if (!proc) return;
-    onRegistrar(proc, zonas, obs.trim(), intencao, valor ? Number(valor) : undefined);
+    onRegistrar(proc, zonas, obs.trim(), intencao, intencao === "planejado" && valor ? Number(valor) : undefined);
     setProcNome(""); setValor(""); setZonas([]); setObs(""); setIntencao("planejado");
   }
 
@@ -396,12 +396,14 @@ function DetalheDente({ dente, zonaInicial, precios, sondagem, salvando, onRegis
           })}
         </div>
 
-        {/* Valor */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
-          <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
-            style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
-        </div>
+        {/* Valor (só para "A fazer" — existente é só referência, sem cobrança) */}
+        {intencao === "planejado" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+            <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
+            <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
+              style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
+          </div>
+        )}
 
         {/* Superfícies */}
         <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Superfícies (opcional)</div>
