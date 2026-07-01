@@ -12,6 +12,8 @@ import {
 } from "@/lib/odontograma";
 import { toothAssetUrl } from "@/lib/odontograma-assets";
 import { criarLancamento } from "@/lib/financeiro";
+import { criarOrcamentoDoPlano, type Orcamento } from "@/lib/orcamento";
+import OrcamentoModal from "@/components/OrcamentoModal";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
@@ -478,6 +480,8 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
   const [dentes, setDentes] = useState<DenteOdonto[]>([]);
   const [precios, setPrecios] = useState<Procedimento[]>([]);
   const [sondagem, setSondagem] = useState<Record<string, SondagemDente>>({});
+  const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
+  const [gerando, setGerando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -570,10 +574,26 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
     });
   }
 
+  async function gerarOrcamento() {
+    const itens = dentes.flatMap(d =>
+      d.eventos_ativos.filter(ehPlanejadoPendente).map(ev => ({
+        descricao: nomeEvento(ev), dente: d.numero_iso, valor: getPlano(ev).valor ?? 0, origem_id: ev.id,
+      }))
+    );
+    if (!itens.length) return;
+    setGerando(true); setErro("");
+    try {
+      const orc = await criarOrcamentoDoPlano({ clinicaId, pacienteId: paciente.id, criadoPor: autor, itens });
+      setOrcamento(orc);
+    } catch (e) { setErro(e instanceof Error ? e.message : "Erro ao gerar orçamento."); }
+    finally { setGerando(false); }
+  }
+
   const totalComAchados = dentes.filter(d => d.eventos_ativos.length > 0).length;
   const orcamentoAFazer = dentes.reduce((s, d) => s + valorPendenteDente(d), 0);
 
   return (
+    <>
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.45)", padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ width: "min(1120px,100%)", maxHeight: "94vh", background: "#fff", borderRadius: 16, display: "flex", flexDirection: "column", boxShadow: "0 24px 70px rgba(0,0,0,0.25)", overflow: "hidden" }}>
@@ -587,10 +607,16 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
             </div>
           </div>
           {orcamentoAFazer > 0 && (
-            <div style={{ textAlign: "right", marginRight: 4 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>A fazer</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: COR_A_FAZER }}>{formatBRL(orcamentoAFazer)}</div>
-            </div>
+            <>
+              <div style={{ textAlign: "right", marginRight: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>A fazer</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: COR_A_FAZER }}>{formatBRL(orcamentoAFazer)}</div>
+              </div>
+              <button onClick={gerarOrcamento} disabled={gerando}
+                style={{ padding: "8px 14px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT, border: `1px solid ${BRAND}`, borderRadius: 9, cursor: gerando ? "wait" : "pointer", background: "#fff", color: BRAND, whiteSpace: "nowrap" }}>
+                {gerando ? "Gerando…" : "Gerar orçamento"}
+              </button>
+            </>
           )}
           <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", color: "#94a3b8", padding: 4, display: "flex" }}>
             <X size={20} />
@@ -642,5 +668,9 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
         </div>
       </div>
     </div>
+    {orcamento && (
+      <OrcamentoModal orcamento={orcamento} pacienteNome={paciente.nome} usuarioId={usuarioId} onClose={() => setOrcamento(null)} />
+    )}
+    </>
   );
 }
