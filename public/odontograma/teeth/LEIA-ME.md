@@ -30,7 +30,12 @@ Extensão: `.svg` (preferido) ou `.png` (ajustar `TOOTH_ASSET_EXT` em
   priorizar a vestibular com raiz.
 - Estilo consistente em toda a dentição (mesmo pack/artista), arcadas sup. e inf.
 
+## Imagens-fonte
+
+As imagens originais (frontal/oclusal, antes do recorte) ficam **fora de
+`public/`**, em `odontograma-fontes/` na raiz do projeto — para não ficarem
+acessíveis por URL. Ver `odontograma-fontes/LEIA-ME.md`.
+
 ## Licença
 
-Uso comercial em UI de software permitido (ex.: Adobe Stock Standard License).
-Guardar o comprovante/licença do pack junto ao projeto.
+Arte original gerada por IA a partir de descrição anatômica (uso próprio do Iris).
