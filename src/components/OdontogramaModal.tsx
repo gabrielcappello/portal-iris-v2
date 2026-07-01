@@ -552,7 +552,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
         await criarLancamento({
           clinica_id: clinicaId, paciente_id: paciente.id, paciente_nome: paciente.nome,
           tipo: "receita", descricao: nomeEvento(ev), valor: plano.valor, status: "pendente",
-          origem: "odontograma", ref_dente: denteSel.numero_iso, criado_por: autor ?? null,
+          origem_tipo: "odontograma", ref_dente: denteSel.numero_iso, criado_por: autor ?? null,
         });
       }
     });

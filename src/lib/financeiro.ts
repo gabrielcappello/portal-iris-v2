@@ -8,6 +8,8 @@ import { sb } from "./supabase";
 export type LancamentoTipo = "receita" | "despesa";
 export type LancamentoStatus = "pendente" | "pago" | "cancelado";
 export type FormaPagamento = "dinheiro" | "pix" | "cartao_credito" | "cartao_debito" | "boleto";
+// Origem rastreável — preparado para as próximas fases (orçamento, convênio, comissão).
+export type OrigemTipo = "odontograma" | "orcamento" | "manual" | "convenio" | "comissao" | "ajuste" | "agendamento";
 
 export type Lancamento = {
   id: string;
@@ -21,13 +23,17 @@ export type Lancamento = {
   data_vencimento?: string | null;
   data_pagamento?: string | null;
   forma_pagamento?: FormaPagamento | null;
-  origem?: string | null;
-  ref_evento_id?: string | null;
+  // Rastreabilidade
+  origem_tipo?: OrigemTipo | null;
+  origem_id?: string | null;   // referência genérica (evento, orçamento, etc.)
   ref_dente?: string | null;
   dentista_nome?: string | null;
   categoria?: string | null;
+  // Auditoria
   criado_por?: string | null;
   criado_em?: string | null;
+  pago_por?: string | null;
+  pagamento_observacao?: string | null;
 };
 
 export const ROTULO_FORMA: Record<FormaPagamento, string> = {
@@ -79,14 +85,20 @@ export async function criarLancamento(data: Partial<Lancamento>): Promise<Lancam
   return sb.insert("financeiro_lancamentos", data as Record<string, unknown>);
 }
 
-export async function marcarPago(id: string, forma: FormaPagamento): Promise<void> {
+export async function marcarPago(
+  id: string, forma: FormaPagamento, pagoPor?: string | null, observacao?: string | null
+): Promise<void> {
   await sb.update("financeiro_lancamentos", id, {
     status: "pago", data_pagamento: hoje(), forma_pagamento: forma,
+    pago_por: pagoPor || null, pagamento_observacao: observacao?.trim() || null,
   });
 }
 
 export async function marcarPendente(id: string): Promise<void> {
-  await sb.update("financeiro_lancamentos", id, { status: "pendente", data_pagamento: null, forma_pagamento: null });
+  await sb.update("financeiro_lancamentos", id, {
+    status: "pendente", data_pagamento: null, forma_pagamento: null,
+    pago_por: null, pagamento_observacao: null,
+  });
 }
 
 export async function cancelarLancamento(id: string): Promise<void> {

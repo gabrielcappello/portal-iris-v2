@@ -84,9 +84,9 @@ export default function FinanceiroPage() {
     setNovo(false);
     recarregar(clinicaId);
   }
-  async function confirmarPago(forma: FormaPagamento) {
+  async function confirmarPago(forma: FormaPagamento, observacao?: string) {
     if (!pagar) return;
-    await marcarPago(pagar.id, forma);
+    await marcarPago(pagar.id, forma, usuarioId || null, observacao);
     setPagar(null);
     recarregar(clinicaId);
   }
@@ -148,7 +148,7 @@ export default function FinanceiroPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{l.descricao || (receita ? "Receita" : "Despesa")}</div>
                   <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                    {l.paciente_nome ? `${l.paciente_nome} · ` : ""}{l.origem === "odontograma" ? `odontograma${l.ref_dente ? ` (dente ${l.ref_dente})` : ""}` : "manual"}
+                    {l.paciente_nome ? `${l.paciente_nome} · ` : ""}{l.origem_tipo === "odontograma" ? `odontograma${l.ref_dente ? ` (dente ${l.ref_dente})` : ""}` : (l.origem_tipo || "manual")}
                     {l.status === "pago" && l.forma_pagamento ? ` · ${ROTULO_FORMA[l.forma_pagamento]}` : ""}
                   </div>
                 </div>
@@ -202,7 +202,7 @@ function NovoLancamentoModal({ config, onClose, onSalvar }: {
     const v = Number(valor);
     if (!v || v <= 0) return;
     setSalvando(true);
-    onSalvar({ tipo, descricao: descricao.trim() || null, valor: v, data_vencimento: venc, paciente_nome: paciente.trim() || null, origem: "manual", status: "pendente" });
+    onSalvar({ tipo, descricao: descricao.trim() || null, valor: v, data_vencimento: venc, paciente_nome: paciente.trim() || null, origem_tipo: "manual", status: "pendente" });
   }
 
   return (
@@ -246,9 +246,10 @@ function NovoLancamentoModal({ config, onClose, onSalvar }: {
 function PagarModal({ lancamento, onClose, onConfirmar }: {
   lancamento: Lancamento;
   onClose: () => void;
-  onConfirmar: (forma: FormaPagamento) => void;
+  onConfirmar: (forma: FormaPagamento, observacao?: string) => void;
 }) {
   const receita = lancamento.tipo === "receita";
+  const [obs, setObs] = useState("");
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.45)", padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -258,10 +259,12 @@ function PagarModal({ lancamento, onClose, onConfirmar }: {
           <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{lancamento.descricao} · {formatBRL(Number(lancamento.valor))}</div>
         </div>
         <div style={{ padding: 20 }}>
+          <input value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)"
+            style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 9, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box", marginBottom: 12 }} />
           <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Forma de pagamento</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {FORMAS.map(f => (
-              <button key={f} onClick={() => onConfirmar(f)}
+              <button key={f} onClick={() => onConfirmar(f, obs)}
                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", fontSize: 13, fontWeight: 600, fontFamily: FONT, border: "1px solid #e2e8f0", borderRadius: 9, cursor: "pointer", background: "#fff", color: "#334155", textAlign: "left" }}>
                 <Check size={14} color="#059669" /> {ROTULO_FORMA[f]}
               </button>
