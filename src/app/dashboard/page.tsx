@@ -1,4 +1,5 @@
 "use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, Globe, Stethoscope, Building2, Users, UserCheck, Zap, ClipboardList, Eye, EyeOff, DollarSign } from "lucide-react";
@@ -328,7 +329,7 @@ export default function ConfigPage(){
     }catch{}
   }
 
-  if(!clinica)return<div style={{textAlign:'center',padding:'60px 0',color:'#94a3b8',fontSize:13}}>Carregando configurações...</div>;
+  if(!clinica)return<IrisLoader label="Carregando configurações..." />;
 
   const ddi=DDI_MAP[paisCode]||'+55';
   const prefixo=ddd?`${ddi} (${ddd})`:`${ddi}`;

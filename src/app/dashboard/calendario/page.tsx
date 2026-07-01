@@ -910,7 +910,7 @@ export default function CalendarioPage() {
             {/* body */}
             <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
               {drawerLoading ? (
-                <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, padding: "40px 0" }}>Carregando...</div>
+                <IrisLoader />
               ) : (
                 <>
                   {/* status + ações */}

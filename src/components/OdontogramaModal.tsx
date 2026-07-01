@@ -14,6 +14,7 @@ import { toothAssetUrl } from "@/lib/odontograma-assets";
 import { criarLancamento } from "@/lib/financeiro";
 import { criarOrcamentoDoPlano, type Orcamento } from "@/lib/orcamento";
 import OrcamentoModal from "@/components/OrcamentoModal";
+import IrisLoader from "@/components/IrisLoader";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
@@ -627,7 +628,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
         <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
           <div style={{ flex: 1, padding: "20px 16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
             {loading ? (
-              <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, paddingTop: 60 }}>Carregando odontograma…</div>
+              <IrisLoader label="Carregando odontograma…" />
             ) : erro && dentes.length === 0 ? (
               <div style={{ textAlign: "center", color: "#dc2626", fontSize: 13, paddingTop: 60 }}>{erro}</div>
             ) : (

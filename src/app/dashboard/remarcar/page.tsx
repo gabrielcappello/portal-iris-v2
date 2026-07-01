@@ -1,4 +1,5 @@
 ﻿"use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -149,7 +150,7 @@ export default function RemarcarPage() {
   void t;
 
   if (carregando) {
-    return <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 13 }}>Carregando...</div>;
+    return <IrisLoader label="Carregando..." />;
   }
 
   return (

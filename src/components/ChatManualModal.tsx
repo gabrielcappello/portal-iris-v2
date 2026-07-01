@@ -1,4 +1,5 @@
 "use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { X, Send, MessageCircle } from "lucide-react";
@@ -197,7 +198,7 @@ export default function ChatManualModal({ paciente, clinicaId, operadorNome, onC
         {/* Área de mensagens */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8, background: "#f8fafc" }}>
           {loading && (
-            <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, marginTop: 40 }}>Carregando histórico…</div>
+            <IrisLoader label="Carregando histórico…" />
           )}
           {!loading && mensagens.length === 0 && (
             <div style={{ textAlign: "center", marginTop: 40 }}>

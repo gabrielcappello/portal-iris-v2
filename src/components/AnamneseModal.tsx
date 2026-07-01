@@ -1,4 +1,5 @@
 "use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, type Paciente } from "@/lib/supabase";
@@ -213,7 +214,7 @@ export default function AnamneseModal({ paciente, clinicaId, operadorNome, onClo
         {/* Corpo */}
         <div style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
           {loading ? (
-            <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 13, paddingTop: 40 }}>Carregando…</div>
+            <IrisLoader />
           ) : (
             <>
               {/* Grupo 1 — Sim / Não / Não sei */}

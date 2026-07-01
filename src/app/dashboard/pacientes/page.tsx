@@ -9,6 +9,7 @@ import ChatManualModal from "@/components/ChatManualModal";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
 import { listarTratamentosRealizados, formatBRL, ROTULO_ZONA, type TratamentoRealizado } from "@/lib/odontograma";
+import IrisLoader from "@/components/IrisLoader";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -167,7 +168,7 @@ export default function PacientesPage() {
           </thead>
           <tbody>
             {loading&&(
-              <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("patients.loading")}</td></tr>
+              <tr><td colSpan={7} style={{padding:"8px 0"}}><IrisLoader /></td></tr>
             )}
             {!loading&&filtered.length===0&&(
               <tr><td colSpan={7} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("patients.empty")}</td></tr>
@@ -300,7 +301,7 @@ export default function PacientesPage() {
                               {(() => {
                                 const itens = realizadosCache[p.id];
                                 if (realizadosLoading === p.id && itens === undefined)
-                                  return <div style={{ fontSize: 11, color: "#cbd5e1" }}>Carregando tratamentos…</div>;
+                                  return <IrisLoader size={26} />;
                                 if (!itens || itens.length === 0) return null;
                                 const total = itens.reduce((s, it) => s + (it.valor ?? 0), 0);
                                 return (

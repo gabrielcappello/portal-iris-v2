@@ -7,6 +7,7 @@ import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
+import IrisLoader from "@/components/IrisLoader";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -123,7 +124,7 @@ export default function AgendamentosPage() {
           </thead>
           <tbody>
             {loading&&(
-              <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("appointments.loading")}</td></tr>
+              <tr><td colSpan={9} style={{padding:"8px 0"}}><IrisLoader /></td></tr>
             )}
             {!loading&&filtered.length===0&&(
               <tr><td colSpan={9} style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>{t("appointments.empty")}</td></tr>

@@ -1,4 +1,5 @@
 "use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect } from "react";
 import { X, Check, Ban } from "lucide-react";
 import { formatBRL } from "@/lib/financeiro";
@@ -73,7 +74,7 @@ export default function OrcamentoModal({ orcamento, pacienteNome, usuarioId, onC
         {/* Itens */}
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 22px" }}>
           {loading ? (
-            <div style={{ padding: 30, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>Carregando…</div>
+            <IrisLoader />
           ) : itens.length === 0 ? (
             <div style={{ padding: 30, textAlign: "center", color: "#cbd5e1", fontSize: 13 }}>Sem itens.</div>
           ) : (

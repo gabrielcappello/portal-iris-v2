@@ -1,4 +1,5 @@
 "use client";
+import IrisLoader from "@/components/IrisLoader";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -46,8 +47,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#94a3b8",fontSize:13}}>
-        {t("nav.loading_settings")}
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <IrisLoader label={t("nav.loading_settings")} />
       </div>
     );
   }

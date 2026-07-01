@@ -7,6 +7,7 @@ import {
   lerConfigFinanceiro, formatBRL, hoje, ROTULO_FORMA, FORMAS,
   type Lancamento, type LancamentoTipo, type FormaPagamento, type ConfigFinanceiro,
 } from "@/lib/financeiro";
+import IrisLoader from "@/components/IrisLoader";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
@@ -135,7 +136,7 @@ export default function FinanceiroPage() {
       {/* Lista */}
       <div style={{ background: "#fff", border: "1px solid #f1f5f9", borderRadius: 12, overflow: "hidden" }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>Carregando…</div>
+          <IrisLoader />
         ) : filtrados.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#cbd5e1", fontSize: 13 }}>Nenhum lançamento.</div>
         ) : (
