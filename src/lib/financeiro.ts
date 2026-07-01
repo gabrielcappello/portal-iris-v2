@@ -86,6 +86,12 @@ export function hoje(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Vencido = receita pendente com vencimento anterior a hoje (inadimplência).
+export function estaVencido(l: Lancamento): boolean {
+  return l.tipo === "receita" && l.status === "pendente"
+    && !!l.data_vencimento && l.data_vencimento.slice(0, 10) < hoje();
+}
+
 // ── Cliente ───────────────────────────────────────────────────────────────────
 
 export async function listarLancamentos(clinicaId: string): Promise<Lancamento[]> {

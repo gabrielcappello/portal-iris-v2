@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { listarLancamentosPaciente, formatBRL, ROTULO_FORMA, type Lancamento } from "@/lib/financeiro";
+import { listarLancamentosPaciente, formatBRL, estaVencido, ROTULO_FORMA, type Lancamento } from "@/lib/financeiro";
 
 const BRAND = "#2B7A78";
 
@@ -68,13 +68,16 @@ export default function FinanceiroPacienteCard({ pacienteId, ativo }: { paciente
         <div style={{ marginTop: 4 }}>
           <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>Pendências</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {pendencias.slice(0, 5).map(l => (
-              <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                <span style={{ color: "#94a3b8", fontFamily: "monospace", minWidth: 62 }}>{fData(l.data_vencimento)}</span>
-                <span style={{ flex: 1, color: "#334155" }}>{l.descricao || "Receita"}</span>
-                <span style={{ fontWeight: 700, color: "#d97706" }}>{formatBRL(Number(l.valor))}</span>
-              </div>
-            ))}
+            {pendencias.slice(0, 5).map(l => {
+              const venc = estaVencido(l);
+              return (
+                <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                  <span style={{ color: venc ? "#dc2626" : "#94a3b8", fontWeight: venc ? 700 : 400, fontFamily: "monospace", minWidth: 62 }}>{fData(l.data_vencimento)}</span>
+                  <span style={{ flex: 1, color: "#334155" }}>{l.descricao || "Receita"}{venc ? " · vencido" : ""}</span>
+                  <span style={{ fontWeight: 700, color: venc ? "#dc2626" : "#d97706" }}>{formatBRL(Number(l.valor))}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { Plus, X, Check, RotateCcw } from "lucide-react";
 import { sb } from "@/lib/supabase";
 import {
   listarLancamentos, criarLancamento, marcarPago, marcarPendente,
-  lerConfigFinanceiro, formatBRL, hoje, ROTULO_FORMA, FORMAS, ROTULO_GATILHO,
+  lerConfigFinanceiro, formatBRL, hoje, estaVencido, ROTULO_FORMA, FORMAS, ROTULO_GATILHO,
   type Lancamento, type LancamentoTipo, type FormaPagamento, type ConfigFinanceiro, type GatilhoReceita,
 } from "@/lib/financeiro";
 import IrisLoader from "@/components/IrisLoader";
@@ -60,11 +60,11 @@ export default function FinanceiroPage() {
   }, []);
 
   const totais = useMemo(() => {
-    let aReceber = 0, recebidoMes = 0, aPagar = 0, pagoDespesa = 0;
+    let aReceber = 0, recebidoMes = 0, aPagar = 0, pagoDespesa = 0, vencido = 0;
     for (const l of lancamentos) {
       if (l.status === "cancelado") continue;
       if (l.tipo === "receita") {
-        if (l.status === "pendente") aReceber += Number(l.valor);
+        if (l.status === "pendente") { aReceber += Number(l.valor); if (estaVencido(l)) vencido += Number(l.valor); }
         else if (l.status === "pago" && mesmoMes(l.data_pagamento)) recebidoMes += Number(l.valor);
       } else {
         if (l.status === "pendente") aPagar += Number(l.valor);
@@ -72,7 +72,7 @@ export default function FinanceiroPage() {
       }
     }
     const recebidoTotal = lancamentos.filter(l => l.tipo === "receita" && l.status === "pago").reduce((s, l) => s + Number(l.valor), 0);
-    return { aReceber, recebidoMes, aPagar, saldo: recebidoTotal - pagoDespesa };
+    return { aReceber, recebidoMes, aPagar, vencido, saldo: recebidoTotal - pagoDespesa };
   }, [lancamentos]);
 
   const filtrados = lancamentos.filter(l =>
@@ -114,6 +114,7 @@ export default function FinanceiroPage() {
       {/* Cards */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
         <Card label="A receber" valor={totais.aReceber} cor="#d97706" />
+        {totais.vencido > 0 && <Card label="Vencido" valor={totais.vencido} cor="#dc2626" />}
         <Card label="Recebido (mês)" valor={totais.recebidoMes} cor="#059669" />
         {config.despesas && <Card label="A pagar" valor={totais.aPagar} cor="#dc2626" />}
         <Card label="Saldo" valor={totais.saldo} cor={totais.saldo >= 0 ? BRAND : "#dc2626"} />
@@ -157,10 +158,11 @@ export default function FinanceiroPage() {
         ) : (
           filtrados.map((l, i) => {
             const receita = l.tipo === "receita";
-            const stCor = l.status === "pago" ? "#059669" : l.status === "cancelado" ? "#94a3b8" : (receita ? "#d97706" : "#dc2626");
+            const venc = estaVencido(l);
+            const stCor = venc ? "#dc2626" : l.status === "pago" ? "#059669" : l.status === "cancelado" ? "#94a3b8" : (receita ? "#d97706" : "#dc2626");
             return (
               <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: i ? "1px solid #f8fafc" : "none" }}>
-                <div style={{ width: 64, fontSize: 11, color: "#94a3b8", fontFamily: "monospace", flexShrink: 0 }}>{fData(l.data_vencimento)}</div>
+                <div style={{ width: 64, fontSize: 11, color: venc ? "#dc2626" : "#94a3b8", fontWeight: venc ? 700 : 400, fontFamily: "monospace", flexShrink: 0 }}>{fData(l.data_vencimento)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{l.descricao || (receita ? "Receita" : "Despesa")}</div>
                   <div style={{ fontSize: 11, color: "#94a3b8" }}>
@@ -171,7 +173,7 @@ export default function FinanceiroPage() {
                 <div style={{ fontSize: 14, fontWeight: 800, color: receita ? "#059669" : "#dc2626", flexShrink: 0 }}>
                   {receita ? "" : "− "}{formatBRL(Number(l.valor))}
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#fff", background: stCor, padding: "2px 8px", borderRadius: 99, flexShrink: 0 }}>{l.status}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#fff", background: stCor, padding: "2px 8px", borderRadius: 99, flexShrink: 0 }}>{venc ? "vencido" : l.status}</span>
                 <div style={{ width: 96, textAlign: "right", flexShrink: 0 }}>
                   {l.status === "pendente" && (
                     <button onClick={() => setPagar(l)}
