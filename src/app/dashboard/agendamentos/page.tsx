@@ -6,6 +6,7 @@ import { sb, calcularIdade, type Agendamento, type Paciente } from "@/lib/supaba
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
+import OdontogramaModal from "@/components/OdontogramaModal";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -45,6 +46,7 @@ export default function AgendamentosPage() {
   const [expanded, setExpanded]         = useState<string|null>(null);
   const [fichaOpen, setFichaOpen]       = useState<string|null>(null);
   const [anamnesePac, setAnamnesePac]   = useState<Paciente|null>(null);
+  const [odontoPac, setOdontoPac]       = useState<Paciente|null>(null);
   const [anamneseCache, setAnamneseCache] = useState<Record<string, AnamneseData>>({});
   const [operadorNome, setOperadorNome] = useState("");
 
@@ -305,9 +307,17 @@ export default function AgendamentosPage() {
                                             </div>
                                           )}
                                           {/* Odontograma */}
-                                          <div>
-                                            <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{t("patients.odontogram")}</div>
-                                            <div style={{height:56,borderRadius:8,border:"2px dashed #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#cbd5e1",background:"#fff"}}>{t("patients.odontogram_wip")}</div>
+                                          <div style={{padding:"10px 12px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8}}>
+                                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                              <div style={{flex:1}}>
+                                                <div style={{fontSize:11,fontWeight:700,color:"#475569",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>{t("patients.odontogram")}</div>
+                                                <div style={{fontSize:11,color:"#94a3b8"}}>Mapa dentário, procedimentos e orçamento</div>
+                                              </div>
+                                              <button onClick={()=>setOdontoPac(pac)}
+                                                style={{padding:"5px 11px",fontSize:11,fontWeight:700,border:"1px solid #e2e8f0",borderRadius:7,cursor:"pointer",background:"#fff",color:"#2B7A78",fontFamily:"'Sora',sans-serif",flexShrink:0}}>
+                                                Abrir
+                                              </button>
+                                            </div>
                                           </div>
                                         </>
                                       )}
@@ -337,6 +347,15 @@ export default function AgendamentosPage() {
             }
             setAnamnesePac(null);
           }}
+        />
+      )}
+
+      {odontoPac && (
+        <OdontogramaModal
+          paciente={odontoPac}
+          clinicaId={localStorage.getItem("clinica_id") || ""}
+          usuarioId={localStorage.getItem("user_id") || ""}
+          onClose={() => setOdontoPac(null)}
         />
       )}
     </div>

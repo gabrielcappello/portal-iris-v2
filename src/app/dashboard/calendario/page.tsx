@@ -15,6 +15,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Week from "react-big-calendar/lib/Week";
 import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
+import OdontogramaModal from "@/components/OdontogramaModal";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -233,6 +234,7 @@ export default function CalendarioPage() {
   const [savingCor, setSavingCor] = useState(false);
   const [corErro, setCorErro] = useState("");
   const [anamnesePac, setAnamnesePac]       = useState<Paciente|null>(null);
+  const [odontoPac, setOdontoPac]           = useState<Paciente|null>(null);
   const [anamneseCache, setAnamneseCache]   = useState<Record<string, AnamneseData>>({});
   const [operadorNome, setOperadorNome]     = useState("");
   const colorPickerRef = useRef<HTMLDivElement>(null);
@@ -1045,11 +1047,21 @@ export default function CalendarioPage() {
                     </>
                   )}
 
-                  {/* odontograma (placeholder) */}
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>{t("patients.odontogram")}</div>
-                    <div style={{ height: 56, borderRadius: 8, border: "2px dashed #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#cbd5e1" }}>{t("patients.odontogram_wip")}</div>
-                  </div>
+                  {/* odontograma */}
+                  {drawerPaciente && (
+                    <div style={{ padding: "10px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>{t("patients.odontogram")}</div>
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>Mapa dentário, procedimentos e orçamento</div>
+                        </div>
+                        <button onClick={() => setOdontoPac(drawerPaciente)}
+                          style={{ padding: "5px 11px", fontSize: 11, fontWeight: 700, border: "1px solid #e2e8f0", borderRadius: 7, cursor: "pointer", background: "#fff", color: "#2B7A78", fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
+                          Abrir
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* arquivos / documentos (placeholder) */}
                   <div>
@@ -1117,6 +1129,15 @@ export default function CalendarioPage() {
             }
             setAnamnesePac(null);
           }}
+        />
+      )}
+
+      {odontoPac && clinica && (
+        <OdontogramaModal
+          paciente={odontoPac}
+          clinicaId={clinica.id}
+          usuarioId={typeof window !== "undefined" ? (localStorage.getItem("user_id") || "") : ""}
+          onClose={() => setOdontoPac(null)}
         />
       )}
     </div>
