@@ -29,6 +29,9 @@ export type Lancamento = {
   ref_dente?: string | null;
   dentista_nome?: string | null;
   categoria?: string | null;
+  // Parcelamento
+  parcela_numero?: number | null;
+  parcela_total?: number | null;
   // Auditoria
   criado_por?: string | null;
   criado_em?: string | null;
@@ -45,16 +48,27 @@ export const FORMAS: FormaPagamento[] = ["dinheiro", "pix", "cartao_credito", "c
 
 // ── Config financeira por clínica (feature flags) ─────────────────────────────
 
+// Quando a receita nasce: ao aprovar o orçamento, ao realizar o procedimento, ou manual.
+export type GatilhoReceita = "aprovacao" | "realizado" | "manual";
+
 export type ConfigFinanceiro = {
-  convenios: boolean;          // mostra campos de convênio
-  comissao_dentistas: boolean; // sistema de % de repasse
-  despesas: boolean;           // aba de contas a pagar
+  convenios: boolean;             // mostra campos de convênio
+  comissao_dentistas: boolean;    // sistema de % de repasse
+  despesas: boolean;              // aba de contas a pagar
+  gatilho_receita: GatilhoReceita; // desacoplamento execução↔faturamento
 };
 
 export const CONFIG_FIN_PADRAO: ConfigFinanceiro = {
   convenios: false,
   comissao_dentistas: false,
   despesas: true,
+  gatilho_receita: "realizado", // padrão preserva o comportamento atual
+};
+
+export const ROTULO_GATILHO: Record<GatilhoReceita, string> = {
+  aprovacao: "Ao aprovar o orçamento",
+  realizado: "Ao marcar realizado",
+  manual: "Manual (sem automático)",
 };
 
 export function lerConfigFinanceiro(raw: unknown): ConfigFinanceiro {
@@ -83,6 +97,33 @@ export async function listarLancamentos(clinicaId: string): Promise<Lancamento[]
 
 export async function criarLancamento(data: Partial<Lancamento>): Promise<Lancamento[]> {
   return sb.insert("financeiro_lancamentos", data as Record<string, unknown>);
+}
+
+// Gera N parcelas (cada uma = 1 lançamento receita a receber) a partir de um valor.
+export async function gerarParcelasReceita(args: {
+  clinicaId: string; pacienteId?: string | null; pacienteNome?: string | null;
+  valor: number; parcelas: number; descricaoBase: string;
+  origemId?: string | null; criadoPor?: string | null; primeiroVencimento?: string;
+}): Promise<void> {
+  const n = Math.max(1, Math.floor(args.parcelas || 1));
+  const totalCent = Math.round((args.valor || 0) * 100);
+  const baseCent = Math.floor(totalCent / n);
+  const base = new Date(args.primeiroVencimento || hoje());
+
+  const linhas: Partial<Lancamento>[] = [];
+  for (let i = 0; i < n; i++) {
+    const cent = i === n - 1 ? totalCent - baseCent * (n - 1) : baseCent;
+    const venc = new Date(base.getFullYear(), base.getMonth() + i, base.getDate());
+    linhas.push({
+      clinica_id: args.clinicaId, paciente_id: args.pacienteId ?? null, paciente_nome: args.pacienteNome ?? null,
+      tipo: "receita", status: "pendente", valor: cent / 100,
+      descricao: n > 1 ? `${args.descricaoBase} — Parcela ${i + 1}/${n}` : args.descricaoBase,
+      data_vencimento: venc.toISOString().slice(0, 10),
+      origem_tipo: "orcamento", origem_id: args.origemId ?? null,
+      parcela_numero: i + 1, parcela_total: n, criado_por: args.criadoPor ?? null,
+    });
+  }
+  await sb.insert("financeiro_lancamentos", linhas as unknown as Record<string, unknown>);
 }
 
 export async function marcarPago(

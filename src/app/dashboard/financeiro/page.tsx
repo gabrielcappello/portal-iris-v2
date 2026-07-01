@@ -4,8 +4,8 @@ import { Plus, X, Check, RotateCcw } from "lucide-react";
 import { sb } from "@/lib/supabase";
 import {
   listarLancamentos, criarLancamento, marcarPago, marcarPendente,
-  lerConfigFinanceiro, formatBRL, hoje, ROTULO_FORMA, FORMAS,
-  type Lancamento, type LancamentoTipo, type FormaPagamento, type ConfigFinanceiro,
+  lerConfigFinanceiro, formatBRL, hoje, ROTULO_FORMA, FORMAS, ROTULO_GATILHO,
+  type Lancamento, type LancamentoTipo, type FormaPagamento, type ConfigFinanceiro, type GatilhoReceita,
 } from "@/lib/financeiro";
 import IrisLoader from "@/components/IrisLoader";
 
@@ -95,6 +95,11 @@ export default function FinanceiroPage() {
     await marcarPendente(l.id);
     recarregar(clinicaId);
   }
+  async function salvarGatilho(g: GatilhoReceita) {
+    const novo = { ...config, gatilho_receita: g };
+    setConfig(novo);
+    try { await sb.update("clinicas", clinicaId, { config_financeiro: novo }); } catch {}
+  }
 
   return (
     <div>
@@ -112,6 +117,16 @@ export default function FinanceiroPage() {
         <Card label="Recebido (mês)" valor={totais.recebidoMes} cor="#059669" />
         {config.despesas && <Card label="A pagar" valor={totais.aPagar} cor="#dc2626" />}
         <Card label="Saldo" valor={totais.saldo} cor={totais.saldo >= 0 ? BRAND : "#dc2626"} />
+      </div>
+
+      {/* Regra de cobrança (gatilho da receita) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 12, color: "#64748b" }}>
+        <span>Regra de cobrança:</span>
+        <select value={config.gatilho_receita} onChange={e => salvarGatilho(e.target.value as GatilhoReceita)}
+          style={{ padding: "5px 8px", fontSize: 12, border: "1px solid #e2e8f0", borderRadius: 8, fontFamily: FONT, background: "#fff", color: "#334155", cursor: "pointer" }}>
+          {(Object.keys(ROTULO_GATILHO) as GatilhoReceita[]).map(g => <option key={g} value={g}>{ROTULO_GATILHO[g]}</option>)}
+        </select>
+        <span style={{ color: "#cbd5e1" }}>define quando a receita é gerada</span>
       </div>
 
       {/* Filtros */}

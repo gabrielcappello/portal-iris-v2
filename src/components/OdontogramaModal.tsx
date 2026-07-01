@@ -11,7 +11,7 @@ import {
   type DenteOdonto, type Zona, type EstadoDente, type Intencao, type SondagemDente,
 } from "@/lib/odontograma";
 import { toothAssetUrl } from "@/lib/odontograma-assets";
-import { criarLancamento } from "@/lib/financeiro";
+import { criarLancamento, lerConfigFinanceiro, type ConfigFinanceiro } from "@/lib/financeiro";
 import { criarOrcamentoDoPlano, type Orcamento } from "@/lib/orcamento";
 import OrcamentoModal from "@/components/OrcamentoModal";
 import IrisLoader from "@/components/IrisLoader";
@@ -284,7 +284,7 @@ function DetalheDente({ dente, zonaInicial, precios, sondagem, salvando, onRegis
   }
   function registrar() {
     if (!proc) return;
-    onRegistrar(proc, zonas, obs.trim(), intencao, valor ? Number(valor) : undefined);
+    onRegistrar(proc, zonas, obs.trim(), intencao, intencao === "planejado" && valor ? Number(valor) : undefined);
     setProcNome(""); setValor(""); setZonas([]); setObs(""); setIntencao("planejado");
   }
 
@@ -396,12 +396,14 @@ function DetalheDente({ dente, zonaInicial, precios, sondagem, salvando, onRegis
           })}
         </div>
 
-        {/* Valor */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
-          <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
-            style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
-        </div>
+        {/* Valor (só para "A fazer" — existente é só referência, sem cobrança) */}
+        {intencao === "planejado" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+            <span style={{ fontSize: 12, color: "#94a3b8" }}>Valor R$</span>
+            <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
+              style={{ flex: 1, padding: "7px 10px", fontSize: 13, border: "1px solid #e2e8f0", borderRadius: 8, outline: "none", fontFamily: FONT, background: "#fff", color: "#1e293b", boxSizing: "border-box" }} />
+          </div>
+        )}
 
         {/* Superfícies */}
         <div style={{ fontSize: 11, color: "#94a3b8", margin: "12px 0 6px" }}>Superfícies (opcional)</div>
@@ -480,6 +482,7 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
 
   const [dentes, setDentes] = useState<DenteOdonto[]>([]);
   const [precios, setPrecios] = useState<Procedimento[]>([]);
+  const [configFin, setConfigFin] = useState<ConfigFinanceiro>(lerConfigFinanceiro(null));
   const [sondagem, setSondagem] = useState<Record<string, SondagemDente>>({});
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
   const [gerando, setGerando] = useState(false);
@@ -501,12 +504,13 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
       try {
         const [l, cli, snd] = await Promise.all([
           carregarOdontograma(paciente.id, clinicaId),
-          sb.query<{ precios?: Procedimento[] }>("clinicas", `?id=eq.${clinicaId}&select=precios`).catch(() => []),
+          sb.query<{ precios?: Procedimento[]; config_financeiro?: unknown }>("clinicas", `?id=eq.${clinicaId}&select=precios,config_financeiro`).catch(() => []),
           buscarSondagem(paciente.id).catch(() => [] as SondagemDente[]),
         ]);
         if (vivo) {
           setDentes(l);
           setPrecios(cli[0]?.precios ?? []);
+          setConfigFin(lerConfigFinanceiro(cli[0]?.config_financeiro));
           setSondagem(Object.fromEntries(snd.map(s => [s.numero_iso, s])));
         }
       } catch (e) { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar."); }
@@ -552,8 +556,8 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
         zonas: ev.zonas ?? [], detalhes, observacoes: ev.observacoes ?? undefined, criadoPor: autor,
       });
       await resolverAchado({ eventoId: ev.id, status: "substituido", resolvidoPor: autor });
-      // Gancho financeiro: procedimento realizado com valor → receita a receber
-      if (plano.valor && plano.valor > 0) {
+      // Gancho financeiro: só gera receita se a clínica cobra "ao realizar" (desacoplável).
+      if (configFin.gatilho_receita === "realizado" && plano.valor && plano.valor > 0) {
         await criarLancamento({
           clinica_id: clinicaId, paciente_id: paciente.id, paciente_nome: paciente.nome,
           tipo: "receita", descricao: nomeEvento(ev), valor: plano.valor, status: "pendente",
@@ -670,7 +674,15 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
       </div>
     </div>
     {orcamento && (
-      <OrcamentoModal orcamento={orcamento} pacienteNome={paciente.nome} usuarioId={usuarioId} onClose={() => setOrcamento(null)} />
+      <OrcamentoModal
+        orcamento={orcamento}
+        pacienteNome={paciente.nome}
+        pacienteId={paciente.id}
+        clinicaId={clinicaId}
+        usuarioId={usuarioId}
+        gatilho={configFin.gatilho_receita}
+        onClose={() => setOrcamento(null)}
+      />
     )}
     </>
   );

@@ -2,7 +2,7 @@
 import IrisLoader from "@/components/IrisLoader";
 import { useState, useEffect } from "react";
 import { X, Check, Ban } from "lucide-react";
-import { formatBRL } from "@/lib/financeiro";
+import { formatBRL, gerarParcelasReceita, type GatilhoReceita } from "@/lib/financeiro";
 import {
   buscarItens, atualizarDesconto, aprovarOrcamento, recusarOrcamento,
   ROTULO_STATUS_ORC,
@@ -16,16 +16,20 @@ const COR_STATUS: Record<OrcamentoStatus, string> = {
   aberto: "#d97706", aprovado: "#059669", recusado: "#dc2626", cancelado: "#94a3b8",
 };
 
-export default function OrcamentoModal({ orcamento, pacienteNome, usuarioId, onClose }: {
+export default function OrcamentoModal({ orcamento, pacienteNome, pacienteId, clinicaId, usuarioId, gatilho, onClose }: {
   orcamento: Orcamento;
   pacienteNome?: string;
+  pacienteId?: string;
+  clinicaId?: string;
   usuarioId: string;
+  gatilho?: GatilhoReceita;
   onClose: (mudou?: boolean) => void;
 }) {
   const [itens, setItens] = useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<OrcamentoStatus>(orcamento.status);
   const [desconto, setDesconto] = useState(String(orcamento.desconto || ""));
+  const [parcelas, setParcelas] = useState("1");
   const [salvando, setSalvando] = useState(false);
   const [mudou, setMudou] = useState(false);
 
@@ -45,8 +49,18 @@ export default function OrcamentoModal({ orcamento, pacienteNome, usuarioId, onC
   }
   async function aprovar() {
     setSalvando(true);
-    try { await aprovarOrcamento(orcamento.id, usuarioId || null); setStatus("aprovado"); setMudou(true); }
-    finally { setSalvando(false); }
+    try {
+      // Desacoplamento: se a clínica cobra "ao aprovar", gera as parcelas a receber.
+      if (gatilho === "aprovacao" && clinicaId && final > 0) {
+        await gerarParcelasReceita({
+          clinicaId, pacienteId, pacienteNome, valor: final,
+          parcelas: Number(parcelas) || 1, descricaoBase: orcamento.titulo || "Orçamento",
+          origemId: orcamento.id, criadoPor: usuarioId || null,
+        });
+      }
+      await aprovarOrcamento(orcamento.id, usuarioId || null);
+      setStatus("aprovado"); setMudou(true);
+    } finally { setSalvando(false); }
   }
   async function recusar() {
     setSalvando(true);
@@ -106,6 +120,17 @@ export default function OrcamentoModal({ orcamento, pacienteNome, usuarioId, onC
             <span>Total final</span><span style={{ color: BRAND }}>{formatBRL(final)}</span>
           </div>
 
+          {editavel && gatilho === "aprovacao" && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, fontSize: 13, color: "#64748b" }}>
+              <span>Parcelas</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="number" min="1" max="48" value={parcelas} onChange={e => setParcelas(e.target.value)}
+                  style={{ width: 60, padding: "5px 8px", fontSize: 13, textAlign: "center", border: "1px solid #e2e8f0", borderRadius: 7, outline: "none", fontFamily: FONT, color: "#1e293b", background: "#fff" }} />
+                {Number(parcelas) > 1 && <span style={{ fontSize: 12, color: "#94a3b8" }}>de {formatBRL(final / Math.max(1, Number(parcelas)))}</span>}
+              </div>
+            </div>
+          )}
+
           {editavel && (
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button onClick={recusar} disabled={salvando}
@@ -114,7 +139,7 @@ export default function OrcamentoModal({ orcamento, pacienteNome, usuarioId, onC
               </button>
               <button onClick={aprovar} disabled={salvando}
                 style={{ flex: 2, padding: "10px", fontSize: 13, fontWeight: 700, fontFamily: FONT, border: "none", borderRadius: 10, cursor: "pointer", background: "#059669", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: salvando ? 0.7 : 1 }}>
-                <Check size={15} /> Aprovar orçamento
+                <Check size={15} /> {gatilho === "aprovacao" ? "Aprovar e gerar cobrança" : "Aprovar orçamento"}
               </button>
             </div>
           )}
