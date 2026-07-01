@@ -17,6 +17,7 @@ import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Denti
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
 import IrisLoader from "@/components/IrisLoader";
+import FinanceiroPacienteCard from "@/components/FinanceiroPacienteCard";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -1043,6 +1044,9 @@ export default function CalendarioPage() {
                       )}
                     </>
                   )}
+
+                  {/* financeiro do paciente */}
+                  {drawerPaciente && <FinanceiroPacienteCard pacienteId={drawerPaciente.id} ativo={true} />}
 
                   {/* odontograma */}
                   {drawerPaciente && (

@@ -10,6 +10,7 @@ import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
 import { listarTratamentosRealizados, formatBRL, ROTULO_ZONA, type TratamentoRealizado } from "@/lib/odontograma";
 import IrisLoader from "@/components/IrisLoader";
+import FinanceiroPacienteCard from "@/components/FinanceiroPacienteCard";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -296,6 +297,9 @@ export default function PacientesPage() {
                                   </button>
                                 </div>
                               </div>
+
+                              {/* Financeiro do paciente */}
+                              <FinanceiroPacienteCard pacienteId={p.id} ativo={isOpen} />
 
                               {/* Tratamentos realizados (do odontograma) */}
                               {(() => {
