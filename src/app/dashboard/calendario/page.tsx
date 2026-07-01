@@ -16,6 +16,7 @@ import Week from "react-big-calendar/lib/Week";
 import { sb, SUPABASE_URL, SUPABASE_KEY, calcularIdade, type Clinica, type Dentista, type Agendamento, type Paciente } from "@/lib/supabase";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
+import IrisLoader from "@/components/IrisLoader";
 import { useLang } from "@/lib/i18n/LangContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -655,7 +656,7 @@ export default function CalendarioPage() {
   }
 
   if (carregandoClinica) {
-    return <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontSize: 13 }}>Carregando...</div>;
+    return <IrisLoader label="Carregando..." />;
   }
 
   const drawerAn = drawerPaciente ? (anamneseCache[drawerPaciente.id] ?? (drawerPaciente.anamnese as unknown as AnamneseData)) : undefined;
@@ -798,11 +799,7 @@ export default function CalendarioPage() {
 
         {/* calendário */}
         <div style={{ flex: "1 1 520px", minWidth: 0, background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", position: "relative", boxShadow: "0 1px 2px rgba(16,40,36,0.04)" }}>
-          {carregando && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>Carregando agenda...</div>
-            </div>
-          )}
+          {carregando && <IrisLoader overlay />}
           <Calendar
             localizer={localizer}
             events={eventos}
