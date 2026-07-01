@@ -8,6 +8,7 @@ import type { TranslationKey } from "@/lib/i18n/translations";
 import AnamneseModal, { type AnamneseData } from "@/components/AnamneseModal";
 import OdontogramaModal from "@/components/OdontogramaModal";
 import IrisLoader from "@/components/IrisLoader";
+import FinanceiroPacienteCard from "@/components/FinanceiroPacienteCard";
 
 function getStatusStyle(t:(key:TranslationKey,vars?:Record<string,string|number>)=>string): Record<string,{bg:string;color:string;label:string}> {
   return {
@@ -307,6 +308,9 @@ export default function AgendamentosPage() {
                                               </div>
                                             </div>
                                           )}
+                                          {/* Financeiro do paciente */}
+                                          <FinanceiroPacienteCard pacienteId={pac.id} ativo={fichaIsOpen} />
+
                                           {/* Odontograma */}
                                           <div style={{padding:"10px 12px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8}}>
                                             <div style={{display:"flex",alignItems:"center",gap:8}}>

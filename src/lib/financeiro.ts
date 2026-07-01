@@ -95,6 +95,14 @@ export async function listarLancamentos(clinicaId: string): Promise<Lancamento[]
   );
 }
 
+// Lançamentos de um paciente (para a aba Financeiro na ficha).
+export async function listarLancamentosPaciente(pacienteId: string): Promise<Lancamento[]> {
+  return sb.query<Lancamento>(
+    "financeiro_lancamentos",
+    `?paciente_id=eq.${pacienteId}&order=data_vencimento.asc,criado_em.asc`
+  );
+}
+
 export async function criarLancamento(data: Partial<Lancamento>): Promise<Lancamento[]> {
   return sb.insert("financeiro_lancamentos", data as Record<string, unknown>);
 }
