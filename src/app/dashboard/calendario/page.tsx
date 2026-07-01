@@ -200,7 +200,7 @@ export default function CalendarioPage() {
   const [clinica, setClinica] = useState<Clinica | null>(null);
   const [carregandoClinica, setCarregandoClinica] = useState(true);
 
-  const [view, setView] = useState<View>("month");
+  const [view, setView] = useState<View>("day");
   const [date, setDate] = useState<Date>(new Date());
   const [eventos, setEventos] = useState<CalEvent[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
