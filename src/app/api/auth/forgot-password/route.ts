@@ -10,10 +10,11 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const APP_URL = process.env.APP_URL || "";
 const FROM_EMAIL = "iris@cappia.app";
 
-const SB_HEADERS = {
+// Legada (JWT eyJ…) precisa do role via Bearer; sb_secret_… é só apikey (Bearer a rejeita).
+const SB_HEADERS: Record<string, string> = {
   apikey: SERVICE_KEY,
-  Authorization: `Bearer ${SERVICE_KEY}`,
   "Content-Type": "application/json",
+  ...(SERVICE_KEY.startsWith("eyJ") ? { Authorization: `Bearer ${SERVICE_KEY}` } : {}),
 };
 
 function sha256(text: string): string {
