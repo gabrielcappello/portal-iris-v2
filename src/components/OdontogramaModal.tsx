@@ -11,6 +11,7 @@ import {
   type DenteOdonto, type Zona, type EstadoDente, type Intencao, type SondagemDente,
 } from "@/lib/odontograma";
 import { toothAssetUrl } from "@/lib/odontograma-assets";
+import { criarLancamento } from "@/lib/financeiro";
 
 const BRAND = "#2B7A78";
 const FONT = "'Sora',sans-serif";
@@ -539,12 +540,21 @@ export default function OdontogramaModal({ paciente, clinicaId, usuarioId, onClo
   function handleRealizar(ev: DenteOdonto["eventos_ativos"][number]) {
     if (!denteSel) return;
     const detalhes = { ...(ev.detalhes ?? {}), intencao: "planejado", plano_status: "realizado" };
+    const plano = getPlano(ev);
     comSalvar(async () => {
       await registrarAchado({
         denteId: denteSel.id, clinicaId, pacienteId: paciente.id, achadoId: ev.achado_id,
         zonas: ev.zonas ?? [], detalhes, observacoes: ev.observacoes ?? undefined, criadoPor: autor,
       });
       await resolverAchado({ eventoId: ev.id, status: "substituido", resolvidoPor: autor });
+      // Gancho financeiro: procedimento realizado com valor → receita a receber
+      if (plano.valor && plano.valor > 0) {
+        await criarLancamento({
+          clinica_id: clinicaId, paciente_id: paciente.id, paciente_nome: paciente.nome,
+          tipo: "receita", descricao: nomeEvento(ev), valor: plano.valor, status: "pendente",
+          origem: "odontograma", ref_dente: denteSel.numero_iso, criado_por: autor ?? null,
+        });
+      }
     });
   }
   function handleEstado(estado: EstadoDente) {
