@@ -1,21 +1,34 @@
 // src/app/api/odontograma/route.ts
 //
-// Proxy server-side para o odontograma. Roda SOMENTE no servidor e usa a
-// SERVICE/SECRET key do Supabase (nunca exposta ao browser). O cliente envia
-// { rpc, params } e este handler encaminha para /rest/v1/rpc/{rpc}.
+// Proxy server-side para o odontograma. Roda SOMENTE no servidor e usa a chave
+// secreta do Supabase (nunca exposta ao browser). O cliente envia { rpc, params }
+// e este handler encaminha para /rest/v1/rpc/{rpc}.
 //
-// A chave secreta vai em `apikey` E `Authorization: Bearer`. A env do projeto é
-// uma JWT service_role legada (eyJ…) — para JWTs legadas o PostgREST resolve o
-// role pelo Bearer; sem ele a request cai em `anon` (mesmo com a service_role no
-// apikey). Mandar nos dois headers é robusto para o formato legado e o novo
-// (sb_secret_…). Isolamento por clinica_id é do backend — sempre passar
-// p_clinica_id nos params quando a RPC pedir.
+// AUTENTICAÇÃO — dois formatos de chave, headers diferentes:
+//   • Legada (JWT service_role, "eyJ…"): vai em `apikey` E `Authorization: Bearer`.
+//     O PostgREST resolve o role pelo Bearer.
+//   • Nova (`sb_secret_…`): NÃO é JWT. Vai SÓ no `apikey`. Enviá-la no
+//     `Authorization: Bearer` faz o gateway rejeitar como "Invalid JWT" (doc
+//     oficial Supabase); o gateway sintetiza o Authorization interno a partir
+//     do apikey.
+// Por isso o header é montado condicionalmente pelo prefixo da chave (só a
+// legada leva Bearer) — o mesmo código funciona antes e depois da troca da
+// chave, sem downtime.
+// Isolamento por clinica_id é do backend — sempre passar p_clinica_id nos
+// params quando a RPC pedir.
 
 import { NextResponse } from "next/server";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
 const SECRET_KEY =
   process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
+
+// Legada (JWT eyJ…) precisa do role via Bearer; sb_secret_… é só apikey (Bearer a rejeita).
+function sbHeaders(key: string): Record<string, string> {
+  const h: Record<string, string> = { apikey: key, "Content-Type": "application/json" };
+  if (key.startsWith("eyJ")) h.Authorization = `Bearer ${key}`;
+  return h;
+}
 
 // Apenas estas RPCs podem ser chamadas pelo proxy.
 const RPCS_PERMITIDAS = new Set([
@@ -58,11 +71,7 @@ export async function POST(req: Request) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
       method: "POST",
-      headers: {
-        apikey: SECRET_KEY,
-        Authorization: `Bearer ${SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: sbHeaders(SECRET_KEY),
       body: JSON.stringify(params ?? {}),
     });
 

@@ -11,10 +11,11 @@ const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
 // Prefere SUPABASE_SECRET (nome novo padrão do projeto); cai pra SUPABASE_SERVICE_KEY por compat.
 const SERVICE_KEY = process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
 
-const SB_HEADERS = {
+// Legada (JWT eyJ…) precisa do role via Bearer; sb_secret_… é só apikey (Bearer a rejeita).
+const SB_HEADERS: Record<string, string> = {
   apikey: SERVICE_KEY,
-  Authorization: `Bearer ${SERVICE_KEY}`,
   "Content-Type": "application/json",
+  ...(SERVICE_KEY.startsWith("eyJ") ? { Authorization: `Bearer ${SERVICE_KEY}` } : {}),
 };
 
 function sha256(text: string): string {
