@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation, detectBrowserLang, Lang } from "@/lib/i18n/useTranslation";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws";
+const SUPABASE_KEY = "sb_publishable_0mN6LUu3G2r9dE5YUzgaIQ_vrB8NE2C";
 
 async function sha256(text: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -15,7 +15,7 @@ async function sha256(text: string) {
 
 async function sbQuery<T>(table: string, params = ""): Promise<T[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    headers: { apikey: SUPABASE_KEY }
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -24,7 +24,7 @@ async function sbQuery<T>(table: string, params = ""): Promise<T[]> {
 async function sbUpdate(table: string, id: string, data: Record<string, unknown>) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
     method: "PATCH",
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error(await res.text());

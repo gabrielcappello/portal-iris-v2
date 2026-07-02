@@ -55,10 +55,10 @@ export default function ChatManualModal({ paciente, clinicaId, operadorNome, onC
       try {
         const [convRes, msgRes] = await Promise.all([
           fetch(`${SUPABASE_URL}/rest/v1/conversas_manuais?clinica_id=eq.${clinicaId}&telefone=eq.${encodeURIComponent(telefone)}&ativo=eq.true&limit=1`, {
-            headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+            headers: { apikey: SUPABASE_KEY },
           }),
           fetch(`${SUPABASE_URL}/rest/v1/mensagens_manuais?clinica_id=eq.${clinicaId}&telefone=eq.${encodeURIComponent(telefone)}&order=criado_em.asc`, {
-            headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+            headers: { apikey: SUPABASE_KEY },
           }),
         ]);
         const convData: ConversaManual[] = await convRes.json();
@@ -106,7 +106,7 @@ export default function ChatManualModal({ paciente, clinicaId, operadorNome, onC
         `${SUPABASE_URL}/rest/v1/conversas_manuais`,
         {
           method: "POST",
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" },
+          headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=representation" },
           body: JSON.stringify({ clinica_id: clinicaId, telefone, ativo: true, operador: operadorNome }),
         }
       );
@@ -124,7 +124,7 @@ export default function ChatManualModal({ paciente, clinicaId, operadorNome, onC
         `${SUPABASE_URL}/rest/v1/conversas_manuais?clinica_id=eq.${clinicaId}&telefone=eq.${encodeURIComponent(telefone)}&ativo=eq.true`,
         {
           method: "PATCH",
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+          headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
           body: JSON.stringify({ ativo: false, fim: new Date().toISOString() }),
         }
       );
