@@ -20,8 +20,7 @@
 import { NextResponse } from "next/server";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-const SECRET_KEY =
-  process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
+const SECRET_KEY = process.env.SUPABASE_SECRET || "";
 
 // Legada (JWT eyJ…) precisa do role via Bearer; sb_secret_… é só apikey (Bearer a rejeita).
 function sbHeaders(key: string): Record<string, string> {
@@ -43,9 +42,6 @@ const RPCS_PERMITIDAS = new Set([
 ]);
 
 export async function POST(req: Request) {
-  // LOG TEMPORÁRIO (remover depois): confirma só a EXISTÊNCIA das env vars em prod, nunca o valor.
-  console.log("[odontograma] tem chave:", Boolean(process.env.SUPABASE_SECRET), Boolean(process.env.SUPABASE_SERVICE_KEY));
-
   if (!SECRET_KEY) {
     return NextResponse.json(
       { ok: false, message: "Servidor sem chave do Supabase configurada." },
