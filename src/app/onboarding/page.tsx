@@ -7,7 +7,7 @@ import { ChevronDown, Check } from "lucide-react";
 const CRIAR_CLINICA_URL = "https://udizowyfjnhuhgxkeayk.supabase.co/functions/v1/criar-clinica";
 const CRIAR_CLINICA_KEY = "Cappia@2026";
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws";
+const SUPABASE_KEY = "sb_publishable_0mN6LUu3G2r9dE5YUzgaIQ_vrB8NE2C";
 
 // ── Dados idênticos ao dashboard/page.tsx ─────────────────────────────────────
 const PAIS_POR_IDIOMA: Record<string, {v:string;l:string}[]> = {
@@ -356,7 +356,7 @@ export default function OnboardingPage() {
   async function loadDdd(p: string, s: string) {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/paises_config?codigo=eq.${p}&select=ddd_por_estado`, {
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+        headers: { apikey: SUPABASE_KEY }
       });
       const rows = await res.json();
       const mapa: Record<string,string> = rows[0]?.ddd_por_estado || {};
@@ -439,7 +439,7 @@ export default function OnboardingPage() {
       if (clinicaId && (estado || cep)) {
         await fetch(`${SUPABASE_URL}/rest/v1/clinicas?id=eq.${clinicaId}`, {
           method: "PATCH",
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+          headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
           body: JSON.stringify({ ...(estado && { estado }), ...(cep && { cep }) }),
         });
       }

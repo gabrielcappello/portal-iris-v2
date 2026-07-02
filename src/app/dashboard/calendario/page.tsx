@@ -272,7 +272,6 @@ export default function CalendarioPage() {
         method: "POST",
         headers: {
           apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ p_clinica_id: clinica.id, p_token_acesso: token, p_cor: cor }),

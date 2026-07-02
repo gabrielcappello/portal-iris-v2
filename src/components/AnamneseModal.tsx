@@ -150,7 +150,7 @@ export default function AnamneseModal({ paciente, clinicaId, operadorNome, onClo
       try {
         const res = await fetch(
           `${SUPABASE_URL}/rest/v1/pacientes?id=eq.${paciente.id}&select=anamnese`,
-          { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+          { headers: { apikey: SUPABASE_KEY } }
         );
         const linhas: { anamnese?: AnamneseData }[] = await res.json();
         const a: AnamneseData = linhas[0]?.anamnese || {};
@@ -172,14 +172,14 @@ export default function AnamneseModal({ paciente, clinicaId, operadorNome, onClo
       const obj = formParaAnamnese(form, operadorNome);
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/atualizar_anamnese`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
         body: JSON.stringify({ p_paciente_id: paciente.id, p_clinica_id: clinicaId, p_anamnese: obj }),
       });
       if (!res.ok) { setErro("Erro ao salvar. Tente novamente."); setSalvando(false); return; }
       // recarrega para pegar _meta.atualizada_em do servidor
       const r2 = await fetch(
         `${SUPABASE_URL}/rest/v1/pacientes?id=eq.${paciente.id}&select=anamnese`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        { headers: { apikey: SUPABASE_KEY } }
       );
       const linhas: { anamnese?: AnamneseData }[] = await r2.json();
       onClose(linhas[0]?.anamnese);

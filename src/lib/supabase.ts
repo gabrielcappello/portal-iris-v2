@@ -1,7 +1,7 @@
 export const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkaXpvd3lmam5odWhneGtlYXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NDQ1NDgsImV4cCI6MjA5NTQyMDU0OH0.EGX17VhE0IBlX5K-aqvJeAQ3GDIiDD-w-hXgTyQiaws";
+export const SUPABASE_KEY = "sb_publishable_0mN6LUu3G2r9dE5YUzgaIQ_vrB8NE2C";
 
-const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" };
+const H = { apikey: SUPABASE_KEY, "Content-Type": "application/json" };
 
 export const sb = {
   async query<T>(table: string, params = ""): Promise<T[]> {
