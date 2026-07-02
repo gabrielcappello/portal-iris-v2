@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-// Prefere SUPABASE_SECRET (nome novo padrão do projeto); cai pra SUPABASE_SERVICE_KEY por compat.
-const SERVICE_KEY = process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
+// Chave secreta do Supabase (sb_secret) via env.
+const SERVICE_KEY = process.env.SUPABASE_SECRET || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const APP_URL = process.env.APP_URL || "";
 const FROM_EMAIL = "iris@cappia.app";

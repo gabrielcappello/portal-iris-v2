@@ -8,8 +8,8 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 const SUPABASE_URL = "https://udizowyfjnhuhgxkeayk.supabase.co";
-// Prefere SUPABASE_SECRET (nome novo padrão do projeto); cai pra SUPABASE_SERVICE_KEY por compat.
-const SERVICE_KEY = process.env.SUPABASE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
+// Chave secreta do Supabase (sb_secret) via env.
+const SERVICE_KEY = process.env.SUPABASE_SECRET || "";
 
 // Legada (JWT eyJ…) precisa do role via Bearer; sb_secret_… é só apikey (Bearer a rejeita).
 const SB_HEADERS: Record<string, string> = {
